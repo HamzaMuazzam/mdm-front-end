@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TW MDM Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+* { box-sizing: border-box; font-family: "Segoe UI", sans-serif; }
+body { margin: 0; height: 100vh; background: #f4f6f8; display: flex; }
+
+/* Sidebar */
+.sidebar { width: 20%; background: #1e1e2f; color: #fff; display: flex; flex-direction: column; }
+.sidebar-top { height: 30%; padding: 20px; border-bottom: 1px solid rgba(255,255,255,.1); }
+.sidebar-top button { width: 100%; padding: 10px; background: #e53935; border: none; color: #fff; border-radius: 4px; cursor: pointer; }
+.sidebar-bottom { height: 70%; padding: 20px; }
+.nav-btn { width: 100%; padding: 12px; margin-bottom: 10px; background: #2c2c44; border: none; color: #fff; border-radius: 4px; cursor: pointer; }
+.nav-btn.active, .nav-btn:hover { background: #3f51b5; }
+
+/* Content */
+.content { width: 80%; padding: 25px; }
+
+/* Buttons */
+.primary-btn { padding: 10px 15px; background: #3f51b5; border: none; color: #fff; border-radius: 4px; cursor: pointer; }
+
+/* Table */
+table { width: 100%; border-collapse: collapse; background: #fff; margin-top: 10px; }
+th, td { padding: 12px; border-bottom: 1px solid #eee; }
+th { background: #f1f3f5; }
+tbody tr:hover { background: #fafafa; cursor: pointer; }
+.hidden { display: none; }
+
+/* Action Box */
+.action-box { position: fixed; background: #fff; padding: 10px; border-radius: 6px; box-shadow: 0 6px 20px rgba(0,0,0,.2); display: none; z-index: 1000; }
+.action-box button { width: 100%; padding: 8px; margin-bottom: 5px; border: none; border-radius: 4px; cursor: pointer; }
+.edit-btn { background: #4caf50; color: #fff; }
+.delete-btn { background: #e53935; color: #fff; }
+
+/* Modal */
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; justify-content: center; align-items: center; z-index: 2000; }
+.modal.show { display: flex; }
+.modal-content { background: #fff; padding: 25px; width: 400px; border-radius: 8px; }
+.modal-content input { width: 100%; padding: 10px; margin-bottom: 10px; }
+</style>
+</head>
+
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+    <div class="sidebar-top">
+        <h3>User</h3>
+        <p id="userEmail"></p>
+        <button onclick="logout()">Logout</button>
+    </div>
+    <div class="sidebar-bottom">
+        <button class="nav-btn active" onclick="showUsers()">👤 Users</button>
+        <button class="nav-btn" onclick="showDevices()">📱 Devices</button>
+    </div>
+</div>
+
+<!-- Content -->
+<div class="content">
+<div id="usersSection">
+    <h2>Users</h2>
+    <button class="primary-btn" onclick="openUserModal()">New User</button>
+    <table onclick="rowClicked(event,'user')">
+        <thead>
+            <tr>
+                <th>ID</th><th>Login</th><th>Email</th><th>User Name</th><th>Phone</th><th>Active</th>
+            </tr>
+        </thead>
+        <tbody id="usersTable"></tbody>
+    </table>
+</div>
+
+<div id="devicesSection" class="hidden">
+    <h2>Devices</h2>
+    <button class="primary-btn" onclick="openDeviceModal()">New Device</button>
+
+    <table onclick="rowClicked(event,'device')">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Device UUID</th>
+                <th>Phone</th>
+                <th>User</th>
+                <th>Model</th>
+                <th>OS</th>
+            </tr>
+        </thead>
+        <tbody id="devicesTable"></tbody>
+    </table>
+</div>
+</div>
+
+<!-- Action Box -->
+<div id="actionBox" class="action-box">
+    <button class="edit-btn" onclick="editItem()">Edit</button>
+    <button class="delete-btn" onclick="deleteItem()">Delete</button>
+</div>
+
+<!-- New User Modal -->
+<div id="userModal" class="modal">
+    <div class="modal-content">
+        <h3>New User</h3>
+        <input id="login" placeholder="Login">
+        <input id="email" placeholder="Email">
+        <input id="userName" placeholder="User Name">
+        <input id="password" type="password" placeholder="Password">
+        <input id="phone" placeholder="Phone">
+
+        <button class="primary-btn" onclick="addUser()">Add</button>
+        <button onclick="closeUserModal()">Close</button>
+    </div>
+</div>
+
+<!-- New Device Modal -->
+<div id="deviceModal" class="modal">
+    <div class="modal-content">
+        <h3>New Device</h3>
+
+        <input id="deviceUuid" placeholder="Device UUID">
+        <input id="devicePhone" placeholder="Phone">
+        <input id="deviceUserId" placeholder="User ID">
+        <input id="deviceModel" placeholder="Model">
+        <input id="deviceOs" placeholder="OS Version">
+        <input id="deviceDesc" placeholder="Description">
+
+        <button class="primary-btn" onclick="addDevice()">Add Device</button>
+        <button onclick="closeDeviceModal()">Close</button>
+    </div>
+</div>
+
+<script>
+/* ===== AUTH ===== */
+const user = JSON.parse(localStorage.getItem("user"));
+const token = localStorage.getItem("token");
+if (!user || !token) location.href = "login.html";
+userEmail.textContent = user.email;
+const usersTable = document.getElementById("usersTable");
+
+// Sidebar buttons
+const usersNavBtn = document.querySelector('.sidebar-bottom .nav-btn:first-child'); // Users button
+const usersSection = document.getElementById("usersSection");
+const devicesSection = document.getElementById("devicesSection");
+
+/* ===== HIDE USERS FOR L2 ===== */
+if (user.userLevel === "L2") {
+    // Hide Users section and nav button
+    usersSection.classList.add("hidden");
+    usersNavBtn.style.display = "none";
+
+    // Show devices section by default
+    devicesSection.classList.remove("hidden");
+} else {
+    // Default view for L1
+    usersSection.classList.remove("hidden");
+    devicesSection.classList.add("hidden");
+}
+
+/* ===== NAVIGATION ===== */
+function showUsers() {
+    usersSection.classList.remove("hidden");
+    devicesSection.classList.add("hidden");
+}
+function showDevices() {
+    usersSection.classList.add("hidden");
+    devicesSection.classList.remove("hidden");
+}
+
+/* ===== MODAL CONTROL ===== */
+function openUserModal() { userModal.classList.add("show"); }
+function closeUserModal() { userModal.classList.remove("show"); }
+
+/* ===== LOAD USERS ON PAGE LOAD ===== */
+async function loadUsers() {
+    try {
+        const res = await fetch(
+            "http://10.10.10.203:9000/v1/users/get-all-managers-by-user-id",
+            { method: "GET", headers: { "Accept": "*/*", "Authorization": `Bearer ${token}` } }
+        );
+        const result = await res.json();
+        if (!res.ok || !result.success) throw new Error(result.message || "Failed to load users");
+
+        usersTable.innerHTML = "";
+        if (!result.data || result.data.length === 0) {
+            usersTable.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#777">No users found</td></tr>`;
+            return;
+        }
+
+        result.data.forEach(u => {
+            const color = u.active ? "green" : "red"; // ✅ color based on isActive
+            const statusSymbol = "*"; // display as "*"
+            usersTable.innerHTML += `
+            <tr data-id="${u.id}">
+                <td>${u.id}</td>
+                <td>${u.login}</td>
+                <td>${u.email}</td>
+                <td>${u.userName || "-"}</td>
+                <td>${u.phone || "-"}</td>
+                <td style="color:${color}; font-weight:bold; text-align:center;">${statusSymbol}</td>
+            </tr>`;
+        });
+
+    } catch (err) {
+        alert(err.message);
+        console.error("Load users error:", err);
+    }
+}
+
+/* ===== ADD USER ===== */
+async function addUser() {
+    const data = {
+        login: login.value,
+        email: email.value,
+        userName: userName.value,
+        password: password.value,
+        phone: phone.value
+    };
+    try {
+        const res = await fetch(
+            "http://10.10.10.203:9000/v1/users/create-manager",
+            { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` }, body: JSON.stringify(data) }
+        );
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.message || "Server error");
+
+        usersTable.innerHTML += `
+        <tr data-id="${result.data?.id || Date.now()}">
+            <td>${result.data?.id || Date.now()}</td>
+            <td>${data.login}</td>
+            <td>${data.email}</td>
+            <td>${data.userName}</td>
+            <td>${data.phone}</td>
+        </tr>`;
+
+        closeUserModal();
+        login.value = email.value = userName.value = password.value = phone.value = "";
+        alert(result.message || "User created successfully");
+    } catch (err) {
+        alert(err.message); // Exact server message shown here
+    }
+}
+
+const devicesTable = document.getElementById("devicesTable");
+
+/* ===== DEVICE MODAL ===== */
+function openDeviceModal() { deviceModal.classList.add("show"); }
+function closeDeviceModal() { deviceModal.classList.remove("show"); }
+
+/* ===== LOAD DEVICES ===== */
+async function loadDevices() {
+    try {
+        const res = await fetch(
+            "http://10.10.10.203:9000/v1/devices",
+            { headers: { "Authorization": `Bearer ${token}` } }
+        );
+        const result = await res.json();
+
+        devicesTable.innerHTML = "";
+
+        if (!result || result.length === 0) {
+            devicesTable.innerHTML = `
+                <tr><td colspan="6" style="text-align:center;color:#777">
+                    No devices found
+                </td></tr>`;
+            return;
+        }
+
+        result.forEach(d => {
+            devicesTable.innerHTML += `
+                <tr data-id="${d.id}">
+                    <td>${d.id}</td>
+                    <td>${d.deviceUuid}</td>
+                    <td>${d.phone}</td>
+                    <td>${d.userEmail}</td>
+                    <td>${d.model}</td>
+                    <td>${d.osVersion}</td>
+                </tr>`;
+        });
+
+    } catch (err) {
+        alert("Failed to load devices");
+        console.error(err);
+    }
+}
+
+/* ===== ADD DEVICE ===== */
+async function addDevice() {
+    const data = {
+        deviceUuid: deviceUuid.value,
+        userId: Number(deviceUserId.value),
+        phone: devicePhone.value,
+        description: deviceDesc.value,
+        cpuArchitecture: "string",
+        isDeviceAdmin: true,
+        canOverlayWindows: true,
+        canAccessUsageHistory: true,
+        canAccessAccessibility: true,
+        model: deviceModel.value,
+        osVersion: deviceOs.value,
+        batteryCharge: 0,
+        launcherVariant: "string",
+        defaultLauncher: "string"
+    };
+
+    try {
+        const res = await fetch(
+            "http://10.10.10.203:9000/v1/devices",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify(data)
+            }
+        );
+
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.message || "Device creation failed");
+
+        devicesTable.innerHTML += `
+            <tr data-id="${result.id}">
+                <td>${result.id}</td>
+                <td>${result.deviceUuid}</td>
+                <td>${result.phone}</td>
+                <td>${result.userEmail}</td>
+                <td>${result.model}</td>
+                <td>${result.osVersion}</td>
+            </tr>
+        `;
+
+        closeDeviceModal();
+        alert("Device added successfully");
+
+        deviceUuid.value =
+        devicePhone.value =
+        deviceUserId.value =
+        deviceModel.value =
+        deviceOs.value =
+        deviceDesc.value = "";
+
+    } catch (err) {
+        alert(err.message);
+    }
+}
+
+/* ===== LOAD DEVICES WHEN TAB OPENED ===== */
+function showDevices() {
+    usersSection.classList.add("hidden");
+    devicesSection.classList.remove("hidden");
+    loadDevices();
+}
+
+
+
+
+
+/* ===== ROW ACTIONS ===== */
+let selectedId;
+function rowClicked(e) {
+    const row = e.target.closest("tr[data-id]");
+    if (!row) return;
+    selectedId = row.dataset.id;
+    actionBox.style.top = e.pageY + "px";
+    actionBox.style.left = e.pageX + "px";
+    actionBox.style.display = "block";
+}
+document.addEventListener("click", e => {
+    if (!e.target.closest("table") && !e.target.closest(".action-box")) actionBox.style.display = "none";
+});
+function editItem() { alert("Edit " + selectedId); }
+function deleteItem() { alert("Delete " + selectedId); }
+
+/* ===== LOGOUT ===== */
+function logout() { localStorage.clear(); location.href = "login.html"; }
+
+/* ===== INITIALIZE ===== */
+document.addEventListener("DOMContentLoaded", loadUsers);
+</script>
+
+</body>
+</html>
