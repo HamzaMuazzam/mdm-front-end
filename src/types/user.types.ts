@@ -25,3 +25,16 @@ export interface UpdateManagerRequest {
   phone?: string;
   active?: boolean;
 }
+
+export interface Level2User {
+  id: number;
+  login: string;
+  email: string;
+  userName: string;
+  phone: string;
+  profileImg?: string | null;
+  userLevel: 'L1' | 'L2';
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}

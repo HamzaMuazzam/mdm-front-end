@@ -4,11 +4,20 @@ import { toast } from '@/hooks/useToast';
 import type { CreateManagerRequest, UpdateManagerRequest } from '@/types/user.types';
 
 const USERS_QUERY_KEY = ['users'];
+const LEVEL2_USERS_QUERY_KEY = ['level2-users'];
 
 export function useUsersQuery() {
   return useQuery({
     queryKey: USERS_QUERY_KEY,
     queryFn: userService.getAllManagers,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+export function useLevel2UsersQuery() {
+  return useQuery({
+    queryKey: LEVEL2_USERS_QUERY_KEY,
+    queryFn: userService.getUsersWithLevel2,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }

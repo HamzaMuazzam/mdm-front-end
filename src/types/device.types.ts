@@ -7,6 +7,14 @@ export interface Device {
   osVersion: string;
   userId: number;
   description?: string;
+  cpuArchitecture?: string;
+  isDeviceAdmin?: boolean;
+  canOverlayWindows?: boolean;
+  canAccessUsageHistory?: boolean;
+  canAccessAccessibility?: boolean;
+  batteryCharge?: number;
+  launcherVariant?: string;
+  defaultLauncher?: string;
 }
 
 export interface CreateDeviceRequest {
@@ -16,14 +24,21 @@ export interface CreateDeviceRequest {
   model: string;
   osVersion: string;
   description?: string;
+  userId: number;
 }
 
 export interface UpdateDeviceRequest {
-  id: number;
-  deviceUuid?: string;
+  description?: string;
   phone?: string;
-  userEmail?: string;
+  cpuArchitecture?: string;
+  isDeviceAdmin?: boolean;
+  canOverlayWindows?: boolean;
+  canAccessUsageHistory?: boolean;
+  canAccessAccessibility?: boolean;
   model?: string;
   osVersion?: string;
-  description?: string;
+  batteryCharge?: number;
+  launcherVariant?: string;
+  defaultLauncher?: string;
+  userId?: number;
 }

@@ -48,6 +48,22 @@ export const deviceSchema = z.object({
   userId: z.number().min(1, 'User is required'),
 });
 
+export const updateDeviceSchema = z.object({
+  description: z.string().optional(),
+  phone: z.string().min(10).max(15).optional(),
+  cpuArchitecture: z.string().optional(),
+  isDeviceAdmin: z.boolean().optional(),
+  canOverlayWindows: z.boolean().optional(),
+  canAccessUsageHistory: z.boolean().optional(),
+  canAccessAccessibility: z.boolean().optional(),
+  model: z.string().optional(),
+  osVersion: z.string().optional(),
+  batteryCharge: z.number().optional(),
+  launcherVariant: z.string().optional(),
+  defaultLauncher: z.string().optional(),
+  userId: z.number().min(1, 'User is required').optional(),
+});
+
 // Validation functions
 export function validateEmail(email: string): boolean {
   return EMAIL_REGEX.test(email);

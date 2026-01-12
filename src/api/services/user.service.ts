@@ -1,5 +1,5 @@
 import { apiClient } from '../client';
-import type { Manager, CreateManagerRequest, UpdateManagerRequest } from '@/types/user.types';
+import type { Manager, CreateManagerRequest, UpdateManagerRequest, Level2User } from '@/types/user.types';
 import type { ApiResponse } from '@/types/api.types';
 
 export const userService = {
@@ -23,5 +23,10 @@ export const userService = {
   async deleteUser(id: number): Promise<ApiResponse<void>> {
     const response = await apiClient.delete<ApiResponse<void>>(`/v1/users/${id}`);
     return response.data;
+  },
+
+  async getUsersWithLevel2(): Promise<Level2User[]> {
+    const response = await apiClient.get<ApiResponse<Level2User[]>>('/v1/users/get_user_with_level2');
+    return response.data.data;
   },
 };

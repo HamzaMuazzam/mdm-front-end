@@ -1,28 +1,68 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { deviceSchema } from '@/utils/validators';
-import { useDevicesQuery, useCreateDevice, useDeleteDevice } from '@/hooks/useDevices';
+import { deviceSchema, updateDeviceSchema } from '@/utils/validators';
+import { useDevicesQuery, useCreateDevice, useDeleteDevice, useUpdateDevice } from '@/hooks/useDevices';
+import { useLevel2UsersQuery } from '@/hooks/useUsers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { CreateDeviceRequest } from '@/types/device.types';
+import type { CreateDeviceRequest, UpdateDeviceRequest, Device } from '@/types/device.types';
 
 export function DeviceManagement() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingDevice, setEditingDevice] = useState<Device | null>(null);
   const { data: devices = [], isLoading } = useDevicesQuery();
+  const { data: level2Users = [], isLoading: isLoadingUsers } = useLevel2UsersQuery();
   const createMutation = useCreateDevice();
+  const updateMutation = useUpdateDevice();
   const deleteMutation = useDeleteDevice();
 
   const {
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<CreateDeviceRequest>({
     resolver: zodResolver(deviceSchema),
   });
+
+  const {
+    register: registerEdit,
+    handleSubmit: handleSubmitEdit,
+    reset: resetEdit,
+    setValue: setEditValue,
+    formState: { errors: editErrors },
+  } = useForm<UpdateDeviceRequest>({
+    resolver: zodResolver(updateDeviceSchema),
+  });
+
+  useEffect(() => {
+    if (level2Users.length > 0) {
+      setValue('userId', level2Users[0].id);
+    }
+  }, [level2Users, setValue]);
+
+  useEffect(() => {
+    if (editingDevice && isEditModalOpen) {
+      setEditValue('phone', editingDevice.phone || '');
+      setEditValue('model', editingDevice.model || '');
+      setEditValue('osVersion', editingDevice.osVersion || '');
+      setEditValue('description', editingDevice.description || '');
+      setEditValue('cpuArchitecture', editingDevice.cpuArchitecture || '');
+      setEditValue('isDeviceAdmin', editingDevice.isDeviceAdmin || false);
+      setEditValue('canOverlayWindows', editingDevice.canOverlayWindows || false);
+      setEditValue('canAccessUsageHistory', editingDevice.canAccessUsageHistory || false);
+      setEditValue('canAccessAccessibility', editingDevice.canAccessAccessibility || false);
+      setEditValue('batteryCharge', editingDevice.batteryCharge || 0);
+      setEditValue('launcherVariant', editingDevice.launcherVariant || '');
+      setEditValue('defaultLauncher', editingDevice.defaultLauncher || '');
+      setEditValue('userId', editingDevice.userId);
+    }
+  }, [editingDevice, isEditModalOpen, setEditValue]);
 
   const onSubmit = async (data: CreateDeviceRequest) => {
     try {
@@ -37,6 +77,23 @@ export function DeviceManagement() {
   const handleDelete = async (id: number) => {
     if (window.confirm('Are you sure you want to delete this device?')) {
       await deleteMutation.mutateAsync(id);
+    }
+  };
+
+  const handleEdit = (device: Device) => {
+    setEditingDevice(device);
+    setIsEditModalOpen(true);
+  };
+
+  const onEditSubmit = async (data: UpdateDeviceRequest) => {
+    if (!editingDevice) return;
+    try {
+      await updateMutation.mutateAsync({ id: editingDevice.id, ...data });
+      setIsEditModalOpen(false);
+      setEditingDevice(null);
+      resetEdit();
+    } catch (err) {
+      console.error('Failed to update device', err);
     }
   };
 
@@ -79,14 +136,23 @@ export function DeviceManagement() {
                     <td className="px-4 py-3 text-sm">{device.osVersion}</td>
                     <td className="px-4 py-3 text-sm">{device.description || '-'}</td>
                     <td className="px-4 py-3 text-sm">
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleDelete(device.id)}
-                        disabled={deleteMutation.isPending}
-                      >
-                        Delete
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEdit(device)}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDelete(device.id)}
+                          disabled={deleteMutation.isPending}
+                        >
+                          Delete
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -128,6 +194,29 @@ export function DeviceManagement() {
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="userId">Assign User</Label>
+                  <select
+                    id="userId"
+                    {...register('userId', { valueAsNumber: true })}
+                    className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={isLoadingUsers}
+                  >
+                    {isLoadingUsers ? (
+                      <option value="">Loading users...</option>
+                    ) : (
+                      level2Users.map((user) => (
+                        <option key={user.id} value={user.id}>
+                          {user.userName} ({user.email})
+                        </option>
+                      ))
+                    )}
+                  </select>
+                  {errors.userId && (
+                    <p className="text-sm text-destructive">{errors.userId.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="model">Model</Label>
                   <Input id="model" {...register('model')} />
                   {errors.model && <p className="text-sm text-destructive">{errors.model.message}</p>}
@@ -159,6 +248,151 @@ export function DeviceManagement() {
                   </Button>
                   <Button type="submit" disabled={createMutation.isPending}>
                     {createMutation.isPending ? 'Creating...' : 'Create Device'}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Edit Device Modal */}
+      {isEditModalOpen && editingDevice && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md m-4 max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <CardTitle>Edit Device</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmitEdit(onEditSubmit)} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-phone">Phone</Label>
+                  <Input id="edit-phone" {...registerEdit('phone')} />
+                  {editErrors.phone && (
+                    <p className="text-sm text-destructive">{editErrors.phone.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-model">Model</Label>
+                  <Input id="edit-model" {...registerEdit('model')} />
+                  {editErrors.model && (
+                    <p className="text-sm text-destructive">{editErrors.model.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-osVersion">OS Version</Label>
+                  <Input id="edit-osVersion" {...registerEdit('osVersion')} />
+                  {editErrors.osVersion && (
+                    <p className="text-sm text-destructive">{editErrors.osVersion.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-description">Description</Label>
+                  <Input id="edit-description" {...registerEdit('description')} />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-cpuArchitecture">CPU Architecture</Label>
+                  <Input id="edit-cpuArchitecture" {...registerEdit('cpuArchitecture')} />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-launcherVariant">Launcher Variant</Label>
+                  <Input id="edit-launcherVariant" {...registerEdit('launcherVariant')} />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-defaultLauncher">Default Launcher</Label>
+                  <Input id="edit-defaultLauncher" {...registerEdit('defaultLauncher')} />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-batteryCharge">Battery Charge</Label>
+                  <Input
+                    id="edit-batteryCharge"
+                    type="number"
+                    {...registerEdit('batteryCharge', { valueAsNumber: true })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-userId">Assign User</Label>
+                  <select
+                    id="edit-userId"
+                    {...registerEdit('userId', { valueAsNumber: true })}
+                    className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={isLoadingUsers}
+                  >
+                    {isLoadingUsers ? (
+                      <option value="">Loading users...</option>
+                    ) : (
+                      level2Users.map((user) => (
+                        <option key={user.id} value={user.id}>
+                          {user.userName} ({user.email})
+                        </option>
+                      ))
+                    )}
+                  </select>
+                  {editErrors.userId && (
+                    <p className="text-sm text-destructive">{editErrors.userId.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <Label>Device Permissions</Label>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        {...registerEdit('isDeviceAdmin')}
+                        className="h-4 w-4 rounded border-input"
+                      />
+                      <span className="text-sm">Device Admin</span>
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        {...registerEdit('canOverlayWindows')}
+                        className="h-4 w-4 rounded border-input"
+                      />
+                      <span className="text-sm">Can Overlay Windows</span>
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        {...registerEdit('canAccessUsageHistory')}
+                        className="h-4 w-4 rounded border-input"
+                      />
+                      <span className="text-sm">Can Access Usage History</span>
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        {...registerEdit('canAccessAccessibility')}
+                        className="h-4 w-4 rounded border-input"
+                      />
+                      <span className="text-sm">Can Access Accessibility</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIsEditModalOpen(false);
+                      setEditingDevice(null);
+                      resetEdit();
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={updateMutation.isPending}>
+                    {updateMutation.isPending ? 'Updating...' : 'Update Device'}
                   </Button>
                 </div>
               </form>
