@@ -45,6 +45,7 @@ export const deviceSchema = z.object({
   model: z.string().min(1, 'Model is required'),
   osVersion: z.string().min(1, 'OS Version is required'),
   description: z.string().optional(),
+  userId: z.number().min(1, 'User is required'),
 });
 
 // Validation functions
