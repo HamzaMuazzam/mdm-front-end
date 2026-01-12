@@ -62,24 +62,27 @@ export function useUpdateDevice() {
   });
 }
 
-export function useDeleteDevice() {
+export function useToggleDeviceStatus() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: number) => deviceService.deleteDevice(id),
-    onSuccess: () => {
+    mutationFn: ({ id, isActive }: { id: number; isActive: boolean }) =>
+      deviceService.toggleDeviceStatus(id, isActive),
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: DEVICES_QUERY_KEY });
       toast({
         variant: 'success',
-        title: 'Device Deleted',
-        description: 'Device has been deleted successfully.',
+        title: variables.isActive ? 'Device Activated' : 'Device Deactivated',
+        description: variables.isActive
+          ? 'Device has been activated successfully.'
+          : 'Device has been deactivated successfully.',
       });
     },
     onError: (error: any) => {
-      const message = error?.response?.data?.message || error?.message || 'Failed to delete device. Please try again.';
+      const message = error?.response?.data?.message || error?.message || 'Failed to update device status. Please try again.';
       toast({
         variant: 'destructive',
-        title: 'Delete Error',
+        title: 'Status Update Error',
         description: message,
       });
     },

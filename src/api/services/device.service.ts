@@ -18,8 +18,8 @@ export const deviceService = {
     return response.data;
   },
 
-  async deleteDevice(id: number): Promise<ApiResponse<void>> {
-    const response = await apiClient.delete<ApiResponse<void>>(`/v1/devices/${id}`);
+  async toggleDeviceStatus(id: number, isActive: boolean): Promise<ApiResponse<void>> {
+    const response = await apiClient.delete<ApiResponse<void>>(`/v1/devices/${id}?isActive=${isActive}`);
     return response.data;
   },
 };

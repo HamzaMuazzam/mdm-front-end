@@ -15,6 +15,7 @@ export interface Device {
   batteryCharge?: number;
   launcherVariant?: string;
   defaultLauncher?: string;
+  deletedAt?: string | null;
 }
 
 export interface CreateDeviceRequest {
