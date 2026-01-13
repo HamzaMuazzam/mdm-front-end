@@ -4,8 +4,8 @@ import { USER_LEVELS } from '@/utils/constants';
 import { Button } from '@/components/ui/button';
 
 interface SidebarProps {
-  activeTab: 'users' | 'devices';
-  onTabChange: (tab: 'users' | 'devices') => void;
+  activeTab: 'users' | 'devices' | 'subscriptions';
+  onTabChange: (tab: 'users' | 'devices' | 'subscriptions') => void;
 }
 
 export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
@@ -26,13 +26,22 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
 
       <nav className="flex-1 space-y-2">
         {user?.userLevel === USER_LEVELS.L1 && (
-          <Button
-            variant={activeTab === 'users' ? 'default' : 'ghost'}
-            className="w-full justify-start text-white hover:bg-white/10"
-            onClick={() => onTabChange('users')}
-          >
-            Users
-          </Button>
+          <>
+            <Button
+              variant={activeTab === 'users' ? 'default' : 'ghost'}
+              className="w-full justify-start text-white hover:bg-white/10"
+              onClick={() => onTabChange('users')}
+            >
+              Users
+            </Button>
+            <Button
+              variant={activeTab === 'subscriptions' ? 'default' : 'ghost'}
+              className="w-full justify-start text-white hover:bg-white/10"
+              onClick={() => onTabChange('subscriptions')}
+            >
+              Subscriptions
+            </Button>
+          </>
         )}
         <Button
           variant={activeTab === 'devices' ? 'default' : 'ghost'}

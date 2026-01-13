@@ -5,10 +5,11 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { UserManagement } from '@/components/features/users/UserManagement';
 import { DeviceManagement } from '@/components/features/devices/DeviceManagement';
+import { SubscriptionsManagement } from '@/components/features/subscriptions/SubscriptionsManagement';
 
 export function DashboardPage() {
   const user = useAuthStore((state) => state.user);
-  const [activeTab, setActiveTab] = useState<'users' | 'devices'>(
+  const [activeTab, setActiveTab] = useState<'users' | 'devices' | 'subscriptions'>(
     user?.userLevel === USER_LEVELS.L1 ? 'users' : 'devices'
   );
 
@@ -16,6 +17,7 @@ export function DashboardPage() {
     <DashboardLayout sidebar={<Sidebar activeTab={activeTab} onTabChange={setActiveTab} />}>
       <div className="p-8">
         {activeTab === 'users' && user?.userLevel === USER_LEVELS.L1 && <UserManagement />}
+        {activeTab === 'subscriptions' && user?.userLevel === USER_LEVELS.L1 && <SubscriptionsManagement />}
         {activeTab === 'devices' && <DeviceManagement />}
       </div>
     </DashboardLayout>
