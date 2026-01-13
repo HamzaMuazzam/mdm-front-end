@@ -1,20 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { userSchema } from '@/utils/validators';
-import { useUsersQuery, useCreateUser, useDeleteUser } from '@/hooks/useUsers';
+import { useUsersQuery, useCreateUser, useDeleteUser, useUpdateUser } from '@/hooks/useUsers';
+import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { Manager, CreateManagerRequest } from '@/types/user.types';
+import type { Manager, CreateManagerRequest, UpdateManagerRequest } from '@/types/user.types';
 
 export function UserManagement() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Manager | null>(null);
   const { data: users = [], isLoading } = useUsersQuery();
   const createMutation = useCreateUser();
   const deleteMutation = useDeleteUser();
+  const updateMutation = useUpdateUser();
+  const { user: currentUser } = useAuthStore();
+  const isL1User = currentUser?.userLevel === 'L1';
 
   const {
     register,
@@ -24,6 +29,23 @@ export function UserManagement() {
   } = useForm<CreateManagerRequest>({
     resolver: zodResolver(userSchema),
   });
+
+  const {
+    register: registerEdit,
+    handleSubmit: handleSubmitEdit,
+    reset: resetEdit,
+    setValue: setEditValue,
+    formState: { errors: editErrors },
+  } = useForm<Omit<UpdateManagerRequest, 'id'>>();
+
+  useEffect(() => {
+    if (selectedUser && isEditModalOpen) {
+      setEditValue('userName', selectedUser.userName || '');
+      setEditValue('email', selectedUser.email || '');
+      setEditValue('phone', selectedUser.phone || '');
+      setEditValue('active', selectedUser.active);
+    }
+  }, [selectedUser, isEditModalOpen, setEditValue]);
 
   const onSubmit = async (data: CreateManagerRequest) => {
     try {
@@ -37,7 +59,30 @@ export function UserManagement() {
 
   const handleDelete = async (id: number) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
-      await deleteMutation.mutateAsync(id);
+      await deleteMutation.mutateAsync({ id, status: false });
+    }
+  };
+
+  const handleActivate = async (id: number) => {
+    if (window.confirm('Are you sure you want to activate this user?')) {
+      await deleteMutation.mutateAsync({ id, status: true });
+    }
+  };
+
+  const handleEdit = (user: Manager) => {
+    setSelectedUser(user);
+    setIsEditModalOpen(true);
+  };
+
+  const onEditSubmit = async (data: Omit<UpdateManagerRequest, 'id'>) => {
+    if (!selectedUser) return;
+    try {
+      await updateMutation.mutateAsync({ id: selectedUser.id, ...data });
+      setIsEditModalOpen(false);
+      setSelectedUser(null);
+      resetEdit();
+    } catch (err) {
+      console.error('Failed to update user', err);
     }
   };
 
@@ -70,7 +115,10 @@ export function UserManagement() {
               </thead>
               <tbody className="divide-y">
                 {users.map((user) => (
-                  <tr key={user.id} className="hover:bg-muted/50">
+                  <tr
+                    key={user.id}
+                    className={`hover:bg-muted/50 ${!user.active ? 'bg-gray-100 text-gray-400' : ''}`}
+                  >
                     <td className="px-4 py-3 text-sm">{user.id}</td>
                     <td className="px-4 py-3 text-sm">{user.login}</td>
                     <td className="px-4 py-3 text-sm">{user.email}</td>
@@ -88,14 +136,36 @@ export function UserManagement() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm">
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleDelete(user.id)}
-                        disabled={deleteMutation.isPending}
-                      >
-                        Delete
-                      </Button>
+                      <div className="flex gap-2">
+                        {isL1User && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEdit(user)}
+                          >
+                            Edit
+                          </Button>
+                        )}
+                        {user.active ? (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDelete(user.id)}
+                            disabled={deleteMutation.isPending}
+                          >
+                            Delete
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="default"
+                            onClick={() => handleActivate(user.id)}
+                            disabled={deleteMutation.isPending}
+                          >
+                            Activate
+                          </Button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -161,6 +231,76 @@ export function UserManagement() {
                   </Button>
                   <Button type="submit" disabled={createMutation.isPending}>
                     {createMutation.isPending ? 'Creating...' : 'Create User'}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Edit User Modal - L1 Users Only */}
+      {isEditModalOpen && selectedUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md m-4">
+            <CardHeader>
+              <CardTitle>Edit User</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmitEdit(onEditSubmit)} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-userName">User Name</Label>
+                  <Input id="edit-userName" {...registerEdit('userName')} />
+                  {editErrors.userName && (
+                    <p className="text-sm text-destructive">{editErrors.userName.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-email">Email</Label>
+                  <Input id="edit-email" type="email" {...registerEdit('email')} />
+                  {editErrors.email && (
+                    <p className="text-sm text-destructive">{editErrors.email.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-phone">Phone</Label>
+                  <Input id="edit-phone" {...registerEdit('phone')} />
+                  {editErrors.phone && (
+                    <p className="text-sm text-destructive">{editErrors.phone.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-profileImg">Profile Image URL</Label>
+                  <Input id="edit-profileImg" {...registerEdit('profileImg')} />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="edit-active"
+                    {...registerEdit('active')}
+                    className="h-4 w-4"
+                  />
+                  <Label htmlFor="edit-active">Active</Label>
+                </div>
+
+                <div className="flex gap-2 justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIsEditModalOpen(false);
+                      setSelectedUser(null);
+                      resetEdit();
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={updateMutation.isPending}>
+                    {updateMutation.isPending ? 'Updating...' : 'Update User'}
                   </Button>
                 </div>
               </form>

@@ -19,10 +19,10 @@ export interface CreateManagerRequest {
 
 export interface UpdateManagerRequest {
   id: number;
-  login?: string;
-  email?: string;
   userName?: string;
+  email?: string;
   phone?: string;
+  profileImg?: string;
   active?: boolean;
 }
 

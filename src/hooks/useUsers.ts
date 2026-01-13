@@ -74,20 +74,28 @@ export function useDeleteUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: number) => userService.deleteUser(id),
-    onSuccess: () => {
+    mutationFn: ({ id, status }: { id: number; status: true | false }) =>
+      userService.deleteUser(id, status),
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: USERS_QUERY_KEY });
+      const isActivating = variables.status;
       toast({
         variant: 'success',
-        title: 'User Deleted',
-        description: 'User has been deleted successfully.',
+        title: isActivating ? 'User Activated' : 'User Deleted',
+        description: isActivating
+          ? 'User has been activated successfully.'
+          : 'User has been deleted successfully.',
       });
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || error?.message || 'Failed to delete user. Please try again.';
+    onError: (error: any, variables) => {
+      const isActivating = variables.status;
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        `Failed to ${isActivating ? 'activate' : 'delete'} user. Please try again.`;
       toast({
         variant: 'destructive',
-        title: 'Delete Error',
+        title: isActivating ? 'Activate Error' : 'Delete Error',
         description: message,
       });
     },

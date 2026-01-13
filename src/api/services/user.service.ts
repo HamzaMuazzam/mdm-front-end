@@ -20,8 +20,8 @@ export const userService = {
     return response.data;
   },
 
-  async deleteUser(id: number): Promise<ApiResponse<void>> {
-    const response = await apiClient.delete<ApiResponse<void>>(`/v1/users/${id}`);
+  async deleteUser(id: number, status: true | false ): Promise<ApiResponse<void>> {
+    const response = await apiClient.delete<ApiResponse<void>>(`/v1/users/${id}?status=${status}`);
     return response.data;
   },
 
