@@ -131,15 +131,16 @@ export function DeviceManagement() {
             <table className="w-full">
               <thead className="bg-muted/50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium">ID</th>
+                  {/*<th className="px-4 py-3 text-left text-sm font-medium">ID</th>*/}
                   <th className="px-4 py-3 text-left text-sm font-medium">Device UUID</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Phone</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium">User Name</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">User Email</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Model</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">OS Version</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Description</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Status</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">Deleted At</th>
+                  {/*<th className="px-4 py-3 text-left text-sm font-medium">Deleted At</th>*/}
                   <th className="px-4 py-3 text-left text-sm font-medium">Actions</th>
                 </tr>
               </thead>
@@ -151,9 +152,10 @@ export function DeviceManagement() {
                       key={device.id}
                       className={`hover:bg-muted/50 ${!isActive ? 'opacity-50 bg-muted/30' : ''}`}
                     >
-                      <td className="px-4 py-3 text-sm">{device.id}</td>
+                      {/*<td className="px-4 py-3 text-sm">{device.id}</td>*/}
                       <td className="px-4 py-3 text-sm">{device.deviceUuid}</td>
                       <td className="px-4 py-3 text-sm">{device.phone}</td>
+                      <td className="px-4 py-3 text-sm">{device.userName}</td>
                       <td className="px-4 py-3 text-sm">{device.userEmail}</td>
                       <td className="px-4 py-3 text-sm">{device.model}</td>
                       <td className="px-4 py-3 text-sm">{device.osVersion}</td>
@@ -169,7 +171,7 @@ export function DeviceManagement() {
                           {isActive ? 'Active' : 'Inactive'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm">{device.deletedAt || '-'}</td>
+                      {/*<td className="px-4 py-3 text-sm">{device.deletedAt || '-'}</td>*/}
                       <td className="px-4 py-3 text-sm">
                         <div className="flex gap-2">
                           <Button

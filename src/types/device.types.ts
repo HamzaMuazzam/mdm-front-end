@@ -3,6 +3,7 @@ export interface Device {
   deviceUuid: string;
   phone: string;
   userEmail: string;
+  userName: string;
   model: string;
   osVersion: string;
   userId: number;
