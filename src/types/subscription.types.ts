@@ -6,6 +6,22 @@ export interface Subscription {
   price: number;
 }
 
+export interface UserPlanSubscription {
+  id: number;
+  subscriptionName: string;
+  description: string;
+  type: string;
+  seats: number;
+  validityDays: number;
+  noOfDevices: number;
+  price: number;
+  isUserPlan: boolean;
+  currency: string;
+  createdAt: string;
+  updatedAt: string | null;
+  deletedAt: string | null;
+}
+
 export interface UserSubscriptionPlan {
   id: number;
   userId: number;

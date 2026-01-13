@@ -2,6 +2,7 @@ import { apiClient } from '../client';
 import type {
   Subscription,
   UserSubscriptionPlan,
+  UserPlanSubscription,
   AssignPlanRequest,
 } from '@/types/subscription.types';
 import type { ApiResponse, PaginatedResponse } from '@/types/api.types';
@@ -35,5 +36,12 @@ export const subscriptionService = {
       data
     );
     return response.data;
+  },
+
+  async getUserPlans(): Promise<UserPlanSubscription[]> {
+    const response = await apiClient.get<ApiResponse<UserPlanSubscription[]>>(
+      '/v1/subscriptions/user-plans'
+    );
+    return response.data.data;
   },
 };

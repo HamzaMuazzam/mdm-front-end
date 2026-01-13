@@ -7,6 +7,7 @@ import type { AssignPlanRequest } from '@/types/subscription.types';
 
 const SUBSCRIPTIONS_QUERY_KEY = ['subscriptions'];
 const USER_PLAN_QUERY_KEY = ['userPlan'];
+const USER_PLANS_QUERY_KEY = ['userPlans'];
 
 export function useSubscriptionPlansQuery() {
   return useQuery({
@@ -20,6 +21,14 @@ export function useUserPlanQuery() {
   return useQuery({
     queryKey: USER_PLAN_QUERY_KEY,
     queryFn: () => subscriptionService.getUserPlan(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+export function useUserPlansQuery() {
+  return useQuery({
+    queryKey: USER_PLANS_QUERY_KEY,
+    queryFn: () => subscriptionService.getUserPlans(),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
