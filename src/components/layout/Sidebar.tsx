@@ -14,9 +14,9 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
 
   return (
     <div className="w-64 h-screen bg-sidebar text-white p-6 flex flex-col">
-      <div className="mb-8">
-          <img src="/tw_logo.png" alt="MDM Portal" className="h-10 w-auto" />
-          <h1 className="text-2xl font-bold">MDM Portal</h1>
+      <div className="mb-8 flex flex-col items-center justify-center space-y-2">
+        <img src="/tw_logo.png" alt="MDM Portal" className="h-10 w-auto" />
+        <h1 className="text-2xl font-bold">MDM Portal</h1>
       </div>
 
       <div className="mb-8 p-4 bg-white/10 rounded-lg">
