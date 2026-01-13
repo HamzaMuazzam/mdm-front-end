@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/authStore';
 import { USER_LEVELS } from '@/utils/constants';
 import { Sidebar } from '@/components/layout/Sidebar';
@@ -9,12 +10,26 @@ import { SubscriptionsManagement } from '@/components/features/subscriptions/Sub
 
 export function DashboardPage() {
   const user = useAuthStore((state) => state.user);
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'users' | 'devices' | 'subscriptions'>(
     user?.userLevel === USER_LEVELS.L1 ? 'users' : 'devices'
   );
 
+  const handleTabChange = (tab: 'users' | 'devices' | 'subscriptions') => {
+    setActiveTab(tab);
+
+    // Invalidate queries to refresh data on each tab click
+    if (tab === 'users') {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    } else if (tab === 'devices') {
+      queryClient.invalidateQueries({ queryKey: ['devices'] });
+    } else if (tab === 'subscriptions') {
+      queryClient.invalidateQueries({ queryKey: ['userPlans'] });
+    }
+  };
+
   return (
-    <DashboardLayout sidebar={<Sidebar activeTab={activeTab} onTabChange={setActiveTab} />}>
+    <DashboardLayout sidebar={<Sidebar activeTab={activeTab} onTabChange={handleTabChange} />}>
       <div className="p-8">
         {activeTab === 'users' && user?.userLevel === USER_LEVELS.L1 && <UserManagement />}
         {activeTab === 'subscriptions' && user?.userLevel === USER_LEVELS.L1 && <SubscriptionsManagement />}

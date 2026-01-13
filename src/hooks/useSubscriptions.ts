@@ -41,6 +41,7 @@ export function useAssignPlan() {
     mutationFn: (data: AssignPlanRequest) => subscriptionService.assignPlan(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: USER_PLAN_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: USER_PLANS_QUERY_KEY });
       toast({
         variant: 'success',
         title: 'Plan Assigned',
@@ -53,6 +54,31 @@ export function useAssignPlan() {
       toast({
         variant: 'destructive',
         title: 'Assignment Error',
+        description: message,
+      });
+    },
+  });
+}
+
+export function useChangePlan() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: AssignPlanRequest) => subscriptionService.assignPlan(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: USER_PLAN_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: USER_PLANS_QUERY_KEY });
+      toast({
+        variant: 'success',
+        title: 'Plan Changed',
+        description: 'Your subscription plan has been changed successfully.',
+      });
+    },
+    onError: (error: any) => {
+      const message = error?.response?.data?.message || error?.message || 'Failed to change plan. Please try again.';
+      toast({
+        variant: 'destructive',
+        title: 'Plan Change Error',
         description: message,
       });
     },

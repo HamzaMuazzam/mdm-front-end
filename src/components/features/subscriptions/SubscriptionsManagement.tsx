@@ -1,18 +1,18 @@
 import { useState } from 'react';
-import { useUserPlansQuery, useAssignPlan } from '@/hooks/useSubscriptions';
+import { useUserPlansQuery, useChangePlan } from '@/hooks/useSubscriptions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check } from 'lucide-react';
 
 export function SubscriptionsManagement() {
   const { data: plans = [], isLoading } = useUserPlansQuery();
-  const assignPlanMutation = useAssignPlan();
+  const changePlanMutation = useChangePlan();
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
 
   const handleChangePlan = (planId: number) => {
     if (window.confirm('Are you sure you want to change to this plan?')) {
       setSelectedPlanId(planId);
-      assignPlanMutation.mutate({ subscriptionId: planId });
+      changePlanMutation.mutate({ subscriptionId: planId });
     }
   };
 
@@ -84,9 +84,9 @@ export function SubscriptionsManagement() {
                 <Button
                   className="w-full"
                   onClick={() => handleChangePlan(plan.id)}
-                  disabled={assignPlanMutation.isPending && selectedPlanId === plan.id}
+                  disabled={changePlanMutation.isPending && selectedPlanId === plan.id}
                 >
-                  {assignPlanMutation.isPending && selectedPlanId === plan.id
+                  {changePlanMutation.isPending && selectedPlanId === plan.id
                     ? 'Changing...'
                     : 'Change Plan'}
                 </Button>
