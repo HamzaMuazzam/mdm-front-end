@@ -53,4 +53,9 @@ export const deviceService = {
     const response = await apiClient.get<ApiResponse<ConfigEnumItem[]>>('/v1/configurations/enums/push-notification-protocols');
     return response.data.data;
   },
+
+  async getParentConfiguration(): Promise<DeviceConfiguration> {
+    const response = await apiClient.get<ApiResponse<DeviceConfiguration>>('/v1/configurations/parent/admin');
+    return response.data.data;
+  },
 };

@@ -4,8 +4,8 @@ import { USER_LEVELS } from '@/utils/constants';
 import { Button } from '@/components/ui/button';
 
 interface SidebarProps {
-  activeTab: 'users' | 'devices' | 'subscriptions';
-  onTabChange: (tab: 'users' | 'devices' | 'subscriptions') => void;
+  activeTab: 'users' | 'devices' | 'subscriptions' | 'configuration';
+  onTabChange: (tab: 'users' | 'devices' | 'subscriptions' | 'configuration') => void;
 }
 
 export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
@@ -51,6 +51,15 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
         >
           Devices
         </Button>
+        {user?.userLevel === USER_LEVELS.L1 && (
+          <Button
+            variant={activeTab === 'configuration' ? 'default' : 'ghost'}
+            className="w-full justify-start text-white hover:bg-white/10"
+            onClick={() => onTabChange('configuration')}
+          >
+            Configuration
+          </Button>
+        )}
       </nav>
 
       <Button variant="destructive" className="w-full mt-auto" onClick={logout}>

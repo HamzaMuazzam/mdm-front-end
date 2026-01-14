@@ -155,3 +155,11 @@ export function usePushNotificationProtocols() {
     staleTime: 30 * 60 * 1000,
   });
 }
+
+export function useParentConfiguration() {
+  return useQuery({
+    queryKey: ['parentConfiguration'],
+    queryFn: deviceService.getParentConfiguration,
+    staleTime: 5 * 60 * 1000,
+  });
+}

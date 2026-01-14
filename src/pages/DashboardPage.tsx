@@ -7,15 +7,16 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { UserManagement } from '@/components/features/users/UserManagement';
 import { DeviceManagement } from '@/components/features/devices/DeviceManagement';
 import { SubscriptionsManagement } from '@/components/features/subscriptions/SubscriptionsManagement';
+import { ConfigurationManagement } from '@/components/features/configuration/ConfigurationManagement';
 
 export function DashboardPage() {
   const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'users' | 'devices' | 'subscriptions'>(
+  const [activeTab, setActiveTab] = useState<'users' | 'devices' | 'subscriptions' | 'configuration'>(
     user?.userLevel === USER_LEVELS.L1 ? 'users' : 'devices'
   );
 
-  const handleTabChange = (tab: 'users' | 'devices' | 'subscriptions') => {
+  const handleTabChange = (tab: 'users' | 'devices' | 'subscriptions' | 'configuration') => {
     setActiveTab(tab);
 
     // Invalidate queries to refresh data on each tab click
@@ -25,6 +26,8 @@ export function DashboardPage() {
       queryClient.invalidateQueries({ queryKey: ['devices'] });
     } else if (tab === 'subscriptions') {
       queryClient.invalidateQueries({ queryKey: ['userPlans'] });
+    } else if (tab === 'configuration') {
+      queryClient.invalidateQueries({ queryKey: ['parentConfiguration'] });
     }
   };
 
@@ -34,6 +37,7 @@ export function DashboardPage() {
         {activeTab === 'users' && user?.userLevel === USER_LEVELS.L1 && <UserManagement />}
         {activeTab === 'subscriptions' && user?.userLevel === USER_LEVELS.L1 && <SubscriptionsManagement />}
         {activeTab === 'devices' && <DeviceManagement />}
+        {activeTab === 'configuration' && user?.userLevel === USER_LEVELS.L1 && <ConfigurationManagement />}
       </div>
     </DashboardLayout>
   );
