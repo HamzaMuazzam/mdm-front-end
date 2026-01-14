@@ -1,5 +1,5 @@
 import { apiClient } from '../client';
-import type { Device, CreateDeviceRequest, UpdateDeviceRequest } from '@/types/device.types';
+import type { Device, CreateDeviceRequest, UpdateDeviceRequest, DeviceConfiguration, UpdateDeviceConfigurationRequest, ConfigEnumItem } from '@/types/device.types';
 import type { ApiResponse } from '@/types/api.types';
 
 export const deviceService = {
@@ -21,5 +21,36 @@ export const deviceService = {
   async toggleDeviceStatus(id: number, isActive: boolean): Promise<ApiResponse<void>> {
     const response = await apiClient.delete<ApiResponse<void>>(`/v1/devices/${id}?isActive=${isActive}`);
     return response.data;
+  },
+
+  async getDeviceConfiguration(deviceId: number): Promise<DeviceConfiguration> {
+    const response = await apiClient.get<ApiResponse<DeviceConfiguration>>(`/v1/configurations/device/${deviceId}`);
+    return response.data.data;
+  },
+
+  async updateDeviceConfiguration(configId: number, data: UpdateDeviceConfigurationRequest): Promise<ApiResponse<DeviceConfiguration>> {
+    const response = await apiClient.put<ApiResponse<DeviceConfiguration>>(`/v1/configurations/${configId}`, data);
+    return response.data;
+  },
+
+  // Configuration Enum APIs
+  async getApplicationPermissionGranters(): Promise<ConfigEnumItem[]> {
+    const response = await apiClient.get<ApiResponse<ConfigEnumItem[]>>('/v1/configurations/enums/application-permission-granters');
+    return response.data.data;
+  },
+
+  async getFeatureStates(): Promise<ConfigEnumItem[]> {
+    const response = await apiClient.get<ApiResponse<ConfigEnumItem[]>>('/v1/configurations/enums/feature-states');
+    return response.data.data;
+  },
+
+  async getLocationTrackingTypes(): Promise<ConfigEnumItem[]> {
+    const response = await apiClient.get<ApiResponse<ConfigEnumItem[]>>('/v1/configurations/enums/location-tracking-types');
+    return response.data.data;
+  },
+
+  async getPushNotificationProtocols(): Promise<ConfigEnumItem[]> {
+    const response = await apiClient.get<ApiResponse<ConfigEnumItem[]>>('/v1/configurations/enums/push-notification-protocols');
+    return response.data.data;
   },
 };
