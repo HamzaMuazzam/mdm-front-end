@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useParentConfiguration, useUpdateDeviceConfiguration, useApplicationPermissionGranters, useFeatureStates, useLocationTrackingTypes, usePushNotificationProtocols } from '@/hooks/useDevices';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +9,7 @@ import type { UpdateDeviceConfigurationRequest } from '@/types/device.types';
 export function ConfigurationManagement() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [formData, setFormData] = useState<UpdateDeviceConfigurationRequest>({});
+  const queryClient = useQueryClient();
 
   const { data: config, isLoading } = useParentConfiguration();
   const updateConfigMutation = useUpdateDeviceConfiguration();
@@ -70,6 +72,8 @@ export function ConfigurationManagement() {
         deviceId: undefined, // deviceId is null for parent config
         ...formData,
       });
+      // Refresh the parent configuration data after successful update
+      await queryClient.invalidateQueries({ queryKey: ['parentConfiguration'] });
       setIsEditMode(false);
     } catch (err) {
       console.error('Failed to update configuration', err);
