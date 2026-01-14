@@ -1,7 +1,17 @@
+import { useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useLogout } from '@/hooks/useAuth';
 import { USER_LEVELS } from '@/utils/constants';
 import { Button } from '@/components/ui/button';
+import {
+  Users,
+  Smartphone,
+  CreditCard,
+  Settings,
+  LogOut,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react';
 
 interface SidebarProps {
   activeTab: 'users' | 'devices' | 'subscriptions' | 'configuration';
@@ -9,62 +19,158 @@ interface SidebarProps {
 }
 
 export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const user = useAuthStore((state) => state.user);
   const logout = useLogout();
 
+  const toggleSidebar = () => {
+    setIsCollapsed(!isCollapsed);
+  };
+
   return (
-    <div className="w-64 h-screen bg-sidebar text-white p-6 flex flex-col">
-      <div className="mb-8 flex flex-col items-center justify-center space-y-2">
-        <img src="/tw_logo.png" alt="MDM Portal" className="h-10 w-auto" />
-        <h1 className="text-2xl font-bold">MDM Portal</h1>
+    <div
+      className={`h-screen bg-sidebar text-white flex flex-col relative transition-all duration-300 ease-in-out ${
+        isCollapsed ? 'w-20' : 'w-64'
+      }`}
+    >
+      {/* Collapse Toggle Button */}
+      <button
+        onClick={toggleSidebar}
+        className="absolute -right-3 top-8 bg-sidebar border-2 border-white/20 rounded-full p-1 hover:bg-white/10 transition-colors z-10"
+      >
+        {isCollapsed ? (
+          <ChevronRight className="h-4 w-4" />
+        ) : (
+          <ChevronLeft className="h-4 w-4" />
+        )}
+      </button>
+
+      {/* Logo Section */}
+      <div className={`p-6 ${isCollapsed ? 'px-4' : ''}`}>
+        <div className={`flex flex-col items-center justify-center space-y-2 ${isCollapsed ? 'space-y-0' : ''}`}>
+          <img
+            src="/tw_logo.png"
+            alt="MDM Portal"
+            className={`transition-all duration-300 ${isCollapsed ? 'h-8 w-8' : 'h-10 w-auto'}`}
+          />
+          <h1
+            className={`text-2xl font-bold whitespace-nowrap overflow-hidden transition-all duration-300 ${
+              isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
+            }`}
+          >
+            MDM Portal
+          </h1>
+        </div>
       </div>
 
-      <div className="mb-8 p-4 bg-white/10 rounded-lg">
-        <p className="text-sm text-gray-300">Signed in as</p>
-        <p className="font-medium truncate">{user?.email}</p>
-        <p className="text-xs text-gray-400 mt-1">Level: {user?.userLevel}</p>
-      </div>
-
-      <nav className="flex-1 space-y-2">
-        {user?.userLevel === USER_LEVELS.L1 && (
+      {/* User Info Section */}
+      <div className={`mx-4 mb-6 p-3 bg-white/10 rounded-lg overflow-hidden transition-all duration-300 ${
+        isCollapsed ? 'mx-2 p-2' : ''
+      }`}>
+        {isCollapsed ? (
+          <div className="flex justify-center">
+            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+              <span className="text-xs font-bold">
+                {user?.email?.charAt(0).toUpperCase()}
+              </span>
+            </div>
+          </div>
+        ) : (
           <>
-            <Button
-              variant={activeTab === 'users' ? 'default' : 'ghost'}
-              className="w-full justify-start text-white hover:bg-white/10"
-              onClick={() => onTabChange('users')}
-            >
-              Users
-            </Button>
-            <Button
-              variant={activeTab === 'subscriptions' ? 'default' : 'ghost'}
-              className="w-full justify-start text-white hover:bg-white/10"
-              onClick={() => onTabChange('subscriptions')}
-            >
-              Subscriptions
-            </Button>
+            <p className="text-sm text-gray-300">Signed in as</p>
+            <p className="font-medium truncate">{user?.email}</p>
+            <p className="text-xs text-gray-400 mt-1">Level: {user?.userLevel}</p>
           </>
         )}
-        <Button
-          variant={activeTab === 'devices' ? 'default' : 'ghost'}
-          className="w-full justify-start text-white hover:bg-white/10"
-          onClick={() => onTabChange('devices')}
-        >
-          Devices
-        </Button>
+      </div>
+
+      {/* Navigation */}
+      <nav className={`flex-1 space-y-2 ${isCollapsed ? 'px-2' : 'px-4'}`}>
         {user?.userLevel === USER_LEVELS.L1 && (
-          <Button
-            variant={activeTab === 'configuration' ? 'default' : 'ghost'}
-            className="w-full justify-start text-white hover:bg-white/10"
+          <>
+            <NavButton
+              icon={<Users className="h-5 w-5" />}
+              label="Users"
+              isActive={activeTab === 'users'}
+              isCollapsed={isCollapsed}
+              onClick={() => onTabChange('users')}
+            />
+            <NavButton
+              icon={<CreditCard className="h-5 w-5" />}
+              label="Subscriptions"
+              isActive={activeTab === 'subscriptions'}
+              isCollapsed={isCollapsed}
+              onClick={() => onTabChange('subscriptions')}
+            />
+          </>
+        )}
+        <NavButton
+          icon={<Smartphone className="h-5 w-5" />}
+          label="Devices"
+          isActive={activeTab === 'devices'}
+          isCollapsed={isCollapsed}
+          onClick={() => onTabChange('devices')}
+        />
+        {user?.userLevel === USER_LEVELS.L1 && (
+          <NavButton
+            icon={<Settings className="h-5 w-5" />}
+            label="Configuration"
+            isActive={activeTab === 'configuration'}
+            isCollapsed={isCollapsed}
             onClick={() => onTabChange('configuration')}
-          >
-            Configuration
-          </Button>
+          />
         )}
       </nav>
 
-      <Button variant="destructive" className="w-full mt-auto" onClick={logout}>
-        Logout
-      </Button>
+      {/* Logout Button */}
+      <div className={`p-4 ${isCollapsed ? 'px-2' : ''}`}>
+        <Button
+          variant="destructive"
+          className={`w-full transition-all duration-300 ${
+            isCollapsed ? 'px-2' : ''
+          }`}
+          onClick={logout}
+        >
+          <LogOut className={`h-5 w-5 ${isCollapsed ? '' : 'mr-2'}`} />
+          <span
+            className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${
+              isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
+            }`}
+          >
+            Logout
+          </span>
+        </Button>
+      </div>
     </div>
+  );
+}
+
+interface NavButtonProps {
+  icon: React.ReactNode;
+  label: string;
+  isActive: boolean;
+  isCollapsed: boolean;
+  onClick: () => void;
+}
+
+function NavButton({ icon, label, isActive, isCollapsed, onClick }: NavButtonProps) {
+  return (
+    <Button
+      variant={isActive ? 'default' : 'ghost'}
+      className={`w-full text-white hover:bg-white/10 transition-all duration-300 ${
+        isCollapsed ? 'justify-center px-2' : 'justify-start'
+      }`}
+      onClick={onClick}
+      title={isCollapsed ? label : undefined}
+    >
+      <span className={isCollapsed ? '' : 'mr-3'}>{icon}</span>
+      <span
+        className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${
+          isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
+        }`}
+      >
+        {label}
+      </span>
+    </Button>
   );
 }
