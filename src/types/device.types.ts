@@ -108,6 +108,7 @@ export interface DeviceApplication {
   showIcon: boolean;
   orderNumberInLauncher: number;
   installUpdate: boolean;
+  appIconBase64?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -129,6 +130,7 @@ export interface UpdateDeviceApplicationRequest {
   showIcon?: boolean;
   orderNumberInLauncher?: number;
   installUpdate?: boolean;
+  appIconBase64?: string;
 }
 
 export interface UpdateDeviceConfigurationRequest {

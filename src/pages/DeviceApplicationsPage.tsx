@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDeviceApplications, useDevicesQuery, useUpdateDeviceApplication } from '@/hooks/useDevices';
 import { Button } from '@/components/ui/button';
@@ -23,10 +23,13 @@ import {
   Shield,
   ShieldOff,
   Hash,
-  LayoutGrid
+  LayoutGrid,
+  Upload,
+  Image as ImageIcon
 } from 'lucide-react';
 import { ROUTES } from '@/utils/constants';
 import type { DeviceApplication, UpdateDeviceApplicationRequest } from '@/types/device.types';
+import { toast } from '@/hooks/useToast';
 
 export function DeviceApplicationsPage() {
   const { deviceId } = useParams<{ deviceId: string }>();
@@ -45,6 +48,7 @@ export function DeviceApplicationsPage() {
   // Edit state
   const [editingApp, setEditingApp] = useState<DeviceApplication | null>(null);
   const [editFormData, setEditFormData] = useState<UpdateDeviceApplicationRequest>({});
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Filtered apps based on search
   const filteredApps = useMemo(() => {
@@ -72,6 +76,7 @@ export function DeviceApplicationsPage() {
       showIcon: app.showIcon,
       orderNumberInLauncher: app.orderNumberInLauncher,
       installUpdate: app.installUpdate,
+      appIconBase64: app.appIconBase64,
     });
   };
 
@@ -99,6 +104,69 @@ export function DeviceApplicationsPage() {
 
   const handleRefresh = () => {
     refetch();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (optional, but good practice)
+    if (file.size > 1024 * 1024) { // 1MB limit
+      toast({
+        variant: 'destructive',
+        title: 'File too large',
+        description: 'Please upload an image smaller than 1MB.',
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      
+      // Create an image to check dimensions
+      const img = new Image();
+      img.onload = () => {
+        if (img.width > 50 || img.height > 50) {
+           // Resize logic could go here, but for now we'll just warn or accept
+           // The requirement says "user can also upload maximum 50 by 50 icon"
+           // We will resize it if it's too big or just warn. 
+           // Let's resize it to 50x50 max to be safe and helpful.
+           const canvas = document.createElement('canvas');
+           let width = img.width;
+           let height = img.height;
+           
+           if (width > 50 || height > 50) {
+             if (width > height) {
+               height = Math.round((height * 50) / width);
+               width = 50;
+             } else {
+               width = Math.round((width * 50) / height);
+               height = 50;
+             }
+           }
+           
+           canvas.width = width;
+           canvas.height = height;
+           const ctx = canvas.getContext('2d');
+           ctx?.drawImage(img, 0, 0, width, height);
+           const resizedBase64 = canvas.toDataURL(file.type);
+           handleInputChange('appIconBase64', resizedBase64);
+        } else {
+           handleInputChange('appIconBase64', base64String);
+        }
+      };
+      img.src = base64String;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
+  const removeIcon = () => {
+    handleInputChange('appIconBase64', null);
   };
 
   // Stats
@@ -267,8 +335,12 @@ export function DeviceApplicationsPage() {
                         {/* Application */}
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 rounded-xl flex items-center justify-center">
-                              <Package className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+                            <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 rounded-xl flex items-center justify-center overflow-hidden">
+                              {app.appIconBase64 ? (
+                                <img src={app.appIconBase64} alt={app.appName} className="w-full h-full object-cover" />
+                              ) : (
+                                <Package className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+                              )}
                             </div>
                             <div className="min-w-0">
                               <p className="font-medium text-slate-900 dark:text-white truncate">
@@ -379,8 +451,12 @@ export function DeviceApplicationsPage() {
               {/* App Info Card */}
               <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-                    <Package className="h-6 w-6 text-white" />
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center overflow-hidden">
+                    {editFormData.appIconBase64 ? (
+                      <img src={editFormData.appIconBase64} alt="App Icon" className="w-full h-full object-cover" />
+                    ) : (
+                      <Package className="h-6 w-6 text-white" />
+                    )}
                   </div>
                   <div>
                     <p className="font-semibold text-slate-900 dark:text-white">
@@ -395,6 +471,52 @@ export function DeviceApplicationsPage() {
 
               {/* Form Fields */}
               <div className="space-y-5">
+                {/* App Icon Upload */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Application Icon (Max 50x50)
+                  </Label>
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700">
+                      {editFormData.appIconBase64 ? (
+                        <img src={editFormData.appIconBase64} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <ImageIcon className="h-6 w-6 text-slate-400" />
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={triggerFileInput}
+                        className="gap-2"
+                      >
+                        <Upload className="h-4 w-4" />
+                        Upload Icon
+                      </Button>
+                      {editFormData.appIconBase64 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={removeIcon}
+                          className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                        >
+                          Remove Icon
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 {/* App Name */}
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">
