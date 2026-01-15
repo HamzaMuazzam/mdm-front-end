@@ -183,24 +183,63 @@ export function DeviceApplicationsPage() {
       <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            {/* Breadcrumb */}
-            <nav className="flex items-center space-x-2 text-sm">
-              <button
-                onClick={handleBack}
-                className="flex items-center text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
-              >
-                <Home className="h-4 w-4" />
-              </button>
-              <ChevronRight className="h-4 w-4 text-slate-300 dark:text-slate-600" />
-              <button
-                onClick={handleBack}
-                className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
-              >
-                Devices
-              </button>
-              <ChevronRight className="h-4 w-4 text-slate-300 dark:text-slate-600" />
-              <span className="text-slate-900 dark:text-white font-medium">Applications</span>
-            </nav>
+            <div className="flex items-center gap-8">
+              {/* Breadcrumb */}
+              <nav className="flex items-center space-x-2 text-sm">
+                <button
+                  onClick={handleBack}
+                  className="flex items-center text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
+                >
+                  <Home className="h-4 w-4" />
+                </button>
+                <ChevronRight className="h-4 w-4 text-slate-300 dark:text-slate-600" />
+                <button
+                  onClick={handleBack}
+                  className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
+                >
+                  Devices
+                </button>
+                <ChevronRight className="h-4 w-4 text-slate-300 dark:text-slate-600" />
+                <span className="text-slate-900 dark:text-white font-medium">Applications</span>
+              </nav>
+
+              {/* Device Info in Header */}
+              {device && (
+                <div className="hidden md:flex items-center gap-4 pl-4 border-l border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-2">
+                    <Smartphone className="h-4 w-4 text-slate-400" />
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{device.model}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-400">ID:</span>
+                    <span className="text-sm font-mono text-slate-600 dark:text-slate-300">{device.deviceUuid}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-400">User:</span>
+                    <span className="text-sm text-slate-600 dark:text-slate-300">{device.userName}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Search Header */}
+              <div className="flex-auto px-6 py-4 dark:bg-slate-800/50 dark:border-slate-700">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="relative flex-1 max-w-md">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Input
+                        type="text"
+                        placeholder="Search by app name or package ID..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
+                    />
+                  </div>
+                  <div className="text-sm text-slate-500 dark:text-slate-400">
+                    {filteredApps.length} of {deviceApps.length} apps
+                  </div>
+                </div>
+              </div>
+            </div>
 
             {/* Actions */}
             <Button
@@ -217,9 +256,9 @@ export function DeviceApplicationsPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Page Title Section */}
-        <div className="mb-8">
-          <div className="flex items-start justify-between">
+        <div className="flex flex-col lg:flex-row gap-8 mb-8">
+          {/* Page Title Section */}
+          <div className="flex-1">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg shadow-blue-500/25">
                 <AppWindow className="h-8 w-8 text-white" />
@@ -228,71 +267,45 @@ export function DeviceApplicationsPage() {
                 <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
                   Device Applications
                 </h1>
-                {device && (
-                  <div className="flex items-center gap-3 mt-1">
-                    <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
-                      <Smartphone className="h-4 w-4" />
-                      <span className="text-sm font-medium">{device.model}</span>
-                    </div>
-                    <span className="text-slate-300 dark:text-slate-600">•</span>
-                    <span className="text-sm text-slate-500 dark:text-slate-400">{device.deviceUuid}</span>
-                    <span className="text-slate-300 dark:text-slate-600">•</span>
-                    <span className="text-sm text-slate-500 dark:text-slate-400">{device.userName}</span>
-                  </div>
-                )}
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                  Manage installed applications and permissions
+                </p>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <StatCard
-            icon={<Package className="h-5 w-5" />}
-            label="Total Apps"
-            value={stats.total}
-            color="blue"
-          />
-          <StatCard
-            icon={<Shield className="h-5 w-5" />}
-            label="Allowed"
-            value={stats.allowed}
-            color="green"
-          />
-          <StatCard
-            icon={<ShieldOff className="h-5 w-5" />}
-            label="Blocked"
-            value={stats.blocked}
-            color="red"
-          />
-          <StatCard
-            icon={<Eye className="h-5 w-5" />}
-            label="Visible"
-            value={stats.visible}
-            color="purple"
-          />
+          {/* Stats Cards - Compact Vertical Layout on Desktop */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:w-auto">
+            <CompactStatCard
+              icon={<Package className="h-4 w-4" />}
+              label="Total"
+              value={stats.total}
+              color="blue"
+            />
+            <CompactStatCard
+              icon={<Shield className="h-4 w-4" />}
+              label="Allowed"
+              value={stats.allowed}
+              color="green"
+            />
+            <CompactStatCard
+              icon={<ShieldOff className="h-4 w-4" />}
+              label="Blocked"
+              value={stats.blocked}
+              color="red"
+            />
+            <CompactStatCard
+              icon={<Eye className="h-4 w-4" />}
+              label="Visible"
+              value={stats.visible}
+              color="purple"
+            />
+          </div>
         </div>
 
         {/* Search and Table */}
         <Card className="shadow-xl shadow-slate-200/50 dark:shadow-none border-0 overflow-hidden">
-          {/* Search Header */}
-          <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
-            <div className="flex items-center justify-between gap-4">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <Input
-                  type="text"
-                  placeholder="Search by app name or package ID..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
-                />
-              </div>
-              <div className="text-sm text-slate-500 dark:text-slate-400">
-                {filteredApps.length} of {deviceApps.length} apps
-              </div>
-            </div>
-          </div>
+
 
           {/* Table Content */}
           <CardContent className="p-0">
@@ -395,7 +408,7 @@ export function DeviceApplicationsPage() {
                             size="sm"
                             variant="ghost"
                             onClick={() => handleEdit(app)}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="opacity-60 group-hover:opacity-100 transition-opacity"
                           >
                             <Pencil className="h-4 w-4 mr-1.5" />
                             Edit
@@ -638,42 +651,31 @@ export function DeviceApplicationsPage() {
 }
 
 // Helper Components
-interface StatCardProps {
+interface CompactStatCardProps {
   icon: React.ReactNode;
   label: string;
   value: number;
   color: 'blue' | 'green' | 'red' | 'purple';
 }
 
-function StatCard({ icon, label, value, color }: StatCardProps) {
+function CompactStatCard({ icon, label, value, color }: CompactStatCardProps) {
   const colorClasses = {
-    blue: 'from-blue-500 to-blue-600 shadow-blue-500/25',
-    green: 'from-emerald-500 to-emerald-600 shadow-emerald-500/25',
-    red: 'from-red-500 to-red-600 shadow-red-500/25',
-    purple: 'from-purple-500 to-purple-600 shadow-purple-500/25',
-  };
-
-  const bgClasses = {
-    blue: 'bg-blue-50 dark:bg-blue-950/30',
-    green: 'bg-emerald-50 dark:bg-emerald-950/30',
-    red: 'bg-red-50 dark:bg-red-950/30',
-    purple: 'bg-purple-50 dark:bg-purple-950/30',
+    blue: 'text-blue-600 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400',
+    green: 'text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400',
+    red: 'text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400',
+    purple: 'text-purple-600 bg-purple-100 dark:bg-purple-900/30 dark:text-purple-400',
   };
 
   return (
-    <Card className={`border-0 shadow-lg ${bgClasses[color]}`}>
-      <CardContent className="p-4">
-        <div className="flex items-center gap-4">
-          <div className={`p-2.5 bg-gradient-to-br ${colorClasses[color]} rounded-xl shadow-lg text-white`}>
-            {icon}
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-slate-900 dark:text-white">{value}</p>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+      <div className={`p-2 rounded-lg ${colorClasses[color]}`}>
+        {icon}
+      </div>
+      <div>
+        <p className="text-lg font-bold text-slate-900 dark:text-white leading-none">{value}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{label}</p>
+      </div>
+    </div>
   );
 }
 
