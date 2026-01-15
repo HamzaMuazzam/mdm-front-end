@@ -95,11 +95,40 @@ export interface DeviceConfiguration {
   isParentConfig: boolean;
 }
 
+export interface DeviceApplication {
+  id: number;
+  deviceId: number;
+  deviceUuid: string;
+  userId: number;
+  userEmail: string;
+  appName: string;
+  appPackageId: string;
+  appVersion: string;
+  isAllowed: boolean;
+  showIcon: boolean;
+  orderNumberInLauncher: number;
+  installUpdate: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ConfigEnumItem {
   id: number;
   name: string;
   title: string;
   description: string;
+}
+
+export interface UpdateDeviceApplicationRequest {
+  deviceId?: number;
+  userId?: number;
+  appName?: string;
+  appPackageId?: string;
+  appVersion?: string;
+  isAllowed?: boolean;
+  showIcon?: boolean;
+  orderNumberInLauncher?: number;
+  installUpdate?: boolean;
 }
 
 export interface UpdateDeviceConfigurationRequest {

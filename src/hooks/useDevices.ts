@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { deviceService } from '@/api/services/device.service';
 import { toast } from '@/hooks/useToast';
-import type { CreateDeviceRequest, UpdateDeviceRequest, UpdateDeviceConfigurationRequest } from '@/types/device.types';
+import type { CreateDeviceRequest, UpdateDeviceRequest, UpdateDeviceConfigurationRequest, UpdateDeviceApplicationRequest } from '@/types/device.types';
 
 const DEVICES_QUERY_KEY = ['devices'];
 
@@ -161,5 +161,39 @@ export function useParentConfiguration() {
     queryKey: ['parentConfiguration'],
     queryFn: deviceService.getParentConfiguration,
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useDeviceApplications(deviceId: number | null) {
+  return useQuery({
+    queryKey: ['deviceApplications', deviceId],
+    queryFn: () => deviceService.getDeviceApplications(deviceId!),
+    enabled: deviceId !== null,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useUpdateDeviceApplication() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ appId, ...data }: UpdateDeviceApplicationRequest & { appId: number }) =>
+      deviceService.updateDeviceApplication(appId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['deviceApplications'] });
+      toast({
+        variant: 'success',
+        title: 'Application Updated',
+        description: 'Application has been updated successfully.',
+      });
+    },
+    onError: (error: any) => {
+      const message = error?.response?.data?.message || error?.message || 'Failed to update application. Please try again.';
+      toast({
+        variant: 'destructive',
+        title: 'Update Error',
+        description: message,
+      });
+    },
   });
 }

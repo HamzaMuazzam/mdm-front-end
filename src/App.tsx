@@ -10,6 +10,7 @@ import { VerifyOtpPage } from './pages/VerifyOtpPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { SubscriptionPlansPage } from './pages/SubscriptionPlansPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { DeviceApplicationsPage } from './pages/DeviceApplicationsPage';
 
 function App() {
   return (
@@ -35,6 +36,14 @@ function App() {
           element={
             <ProtectedRoute requiresSubscription>
               <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.DEVICE_APPLICATIONS}
+          element={
+            <ProtectedRoute requiresSubscription>
+              <DeviceApplicationsPage />
             </ProtectedRoute>
           }
         />

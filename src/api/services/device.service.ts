@@ -1,5 +1,5 @@
 import { apiClient } from '../client';
-import type { Device, CreateDeviceRequest, UpdateDeviceRequest, DeviceConfiguration, UpdateDeviceConfigurationRequest, ConfigEnumItem } from '@/types/device.types';
+import type { Device, CreateDeviceRequest, UpdateDeviceRequest, DeviceConfiguration, UpdateDeviceConfigurationRequest, ConfigEnumItem, DeviceApplication, UpdateDeviceApplicationRequest } from '@/types/device.types';
 import type { ApiResponse } from '@/types/api.types';
 
 export const deviceService = {
@@ -57,5 +57,15 @@ export const deviceService = {
   async getParentConfiguration(): Promise<DeviceConfiguration> {
     const response = await apiClient.get<ApiResponse<DeviceConfiguration>>('/v1/configurations/parent/admin');
     return response.data.data;
+  },
+
+  async getDeviceApplications(deviceId: number): Promise<DeviceApplication[]> {
+    const response = await apiClient.get<ApiResponse<DeviceApplication[]>>(`/v1/device-applications/device/${deviceId}`);
+    return response.data.data;
+  },
+
+  async updateDeviceApplication(appId: number, data: UpdateDeviceApplicationRequest): Promise<ApiResponse<DeviceApplication>> {
+    const response = await apiClient.put<ApiResponse<DeviceApplication>>(`/v1/device-applications/${appId}`, data);
+    return response.data;
   },
 };

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { deviceSchema, updateDeviceSchema } from '@/utils/validators';
@@ -8,10 +9,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save } from 'lucide-react';
+import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow } from 'lucide-react';
 import type { CreateDeviceRequest, UpdateDeviceRequest, Device, UpdateDeviceConfigurationRequest } from '@/types/device.types';
 
 export function DeviceManagement() {
+  const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isToggleDialogOpen, setIsToggleDialogOpen] = useState(false);
@@ -181,6 +183,10 @@ export function DeviceManagement() {
     setConfigFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleViewApps = (device: Device) => {
+    navigate(`/device/${device.id}/applications`);
+  };
+
   const onEditSubmit = async (data: UpdateDeviceRequest) => {
     if (!editingDevice) return;
     try {
@@ -261,6 +267,14 @@ export function DeviceManagement() {
                             title="View Configuration"
                           >
                             <Settings className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleViewApps(device)}
+                            title="View Applications"
+                          >
+                            <AppWindow className="h-4 w-4" />
                           </Button>
                           <Button
                             size="sm"
@@ -1055,6 +1069,7 @@ export function DeviceManagement() {
           </Card>
         </div>
       )}
+
     </div>
   );
 }

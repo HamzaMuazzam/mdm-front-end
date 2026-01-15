@@ -7,6 +7,7 @@ export const ROUTES = {
   FORGOT_PASSWORD: '/forgot-password',
   SUBSCRIPTIONS: '/subscriptions',
   DASHBOARD: '/dashboard',
+  DEVICE_APPLICATIONS: '/device/:deviceId/applications',
 } as const;
 
 export const USER_LEVELS = {

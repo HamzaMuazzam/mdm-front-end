@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/authStore';
 import { USER_LEVELS } from '@/utils/constants';
@@ -9,12 +10,33 @@ import { DeviceManagement } from '@/components/features/devices/DeviceManagement
 import { SubscriptionsManagement } from '@/components/features/subscriptions/SubscriptionsManagement';
 import { ConfigurationManagement } from '@/components/features/configuration/ConfigurationManagement';
 
+type TabType = 'users' | 'devices' | 'subscriptions' | 'configuration';
+
+interface LocationState {
+  activeTab?: TabType;
+}
+
 export function DashboardPage() {
   const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'users' | 'devices' | 'subscriptions' | 'configuration'>(
-    user?.userLevel === USER_LEVELS.L1 ? 'users' : 'devices'
-  );
+  const location = useLocation();
+  const locationState = location.state as LocationState | null;
+
+  const getDefaultTab = (): TabType => {
+    if (locationState?.activeTab) {
+      return locationState.activeTab;
+    }
+    return user?.userLevel === USER_LEVELS.L1 ? 'users' : 'devices';
+  };
+
+  const [activeTab, setActiveTab] = useState<TabType>(getDefaultTab());
+
+  // Update tab when navigating back with state
+  useEffect(() => {
+    if (locationState?.activeTab) {
+      setActiveTab(locationState.activeTab);
+    }
+  }, [locationState]);
 
   const handleTabChange = (tab: 'users' | 'devices' | 'subscriptions' | 'configuration') => {
     setActiveTab(tab);
