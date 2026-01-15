@@ -182,79 +182,63 @@ export function DeviceApplicationsPage() {
       {/* Header */}
       <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-8">
+          <div className="flex items-center h-16 gap-6">
+
+            {/* Left: Breadcrumb + Device Info */}
+            <div className="flex items-center gap-8 shrink-0">
               {/* Breadcrumb */}
               <nav className="flex items-center space-x-2 text-sm">
-                <button
-                  onClick={handleBack}
-                  className="flex items-center text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
-                >
+                <button onClick={handleBack} className="flex items-center text-slate-500 hover:text-slate-700">
                   <Home className="h-4 w-4" />
                 </button>
-                <ChevronRight className="h-4 w-4 text-slate-300 dark:text-slate-600" />
-                <button
-                  onClick={handleBack}
-                  className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
-                >
+                <ChevronRight className="h-4 w-4 text-slate-300" />
+                <button onClick={handleBack} className="text-slate-500 hover:text-slate-700">
                   Devices
                 </button>
-                <ChevronRight className="h-4 w-4 text-slate-300 dark:text-slate-600" />
-                <span className="text-slate-900 dark:text-white font-medium">Applications</span>
+                <ChevronRight className="h-4 w-4 text-slate-300" />
+                <span className="text-slate-900 dark:text-white font-medium">
+            Applications
+          </span>
               </nav>
 
-              {/* Device Info in Header */}
               {device && (
-                <div className="hidden md:flex items-center gap-4 pl-4 border-l border-slate-200 dark:border-slate-700">
-                  <div className="flex items-center gap-2">
-                    <Smartphone className="h-4 w-4 text-slate-400" />
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{device.model}</span>
+                  <div className="hidden md:flex items-center gap-4 pl-4 border-l border-slate-200 dark:border-slate-700">
+                    <span className="text-sm font-medium">{device.model}</span>
+                    <span className="text-sm font-mono">{device.deviceUuid}</span>
+                    <span className="text-sm">{device.userName}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-400">ID:</span>
-                    <span className="text-sm font-mono text-slate-600 dark:text-slate-300">{device.deviceUuid}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-400">User:</span>
-                    <span className="text-sm text-slate-600 dark:text-slate-300">{device.userName}</span>
-                  </div>
-                </div>
               )}
+            </div>
 
-              {/* Search Header */}
-              <div className="flex-auto px-6 py-4 dark:bg-slate-800/50 dark:border-slate-700">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="relative flex-1 max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <Input
-                        type="text"
-                        placeholder="Search by app name or package ID..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
-                    />
-                  </div>
-                  <div className="text-sm text-slate-500 dark:text-slate-400">
-                    {filteredApps.length} of {deviceApps.length} apps
-                  </div>
-                </div>
+            {/* Center: Search (fills remaining space) */}
+            <div className="flex-1 flex items-center">
+              <div className="relative w-full max-w-2xl">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input
+                    type="text"
+                    placeholder="Search by app name or package ID..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                />
+              </div>
+
+              <div className="ml-4 text-sm text-slate-500 whitespace-nowrap">
+                {filteredApps.length} of {deviceApps.length} apps
               </div>
             </div>
 
-            {/* Actions */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              className="gap-2"
-            >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
+            {/* Right: Actions */}
+            <div className="shrink-0">
+              <Button variant="outline" size="sm" onClick={handleRefresh} className="gap-2">
+                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            </div>
+
           </div>
         </div>
       </header>
-
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col lg:flex-row gap-8 mb-8">
           {/* Page Title Section */}
