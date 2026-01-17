@@ -31,6 +31,15 @@ import { ROUTES } from '@/utils/constants';
 import type { DeviceApplication, UpdateDeviceApplicationRequest } from '@/types/device.types';
 import { toast } from '@/hooks/useToast';
 
+// Helper to convert base64 string to a valid image src
+const getBase64ImageSrc = (base64: string | null | undefined): string | null => {
+  if (!base64) return null;
+  // If it already has the data URI prefix, return as-is
+  if (base64.startsWith('data:')) return base64;
+  // Otherwise, add a generic image prefix
+  return `data:image/png;base64,${base64}`;
+};
+
 export function DeviceApplicationsPage() {
   const { deviceId } = useParams<{ deviceId: string }>();
   const navigate = useNavigate();
@@ -181,7 +190,7 @@ export function DeviceApplicationsPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
       {/* Header */}
       <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="px-4 sm:px-6">
           <div className="flex items-center h-16 gap-6">
 
             {/* Left: Breadcrumb + Device Info */}
@@ -239,7 +248,7 @@ export function DeviceApplicationsPage() {
           </div>
         </div>
       </header>
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="px-4 sm:px-6 py-8">
         <div className="flex flex-col lg:flex-row gap-8 mb-8">
           {/* Page Title Section */}
           <div className="flex-1">
@@ -334,7 +343,7 @@ export function DeviceApplicationsPage() {
                           <div className="flex items-center gap-3">
                             <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 rounded-xl flex items-center justify-center overflow-hidden">
                               {app.appIconBase64 ? (
-                                <img src={app.appIconBase64} alt={app.appName} className="w-full h-full object-cover" />
+                                <img src={getBase64ImageSrc(app.appIconBase64)!} alt={app.appName} className="w-full h-full object-cover" />
                               ) : (
                                 <Package className="h-5 w-5 text-slate-500 dark:text-slate-400" />
                               )}
@@ -450,7 +459,7 @@ export function DeviceApplicationsPage() {
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center overflow-hidden">
                     {editFormData.appIconBase64 ? (
-                      <img src={editFormData.appIconBase64} alt="App Icon" className="w-full h-full object-cover" />
+                      <img src={getBase64ImageSrc(editFormData.appIconBase64)!} alt="App Icon" className="w-full h-full object-cover" />
                     ) : (
                       <Package className="h-6 w-6 text-white" />
                     )}
@@ -476,7 +485,7 @@ export function DeviceApplicationsPage() {
                   <div className="flex items-center gap-4">
                     <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700">
                       {editFormData.appIconBase64 ? (
-                        <img src={editFormData.appIconBase64} alt="Preview" className="w-full h-full object-cover" />
+                        <img src={getBase64ImageSrc(editFormData.appIconBase64)!} alt="Preview" className="w-full h-full object-cover" />
                       ) : (
                         <ImageIcon className="h-6 w-6 text-slate-400" />
                       )}

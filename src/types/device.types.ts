@@ -17,6 +17,7 @@ export interface Device {
   launcherVariant?: string;
   defaultLauncher?: string;
   deletedAt?: string | null;
+  deviceVerificationCode?: number;
 }
 
 export interface CreateDeviceRequest {

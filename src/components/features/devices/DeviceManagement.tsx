@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow } from 'lucide-react';
+import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key } from 'lucide-react';
 import type { CreateDeviceRequest, UpdateDeviceRequest, Device, UpdateDeviceConfigurationRequest } from '@/types/device.types';
 
 export function DeviceManagement() {
@@ -199,6 +199,14 @@ export function DeviceManagement() {
     }
   };
 
+  const handleShowCode = (code: number | undefined) => {
+    if (code) {
+      alert(`Device Verification Code: ${code}`);
+    } else {
+      alert('No verification code available for this device.');
+    }
+  };
+
   if (isLoading) {
     return <div>Loading devices...</div>;
   }
@@ -260,6 +268,14 @@ export function DeviceManagement() {
                       {/*<td className="px-4 py-3 text-sm">{device.deletedAt || '-'}</td>*/}
                       <td className="px-4 py-3 text-sm">
                         <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleShowCode(device.deviceVerificationCode)}
+                            title="Show Verification Code"
+                          >
+                            <Key className="h-4 w-4" />
+                          </Button>
                           <Button
                             size="sm"
                             variant="outline"
