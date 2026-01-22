@@ -25,10 +25,22 @@ import {
   Hash,
   LayoutGrid,
   Upload,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Gamepad2,
+  Music,
+  Video,
+  Camera,
+  Users,
+  Newspaper,
+  MapPin,
+  Wrench,
+  Accessibility,
+  ChevronDown,
+  Monitor
 } from 'lucide-react';
 import { ROUTES } from '@/utils/constants';
 import type { DeviceApplication, UpdateDeviceApplicationRequest } from '@/types/device.types';
+import { ApplicationCategoryInfo } from '@/types/device.types';
 import { toast } from '@/hooks/useToast';
 
 // Helper to convert base64 string to a valid image src
@@ -39,6 +51,26 @@ const getBase64ImageSrc = (base64: string | null | undefined): string | null => 
   // Otherwise, add a generic image prefix
   return `data:image/png;base64,${base64}`;
 };
+
+// Category icon mapping
+const getCategoryIcon = (category: string) => {
+  const iconMap: Record<string, React.ReactNode> = {
+    'Games': <Gamepad2 className="h-4 w-4" />,
+    'Audio & Music': <Music className="h-4 w-4" />,
+    'Video': <Video className="h-4 w-4" />,
+    'Photos': <Camera className="h-4 w-4" />,
+    'Social Apps': <Users className="h-4 w-4" />,
+    'News': <Newspaper className="h-4 w-4" />,
+    'Maps & Navigations': <MapPin className="h-4 w-4" />,
+    'Tools & Productivity': <Wrench className="h-4 w-4" />,
+    'Accessibility': <Accessibility className="h-4 w-4" />,
+    'Others': <Package className="h-4 w-4" />,
+  };
+  return iconMap[category] || <Package className="h-4 w-4" />;
+};
+
+// All category options for filter
+const categoryOptions = Object.values(ApplicationCategoryInfo).map(info => info.label);
 
 export function DeviceApplicationsPage() {
   const { deviceId } = useParams<{ deviceId: string }>();
@@ -54,20 +86,40 @@ export function DeviceApplicationsPage() {
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Filter states
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [systemAppFilter, setSystemAppFilter] = useState<string>('all');
+
   // Edit state
   const [editingApp, setEditingApp] = useState<DeviceApplication | null>(null);
   const [editFormData, setEditFormData] = useState<UpdateDeviceApplicationRequest>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Filtered apps based on search
+  // Filtered apps based on search and filters
   const filteredApps = useMemo(() => {
-    if (!searchQuery.trim()) return deviceApps;
-    const query = searchQuery.toLowerCase();
-    return deviceApps.filter(app =>
-      app.appName.toLowerCase().includes(query) ||
-      app.appPackageId.toLowerCase().includes(query)
-    );
-  }, [deviceApps, searchQuery]);
+    return deviceApps.filter(app => {
+      // Search filter
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        if (!app.appName.toLowerCase().includes(query) &&
+            !app.appPackageId.toLowerCase().includes(query)) {
+          return false;
+        }
+      }
+      // Category filter
+      if (categoryFilter !== 'all' && app.applicationCategory !== categoryFilter) {
+        return false;
+      }
+      // System app filter
+      if (systemAppFilter === 'system' && !app.isSystemApp) {
+        return false;
+      }
+      if (systemAppFilter === 'user' && app.isSystemApp) {
+        return false;
+      }
+      return true;
+    });
+  }, [deviceApps, searchQuery, categoryFilter, systemAppFilter]);
 
   const handleBack = () => {
     navigate(ROUTES.DASHBOARD, { state: { activeTab: 'devices' } });
@@ -219,9 +271,9 @@ export function DeviceApplicationsPage() {
               )}
             </div>
 
-            {/* Center: Search (fills remaining space) */}
-            <div className="flex-1 flex items-center">
-              <div className="relative w-full max-w-2xl">
+            {/* Center: Search and Filters */}
+            <div className="flex-1 flex items-center gap-3">
+              <div className="relative w-full max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <Input
                     type="text"
@@ -232,7 +284,36 @@ export function DeviceApplicationsPage() {
                 />
               </div>
 
-              <div className="ml-4 text-sm text-slate-500 whitespace-nowrap">
+              {/* Category Filter */}
+              <div className="relative">
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="appearance-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                >
+                  <option value="all">All Categories</option>
+                  {categoryOptions.map(category => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+              </div>
+
+              {/* System App Filter */}
+              <div className="relative">
+                <select
+                  value={systemAppFilter}
+                  onChange={(e) => setSystemAppFilter(e.target.value)}
+                  className="appearance-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                >
+                  <option value="all">All Apps</option>
+                  <option value="system">System Apps</option>
+                  <option value="user">User Apps</option>
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+              </div>
+
+              <div className="ml-2 text-sm text-slate-500 whitespace-nowrap">
                 {filteredApps.length} of {deviceApps.length} apps
               </div>
             </div>
@@ -313,6 +394,12 @@ export function DeviceApplicationsPage() {
                         Application
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        Category
+                      </th>
+                      <th className="px-6 py-4 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        Type
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                         Version
                       </th>
                       <th className="px-6 py-4 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
@@ -357,6 +444,16 @@ export function DeviceApplicationsPage() {
                               </p>
                             </div>
                           </div>
+                        </td>
+
+                        {/* Category */}
+                        <td className="px-6 py-4">
+                          <CategoryBadge category={app.applicationCategory} />
+                        </td>
+
+                        {/* Type (System/User) */}
+                        <td className="px-6 py-4 text-center">
+                          <AppTypeBadge isSystemApp={app.isSystemApp} />
                         </td>
 
                         {/* Version */}
@@ -696,6 +793,44 @@ function VisibilityBadge({ visible }: { visible: boolean }) {
     <span className="inline-flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
       <EyeOff className="h-4 w-4" />
       <span className="text-xs font-medium">Hidden</span>
+    </span>
+  );
+}
+
+function CategoryBadge({ category }: { category: string }) {
+  const colorMap: Record<string, string> = {
+    'Games': 'bg-pink-100 text-pink-700 dark:bg-pink-900/50 dark:text-pink-400',
+    'Audio & Music': 'bg-violet-100 text-violet-700 dark:bg-violet-900/50 dark:text-violet-400',
+    'Video': 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400',
+    'Photos': 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400',
+    'Social Apps': 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400',
+    'News': 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/50 dark:text-cyan-400',
+    'Maps & Navigations': 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400',
+    'Tools & Productivity': 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-400',
+    'Accessibility': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-400',
+    'Others': 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300',
+  };
+
+  const colorClass = colorMap[category] || colorMap['Others'];
+
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${colorClass}`}>
+      {getCategoryIcon(category)}
+      {category}
+    </span>
+  );
+}
+
+function AppTypeBadge({ isSystemApp }: { isSystemApp: boolean }) {
+  return isSystemApp ? (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+      <Monitor className="h-3.5 w-3.5" />
+      System
+    </span>
+  ) : (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400">
+      <Smartphone className="h-3.5 w-3.5" />
+      User
     </span>
   );
 }

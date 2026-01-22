@@ -110,6 +110,8 @@ export interface DeviceApplication {
   orderNumberInLauncher: number;
   installUpdate: boolean;
   appIconBase64?: string;
+  isSystemApp: boolean;
+  applicationCategory: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -133,6 +135,32 @@ export interface UpdateDeviceApplicationRequest {
   installUpdate?: boolean;
   appIconBase64?: string;
 }
+
+export enum ApplicationCategory {
+  CATEGORY_UNDEFINED = -1,
+  CATEGORY_GAME = 0,
+  CATEGORY_AUDIO = 1,
+  CATEGORY_VIDEO = 2,
+  CATEGORY_IMAGE = 3,
+  CATEGORY_SOCIAL = 4,
+  CATEGORY_NEWS = 5,
+  CATEGORY_MAPS = 6,
+  CATEGORY_PRODUCTIVITY = 7,
+  CATEGORY_ACCESSIBILITY = 8,
+}
+
+export const ApplicationCategoryInfo: Record<ApplicationCategory, { label: string; description: string }> = {
+  [ApplicationCategory.CATEGORY_UNDEFINED]: { label: 'Others', description: 'Apps that do not fall into a specific category' },
+  [ApplicationCategory.CATEGORY_GAME]: { label: 'Games', description: 'Apps designed for entertainment and gaming experiences' },
+  [ApplicationCategory.CATEGORY_AUDIO]: { label: 'Audio & Music', description: 'Apps for listening to music, podcasts, and audio content' },
+  [ApplicationCategory.CATEGORY_VIDEO]: { label: 'Video', description: 'Apps for watching videos, movies, and streaming content' },
+  [ApplicationCategory.CATEGORY_IMAGE]: { label: 'Photos', description: 'Apps for viewing, editing, and managing photos' },
+  [ApplicationCategory.CATEGORY_SOCIAL]: { label: 'Social Apps', description: 'Apps for communication and social networking' },
+  [ApplicationCategory.CATEGORY_NEWS]: { label: 'News', description: 'Apps that provide news, articles, and current updates' },
+  [ApplicationCategory.CATEGORY_MAPS]: { label: 'Maps & Navigations', description: 'Apps for navigation, maps, and location services' },
+  [ApplicationCategory.CATEGORY_PRODUCTIVITY]: { label: 'Tools & Productivity', description: 'Apps that help improve productivity and manage tasks' },
+  [ApplicationCategory.CATEGORY_ACCESSIBILITY]: { label: 'Accessibility', description: 'Apps designed to assist users with accessibility needs' },
+};
 
 export interface UpdateDeviceConfigurationRequest {
   userId?: number;
