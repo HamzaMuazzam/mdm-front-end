@@ -94,6 +94,8 @@ export interface DeviceConfiguration {
   screenAlwaysOn: boolean;
   newServerURL: string | null;
   isParentConfig: boolean;
+  deviceAdminCode: string | null;
+  isDeviceAdminCodeEnabled: boolean;
 }
 
 export interface DeviceApplication {
@@ -201,4 +203,6 @@ export interface UpdateDeviceConfigurationRequest {
   enableKioskMode?: boolean;
   screenAlwaysOn?: boolean;
   newServerURL?: string;
+  deviceAdminCode?: string;
+  isDeviceAdminCodeEnabled?: boolean;
 }

@@ -162,6 +162,8 @@ export function DeviceManagement() {
         enableKioskMode: deviceConfig.enableKioskMode,
         screenAlwaysOn: deviceConfig.screenAlwaysOn,
         newServerURL: deviceConfig.newServerURL || '',
+        deviceAdminCode: deviceConfig.deviceAdminCode || '',
+        isDeviceAdminCodeEnabled: deviceConfig.isDeviceAdminCodeEnabled,
       });
     }
   }, [deviceConfig]);
@@ -672,6 +674,8 @@ export function DeviceManagement() {
                             enableKioskMode: deviceConfig.enableKioskMode,
                             screenAlwaysOn: deviceConfig.screenAlwaysOn,
                             newServerURL: deviceConfig.newServerURL || '',
+                            deviceAdminCode: deviceConfig.deviceAdminCode || '',
+                            isDeviceAdminCodeEnabled: deviceConfig.isDeviceAdminCodeEnabled,
                           });
                         }
                       }}
@@ -989,6 +993,22 @@ export function DeviceManagement() {
                       isEditMode={isConfigEditMode}
                       onChange={(v) => handleConfigInputChange('isInstalledAsDeviceOwner', v)}
                       type="checkbox"
+                    />
+                    <ConfigEditItem
+                      label="Device Admin Code Enabled"
+                      value={<BooleanBadge value={deviceConfig.isDeviceAdminCodeEnabled} />}
+                      editValue={configFormData.isDeviceAdminCodeEnabled}
+                      isEditMode={isConfigEditMode}
+                      onChange={(v) => handleConfigInputChange('isDeviceAdminCodeEnabled', v)}
+                      type="checkbox"
+                    />
+                    <ConfigEditItem
+                      label="Device Admin Code"
+                      value={deviceConfig.deviceAdminCode || 'Not set'}
+                      editValue={configFormData.deviceAdminCode || ''}
+                      isEditMode={isConfigEditMode}
+                      onChange={(v) => handleConfigInputChange('deviceAdminCode', v)}
+                      type="text"
                     />
                   </div>
 

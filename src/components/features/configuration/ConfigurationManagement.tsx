@@ -64,6 +64,8 @@ export function ConfigurationManagement() {
         enableKioskMode: config.enableKioskMode,
         screenAlwaysOn: config.screenAlwaysOn,
         newServerURL: config.newServerURL || '',
+        deviceAdminCode: config.deviceAdminCode || '',
+        isDeviceAdminCodeEnabled: config.isDeviceAdminCodeEnabled,
       });
     }
   }, [config]);
@@ -129,6 +131,8 @@ export function ConfigurationManagement() {
         enableKioskMode: config.enableKioskMode,
         screenAlwaysOn: config.screenAlwaysOn,
         newServerURL: config.newServerURL || '',
+        deviceAdminCode: config.deviceAdminCode || '',
+        isDeviceAdminCodeEnabled: config.isDeviceAdminCodeEnabled,
       });
     }
   };
@@ -521,6 +525,22 @@ export function ConfigurationManagement() {
                   isEditMode={isEditMode}
                   onChange={(v) => handleInputChange('isInstalledAsDeviceOwner', v)}
                   type="checkbox"
+                />
+                <ConfigEditItem
+                  label="Device Admin Code Enabled"
+                  value={<BooleanBadge value={config.isDeviceAdminCodeEnabled} />}
+                  editValue={formData.isDeviceAdminCodeEnabled}
+                  isEditMode={isEditMode}
+                  onChange={(v) => handleInputChange('isDeviceAdminCodeEnabled', v)}
+                  type="checkbox"
+                />
+                <ConfigEditItem
+                  label="Device Admin Code"
+                  value={config.deviceAdminCode || 'Not set'}
+                  editValue={formData.deviceAdminCode || ''}
+                  isEditMode={isEditMode}
+                  onChange={(v) => handleInputChange('deviceAdminCode', v)}
+                  type="text"
                 />
               </div>
 
