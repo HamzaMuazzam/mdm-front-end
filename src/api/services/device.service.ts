@@ -1,5 +1,5 @@
 import { apiClient } from '../client';
-import type { Device, CreateDeviceRequest, UpdateDeviceRequest, DeviceConfiguration, UpdateDeviceConfigurationRequest, ConfigEnumItem, DeviceApplication, UpdateDeviceApplicationRequest } from '@/types/device.types';
+import type { Device, CreateDeviceRequest, UpdateDeviceRequest, DeviceConfiguration, UpdateDeviceConfigurationRequest, ConfigEnumItem, DeviceApplication, UpdateDeviceApplicationRequest, BlockedAppRequest } from '@/types/device.types';
 import type { ApiResponse } from '@/types/api.types';
 
 export const deviceService = {
@@ -67,5 +67,10 @@ export const deviceService = {
   async updateDeviceApplication(appId: number, data: UpdateDeviceApplicationRequest): Promise<ApiResponse<DeviceApplication>> {
     const response = await apiClient.put<ApiResponse<DeviceApplication>>(`/v1/device-applications/${appId}`, data);
     return response.data;
+  },
+
+  async getBlockedAppRequests(deviceId: number): Promise<BlockedAppRequest[]> {
+    const response = await apiClient.get<ApiResponse<BlockedAppRequest[]>>(`/v1/blocked-app-requests/device/${deviceId}`);
+    return response.data.data;
   },
 };

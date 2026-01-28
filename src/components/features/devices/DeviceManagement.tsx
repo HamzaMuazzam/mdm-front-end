@@ -3,13 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { deviceSchema, updateDeviceSchema } from '@/utils/validators';
-import { useDevicesQuery, useCreateDevice, useToggleDeviceStatus, useUpdateDevice, useDeviceConfiguration, useUpdateDeviceConfiguration, useApplicationPermissionGranters, useFeatureStates, useLocationTrackingTypes, usePushNotificationProtocols } from '@/hooks/useDevices';
+import { useDevicesQuery, useCreateDevice, useToggleDeviceStatus, useUpdateDevice, useDeviceConfiguration, useUpdateDeviceConfiguration, useApplicationPermissionGranters, useFeatureStates, useLocationTrackingTypes, usePushNotificationProtocols, useBlockedAppRequests } from '@/hooks/useDevices';
 import { useLevel2UsersQuery } from '@/hooks/useUsers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key } from 'lucide-react';
+import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText } from 'lucide-react';
 import type { CreateDeviceRequest, UpdateDeviceRequest, Device, UpdateDeviceConfigurationRequest } from '@/types/device.types';
 
 export function DeviceManagement() {
@@ -23,8 +23,11 @@ export function DeviceManagement() {
   const [editingDevice, setEditingDevice] = useState<Device | null>(null);
   const [configDeviceId, setConfigDeviceId] = useState<number | null>(null);
   const [configFormData, setConfigFormData] = useState<UpdateDeviceConfigurationRequest>({});
+  const [isRequestsModalOpen, setIsRequestsModalOpen] = useState(false);
+  const [requestsDeviceId, setRequestsDeviceId] = useState<number | null>(null);
   const { data: devices = [], isLoading } = useDevicesQuery();
   const { data: deviceConfig, isLoading: isLoadingConfig } = useDeviceConfiguration(configDeviceId);
+  const { data: blockedAppRequests = [], isLoading: isLoadingRequests } = useBlockedAppRequests(requestsDeviceId);
   const { data: level2Users = [], isLoading: isLoadingUsers } = useLevel2UsersQuery();
   const createMutation = useCreateDevice();
   const updateMutation = useUpdateDevice();
@@ -190,6 +193,11 @@ export function DeviceManagement() {
     navigate(`/device/${device.id}/applications`);
   };
 
+  const handleViewRequests = (device: Device) => {
+    setRequestsDeviceId(device.id);
+    setIsRequestsModalOpen(true);
+  };
+
   const onEditSubmit = async (data: UpdateDeviceRequest) => {
     if (!editingDevice) return;
     try {
@@ -294,6 +302,14 @@ export function DeviceManagement() {
                             title="View Applications"
                           >
                             <AppWindow className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleViewRequests(device)}
+                            title="View Requests"
+                          >
+                            <FileText className="h-4 w-4" />
                           </Button>
                           <Button
                             size="sm"
@@ -1116,6 +1132,115 @@ export function DeviceManagement() {
         </div>
       )}
 
+      {/* Blocked App Requests Dialog */}
+      {isRequestsModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-7xl m-4 max-h-[90vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b">
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-primary" />
+                <span className="font-medium">Device Requests</span>
+                <span className="text-sm text-muted-foreground">• Device ID: {requestsDeviceId}</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setIsRequestsModalOpen(false);
+                  setRequestsDeviceId(null);
+                }}
+                className="h-8 w-8 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-auto">
+              {isLoadingRequests ? (
+                <div className="flex items-center justify-center h-32">
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+                    <span className="text-sm text-muted-foreground">Loading...</span>
+                  </div>
+                </div>
+              ) : blockedAppRequests.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
+                  <FileText className="h-8 w-8 mb-2 opacity-50" />
+                  <p className="text-sm">No requests found</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50 sticky top-0">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-medium">ID</th>
+                        <th className="px-3 py-2 text-left font-medium">App Name</th>
+                        <th className="px-3 py-2 text-left font-medium">Package ID</th>
+                        <th className="px-3 py-2 text-left font-medium">Device ID</th>
+                        <th className="px-3 py-2 text-left font-medium">Device UUID</th>
+                        <th className="px-3 py-2 text-left font-medium">App ID</th>
+                        <th className="px-3 py-2 text-center font-medium">Include</th>
+                        <th className="px-3 py-2 text-center font-medium">Sensitive</th>
+                        <th className="px-3 py-2 text-left font-medium">Status</th>
+                        <th className="px-3 py-2 text-left font-medium">Reviewed By</th>
+                        <th className="px-3 py-2 text-left font-medium">Reviewed At</th>
+                        <th className="px-3 py-2 text-left font-medium">Remarks</th>
+                        <th className="px-3 py-2 text-left font-medium">Created At</th>
+                        <th className="px-3 py-2 text-left font-medium">Updated At</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {blockedAppRequests.map((request) => (
+                        <tr key={request.id} className="hover:bg-muted/30">
+                          <td className="px-3 py-2">{request.id}</td>
+                          <td className="px-3 py-2 font-medium">{request.appName}</td>
+                          <td className="px-3 py-2 font-mono text-xs">{request.packageId}</td>
+                          <td className="px-3 py-2">{request.deviceId}</td>
+                          <td className="px-3 py-2 font-mono text-xs max-w-32 truncate" title={request.deviceUuid}>{request.deviceUuid}</td>
+                          <td className="px-3 py-2">{request.deviceApplicationId}</td>
+                          <td className="px-3 py-2 text-center">
+                            {request.isIncludingRequest ? (
+                              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
+                                <Check className="h-3 w-3" />
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500">
+                                <X className="h-3 w-3" />
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2 text-center">
+                            {request.isSensitiveSettings ? (
+                              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300">
+                                <Check className="h-3 w-3" />
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500">
+                                <X className="h-3 w-3" />
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2">
+                            <RequestStatusBadge status={request.reviewStatus} />
+                          </td>
+                          <td className="px-3 py-2">{request.reviewedByName || '-'}</td>
+                          <td className="px-3 py-2 text-xs">{formatDateTime(request.reviewedAt)}</td>
+                          <td className="px-3 py-2 max-w-32 truncate" title={request.reviewRemarks || ''}>{request.reviewRemarks || '-'}</td>
+                          <td className="px-3 py-2 text-xs">{formatDateTime(request.createdAt)}</td>
+                          <td className="px-3 py-2 text-xs">{formatDateTime(request.updatedAt)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </Card>
+        </div>
+      )}
+
     </div>
   );
 }
@@ -1254,6 +1379,37 @@ function StateBadge({ value }: { value: string }) {
       }`}
     >
       {value}
+    </span>
+  );
+}
+
+// Request Table Helper Functions
+function formatDateTime(dateString: string | null): string {
+  if (!dateString) return '-';
+  const date = new Date(dateString);
+  return date.toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function RequestStatusBadge({ status }: { status: string }) {
+  const normalizedStatus = status.toUpperCase();
+  const statusConfig: Record<string, { bg: string; dot: string }> = {
+    PENDING: { bg: 'bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300', dot: 'bg-yellow-500' },
+    APPROVED: { bg: 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300', dot: 'bg-green-500' },
+    REJECTED: { bg: 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300', dot: 'bg-red-500' },
+    IN_REVIEW: { bg: 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300', dot: 'bg-blue-500' },
+  };
+  const config = statusConfig[normalizedStatus] || { bg: 'bg-gray-50 text-gray-700 dark:bg-gray-900 dark:text-gray-300', dot: 'bg-gray-500' };
+
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${config.bg}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`}></span>
+      {status}
     </span>
   );
 }

@@ -197,3 +197,12 @@ export function useUpdateDeviceApplication() {
     },
   });
 }
+
+export function useBlockedAppRequests(deviceId: number | null) {
+  return useQuery({
+    queryKey: ['blockedAppRequests', deviceId],
+    queryFn: () => deviceService.getBlockedAppRequests(deviceId!),
+    enabled: deviceId !== null,
+    staleTime: 5 * 60 * 1000,
+  });
+}

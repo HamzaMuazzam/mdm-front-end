@@ -165,6 +165,24 @@ export const ApplicationCategoryInfo: Record<ApplicationCategory, { label: strin
   [ApplicationCategory.CATEGORY_ACCESSIBILITY]: { label: 'Accessibility', description: 'Apps designed to assist users with accessibility needs' },
 };
 
+export interface BlockedAppRequest {
+  id: number;
+  deviceId: number;
+  deviceUuid: string;
+  isIncludingRequest: boolean;
+  isSensitiveSettings: boolean;
+  packageId: string;
+  deviceApplicationId: number;
+  appName: string;
+  reviewStatus: string;
+  reviewedById: number | null;
+  reviewedByName: string | null;
+  reviewedAt: string | null;
+  reviewRemarks: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface UpdateDeviceConfigurationRequest {
   userId?: number;
   deviceId?: number;
