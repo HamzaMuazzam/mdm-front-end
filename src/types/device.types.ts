@@ -96,6 +96,7 @@ export interface DeviceConfiguration {
   isParentConfig: boolean;
   deviceAdminCode: string | null;
   isDeviceAdminCodeEnabled: boolean;
+  allowToAccessSensitiveSettings: boolean;
 }
 
 export interface DeviceApplication {
@@ -205,4 +206,5 @@ export interface UpdateDeviceConfigurationRequest {
   newServerURL?: string;
   deviceAdminCode?: string;
   isDeviceAdminCodeEnabled?: boolean;
+  allowToAccessSensitiveSettings?: boolean;
 }

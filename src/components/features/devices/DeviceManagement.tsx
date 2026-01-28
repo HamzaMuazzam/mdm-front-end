@@ -164,6 +164,7 @@ export function DeviceManagement() {
         newServerURL: deviceConfig.newServerURL || '',
         deviceAdminCode: deviceConfig.deviceAdminCode || '',
         isDeviceAdminCodeEnabled: deviceConfig.isDeviceAdminCodeEnabled,
+        allowToAccessSensitiveSettings: deviceConfig.allowToAccessSensitiveSettings,
       });
     }
   }, [deviceConfig]);
@@ -676,6 +677,7 @@ export function DeviceManagement() {
                             newServerURL: deviceConfig.newServerURL || '',
                             deviceAdminCode: deviceConfig.deviceAdminCode || '',
                             isDeviceAdminCodeEnabled: deviceConfig.isDeviceAdminCodeEnabled,
+                            allowToAccessSensitiveSettings: deviceConfig.allowToAccessSensitiveSettings,
                           });
                         }
                       }}
@@ -1009,6 +1011,14 @@ export function DeviceManagement() {
                       isEditMode={isConfigEditMode}
                       onChange={(v) => handleConfigInputChange('deviceAdminCode', v)}
                       type="text"
+                    />
+                    <ConfigEditItem
+                      label="Allow Access to Sensitive Settings"
+                      value={<BooleanBadge value={deviceConfig.allowToAccessSensitiveSettings} />}
+                      editValue={configFormData.allowToAccessSensitiveSettings}
+                      isEditMode={isConfigEditMode}
+                      onChange={(v) => handleConfigInputChange('allowToAccessSensitiveSettings', v)}
+                      type="checkbox"
                     />
                   </div>
 
