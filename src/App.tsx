@@ -11,6 +11,7 @@ import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { SubscriptionPlansPage } from './pages/SubscriptionPlansPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { DeviceApplicationsPage } from './pages/DeviceApplicationsPage';
+import { DeviceRequestsPage } from './pages/DeviceRequestsPage';
 
 function App() {
   return (
@@ -44,6 +45,14 @@ function App() {
           element={
             <ProtectedRoute requiresSubscription>
               <DeviceApplicationsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.DEVICE_REQUESTS}
+          element={
+            <ProtectedRoute requiresSubscription>
+              <DeviceRequestsPage />
             </ProtectedRoute>
           }
         />

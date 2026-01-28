@@ -8,6 +8,7 @@ export const ROUTES = {
   SUBSCRIPTIONS: '/subscriptions',
   DASHBOARD: '/dashboard',
   DEVICE_APPLICATIONS: '/device/:deviceId/applications',
+  DEVICE_REQUESTS: '/device/:deviceId/requests',
 } as const;
 
 export const USER_LEVELS = {

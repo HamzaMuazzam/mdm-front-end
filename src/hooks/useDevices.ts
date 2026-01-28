@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { deviceService } from '@/api/services/device.service';
 import { toast } from '@/hooks/useToast';
-import type { CreateDeviceRequest, UpdateDeviceRequest, UpdateDeviceConfigurationRequest, UpdateDeviceApplicationRequest } from '@/types/device.types';
+import type { CreateDeviceRequest, UpdateDeviceRequest, UpdateDeviceConfigurationRequest, UpdateDeviceApplicationRequest, BlockedAppReviewRequest } from '@/types/device.types';
 
 const DEVICES_QUERY_KEY = ['devices'];
 
@@ -204,5 +204,30 @@ export function useBlockedAppRequests(deviceId: number | null) {
     queryFn: () => deviceService.getBlockedAppRequests(deviceId!),
     enabled: deviceId !== null,
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useReviewBlockedAppRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ requestId, ...data }: BlockedAppReviewRequest & { requestId: number }) =>
+      deviceService.reviewBlockedAppRequest(requestId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['blockedAppRequests'] });
+      toast({
+        variant: 'success',
+        title: 'Request Reviewed',
+        description: 'Blocked app request has been reviewed successfully.',
+      });
+    },
+    onError: (error: any) => {
+      const message = error?.response?.data?.message || error?.message || 'Failed to review request. Please try again.';
+      toast({
+        variant: 'destructive',
+        title: 'Review Error',
+        description: message,
+      });
+    },
   });
 }

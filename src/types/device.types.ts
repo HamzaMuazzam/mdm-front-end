@@ -183,6 +183,11 @@ export interface BlockedAppRequest {
   updatedAt: string;
 }
 
+export interface BlockedAppReviewRequest {
+  status: 'APPROVED' | 'REJECTED';
+  reviewRemarks: string;
+}
+
 export interface UpdateDeviceConfigurationRequest {
   userId?: number;
   deviceId?: number;
