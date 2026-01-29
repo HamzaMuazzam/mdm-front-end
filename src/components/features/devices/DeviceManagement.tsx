@@ -160,6 +160,7 @@ export function DeviceManagement() {
         enableScreenLock: deviceConfig.enableScreenLock,
         lockPowerButton: deviceConfig.lockPowerButton,
         enableKioskMode: deviceConfig.enableKioskMode,
+        kioskModePackageId: deviceConfig.kioskModePackageId || '',
         screenAlwaysOn: deviceConfig.screenAlwaysOn,
         newServerURL: deviceConfig.newServerURL || '',
         deviceAdminCode: deviceConfig.deviceAdminCode || '',
@@ -685,6 +686,7 @@ export function DeviceManagement() {
                             enableScreenLock: deviceConfig.enableScreenLock,
                             lockPowerButton: deviceConfig.lockPowerButton,
                             enableKioskMode: deviceConfig.enableKioskMode,
+                            kioskModePackageId: deviceConfig.kioskModePackageId || '',
                             screenAlwaysOn: deviceConfig.screenAlwaysOn,
                             newServerURL: deviceConfig.newServerURL || '',
                             deviceAdminCode: deviceConfig.deviceAdminCode || '',
@@ -965,9 +967,37 @@ export function DeviceManagement() {
                       value={<BooleanBadge value={deviceConfig.enableKioskMode} />}
                       editValue={configFormData.enableKioskMode}
                       isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('enableKioskMode', v)}
+                      onChange={(v) => {
+                        if (v && !configFormData.kioskModePackageId) {
+                          // Don't enable if package ID is not set
+                          return;
+                        }
+                        handleConfigInputChange('enableKioskMode', v);
+                      }}
                       type="checkbox"
                     />
+                    {/* Kiosk Mode Package ID - shown when kiosk mode is enabled or in edit mode */}
+                    {(deviceConfig.enableKioskMode || isConfigEditMode) && (
+                      <ConfigEditItem
+                        label="Kiosk Mode Package ID"
+                        value={deviceConfig.kioskModePackageId || 'Not set'}
+                        editValue={configFormData.kioskModePackageId || ''}
+                        isEditMode={isConfigEditMode}
+                        onChange={(v) => {
+                          handleConfigInputChange('kioskModePackageId', v);
+                          // If package ID is cleared, disable kiosk mode
+                          if (!v && configFormData.enableKioskMode) {
+                            handleConfigInputChange('enableKioskMode', false);
+                          }
+                        }}
+                        type="text"
+                      />
+                    )}
+                    {isConfigEditMode && !configFormData.kioskModePackageId && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400 -mt-2 ml-1">
+                        * Set Package ID first to enable Kiosk Mode
+                      </p>
+                    )}
                     <ConfigEditItem
                       label="Enable Screen Lock"
                       value={<BooleanBadge value={deviceConfig.enableScreenLock} />}

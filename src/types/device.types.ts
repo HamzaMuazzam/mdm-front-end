@@ -91,6 +91,7 @@ export interface DeviceConfiguration {
   enableScreenLock: boolean;
   lockPowerButton: boolean;
   enableKioskMode: boolean;
+  kioskModePackageId: string;
   screenAlwaysOn: boolean;
   newServerURL: string | null;
   isParentConfig: boolean;
@@ -227,6 +228,7 @@ export interface UpdateDeviceConfigurationRequest {
   enableKioskMode?: boolean;
   screenAlwaysOn?: boolean;
   newServerURL?: string;
+  kioskModePackageId?: string;
   deviceAdminCode?: string;
   isDeviceAdminCodeEnabled?: boolean;
   allowToAccessSensitiveSettings?: boolean;
