@@ -3,7 +3,7 @@ import { MQTT_BROKER_URL } from '@/utils/constants';
 
 export interface DeviceStatusEvent {
   clientId: string;
-  deviceId: number;
+  deviceId: string;
   status: 'online' | 'offline';
   timestamp: string;
   deviceInfo?: Record<string, unknown>;
@@ -58,7 +58,11 @@ export function connectMqtt(): void {
 
   client.on('message', (_topic: string, payload: Buffer) => {
     try {
-      const event: DeviceStatusEvent = JSON.parse(payload.toString());
+      // let x= payload.toString()
+      let x = payload.toString()
+          .replace(/(\w+)=([^,}\s]+)/g, '"$1":"$2"') // Wrap keys and values in quotes
+          .replace(/=/g, ':'); // Swap = for :
+      const event: DeviceStatusEvent = JSON.parse(x);
       listeners.forEach((cb) => cb(event));
     } catch (err) {
       console.error('[MQTT] Failed to parse message:', err);

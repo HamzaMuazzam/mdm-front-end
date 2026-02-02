@@ -260,7 +260,7 @@ export function DeviceManagement() {
                     >
                       {/*<td className="px-4 py-3 text-sm">{device.id}</td>*/}
                       <td className="px-4 py-3 text-sm text-center">
-                        <DeviceStatusDot status={deviceStatuses[device.id]} />
+                        <DeviceStatusDot status={deviceStatuses[device.deviceUuid]} />
                       </td>
                       <td className="px-4 py-3 text-sm">{device.deviceUuid}</td>
                       <td className="px-4 py-3 text-sm">{device.phone}</td>

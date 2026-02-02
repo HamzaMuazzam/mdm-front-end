@@ -3,9 +3,9 @@ import { create } from 'zustand';
 import { connectMqtt, disconnectMqtt, onDeviceStatus, DeviceStatusEvent } from '@/services/mqttClient';
 
 interface DeviceStatusState {
-  /** Map of deviceId -> 'online' | 'offline' */
-  statuses: Record<number, 'online' | 'offline'>;
-  setStatus: (deviceId: number, status: 'online' | 'offline') => void;
+  /** Map of deviceUuid -> 'online' | 'offline' */
+  statuses: Record<string, 'online' | 'offline'>;
+  setStatus: (deviceId: string, status: 'online' | 'offline') => void;
 }
 
 export const useDeviceStatusStore = create<DeviceStatusState>((set) => ({
@@ -49,6 +49,6 @@ export function useDeviceStatusMqtt() {
 /**
  * Read the live status for a single device.
  */
-export function useDeviceLiveStatus(deviceId: number): 'online' | 'offline' | undefined {
-  return useDeviceStatusStore((s) => s.statuses[deviceId]);
+export function useDeviceLiveStatus(deviceUuid: string): 'online' | 'offline' | undefined {
+  return useDeviceStatusStore((s) => s.statuses[deviceUuid]);
 }
