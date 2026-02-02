@@ -1,4 +1,7 @@
-export const API_BASE_URL = 'http://10.10.10.203:9000';
+// export const API_BASE_URL = 'http://10.10.10.203:9000';
+
+// MQTT broker URL (WebSocket) — adjust port if your broker uses a different WS port
+export const MQTT_BROKER_URL = 'ws://localhost:8083/mqtt';
 
 export const ROUTES = {
   LOGIN: '/login',

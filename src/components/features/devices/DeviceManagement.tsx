@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { deviceSchema, updateDeviceSchema } from '@/utils/validators';
 import { useDevicesQuery, useCreateDevice, useToggleDeviceStatus, useUpdateDevice, useDeviceConfiguration, useUpdateDeviceConfiguration, useApplicationPermissionGranters, useFeatureStates, useLocationTrackingTypes, usePushNotificationProtocols } from '@/hooks/useDevices';
 import { useLevel2UsersQuery } from '@/hooks/useUsers';
+import { useDeviceStatusMqtt, useDeviceStatusStore } from '@/hooks/useDeviceStatus';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,6 +15,8 @@ import type { CreateDeviceRequest, UpdateDeviceRequest, Device, UpdateDeviceConf
 
 export function DeviceManagement() {
   const navigate = useNavigate();
+  useDeviceStatusMqtt();
+  const deviceStatuses = useDeviceStatusStore((s) => s.statuses);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isToggleDialogOpen, setIsToggleDialogOpen] = useState(false);
@@ -234,6 +237,7 @@ export function DeviceManagement() {
               <thead className="bg-muted/50">
                 <tr>
                   {/*<th className="px-4 py-3 text-left text-sm font-medium">ID</th>*/}
+                  <th className="px-4 py-3 text-center text-sm font-medium">Live</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Device UUID</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Phone</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">User Name</th>
@@ -255,6 +259,9 @@ export function DeviceManagement() {
                       className={`hover:bg-muted/50 ${!isActive ? 'opacity-50 bg-muted/30' : ''}`}
                     >
                       {/*<td className="px-4 py-3 text-sm">{device.id}</td>*/}
+                      <td className="px-4 py-3 text-sm text-center">
+                        <DeviceStatusDot status={deviceStatuses[device.id]} />
+                      </td>
                       <td className="px-4 py-3 text-sm">{device.deviceUuid}</td>
                       <td className="px-4 py-3 text-sm">{device.phone}</td>
                       <td className="px-4 py-3 text-sm">{device.userName}</td>
@@ -1296,6 +1303,30 @@ function StateBadge({ value }: { value: string }) {
       }`}
     >
       {value}
+    </span>
+  );
+}
+
+function DeviceStatusDot({ status }: { status?: 'online' | 'offline' }) {
+  if (!status) {
+    // No MQTT event received yet — show grey dot
+    return (
+      <span className="relative inline-flex h-3 w-3" title="Unknown">
+        <span className="h-3 w-3 rounded-full bg-gray-300 dark:bg-gray-600" />
+      </span>
+    );
+  }
+  if (status === 'online') {
+    return (
+      <span className="relative inline-flex h-3 w-3" title="Online">
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+        <span className="relative inline-flex h-3 w-3 rounded-full bg-green-500" />
+      </span>
+    );
+  }
+  return (
+    <span className="relative inline-flex h-3 w-3" title="Offline">
+      <span className="h-3 w-3 rounded-full bg-red-500" />
     </span>
   );
 }
