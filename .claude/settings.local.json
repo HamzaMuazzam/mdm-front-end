@@ -9,7 +9,10 @@
       "Bash(source ~/.nvm/nvm.sh)",
       "Bash(nvm ls:*)",
       "Bash(nvm install:*)",
-      "Bash(nvm use:*)"
+      "Bash(nvm use:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)"
     ]
   }
 }

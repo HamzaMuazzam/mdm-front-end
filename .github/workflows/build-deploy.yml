@@ -1,47 +1,27 @@
-name: Build and Deploy
+name: React Vite Dev Server
 
 on:
   push:
     branches:
       - main
-      - master
-  pull_request:
-    branches:
-      - main
-      - master
+  workflow_dispatch:
 
 jobs:
-  build:
+  run-dev:
     runs-on: self-hosted
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: 18
+          cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
-      - name: Run lint
-        run: npm run lint
-        continue-on-error: true
-
-      - name: Build project
-        run: npm run build
-
-      - name: Deploy to web server
-        run: |
-          $deployPath = "C:\Users\Administrator\Desktop\MDM-Projects\MDM-Front-end-Pipeline\deploy"
-          if (Test-Path $deployPath) {
-            Remove-Item -Path "$deployPath\*" -Recurse -Force
-          } else {
-            New-Item -ItemType Directory -Path $deployPath -Force
-          }
-          Copy-Item -Path "dist\*" -Destination $deployPath -Recurse -Force
-          Write-Host "Deployed to $deployPath"
-        shell: pwsh
+      - name: Run Vite Dev Server
+        run: npm run dev
