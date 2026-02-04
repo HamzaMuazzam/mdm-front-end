@@ -1,4 +1,4 @@
-name: React Vite Dev Server (PM2 Service)
+name: React Vite Dev Server (PM2 - Windows)
 
 on:
   push:
@@ -23,18 +23,22 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: PM2 status
-        run: pm2 status
-               - name: Restart PM2 App safely
-               shell: powershell
-               run: |
-                 $app = pm2 list | Select-String "mdm-react-vite"
-                 if ($app) {
-                   Write-Host "Reloading PM2 app..."
-                   pm2 reload mdm-react-vite
-                 } else {
-                   Write-Host "Starting PM2 app..."
-                   pm2 start ecosystem.config.js
-                 }
-                 pm2 save
+      - name: Restart Vite Dev Server via PM2
+        shell: powershell
+        run: |
+          Write-Host "Checking PM2 app status..."
 
+          $appExists = pm2 list | Select-String "mdm-react-vite"
+
+          if ($appExists) {
+            Write-Host "PM2 app exists. Reloading..."
+            pm2 reload mdm-react-vite
+          } else {
+            Write-Host "PM2 app not found. Starting fresh..."
+            pm2 start ecosystem.config.js
+          }
+
+          pm2 save
+
+      - name: Show PM2 status
+        run: pm2 status
