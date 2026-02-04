@@ -24,27 +24,26 @@ jobs:
         run: npm install
 
       - name: Restart Vite Dev Server via PM2
-        shell: powershell
-        run: |
-          # Use the absolute path to your PM2 executable
-          $PM2 = "C:\Users\Administrator\AppData\Roaming\npm\pm2.cmd"
-          
-          # Navigate to the project directory explicitly
-          cd "C:\Users\Administrator\Desktop\MDM-Projects\mdm-front-end"
-
-          Write-Host "Checking PM2 app status..."
-          
-          # Check if the process is already running
-          $status = & $PM2 jlist | ConvertFrom-Json
-          $app = $status | Where-Object { $_.name -eq "mdm-react-vite" }
-
-          if ($app) {
-            Write-Host "App is running. Restarting to apply changes..."
-            & $PM2 restart mdm-react-vite
-          } else {
-            Write-Host "App not found. Starting new instance..."
-            & $PM2 start ecosystem.config.js
-          }
-
-          # Save the list to ensure it survives a system reboot
-          & $PM2 save
+          shell: powershell
+          run: |
+            $PM2 = "C:\Users\Administrator\AppData\Roaming\npm\pm2.cmd"
+            
+            # Navigate to the physical folder where the code lives
+            cd "C:\Users\Administrator\Desktop\MDM-Projects\mdm-front-end"
+            
+            Write-Host "Checking PM2 app status..."
+            
+            # Use a simple string search instead of JSON parsing to avoid the 'username' error
+            $pm2List = & $PM2 list
+            $appExists = $pm2List | Select-String "mdm-react-vite"
+            
+            if ($appExists) {
+              Write-Host "App exists. Restarting..."
+              & $PM2 restart mdm-react-vite
+            } else {
+              Write-Host "App not found. Starting fresh..."
+              # Using --name ensures PM2 tracks it correctly
+              & $PM2 start npm --name "mdm-react-vite" -- run dev
+            }
+            
+            & $PM2 save
