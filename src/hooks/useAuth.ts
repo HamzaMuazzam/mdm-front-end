@@ -7,9 +7,7 @@ import { ROUTES, USER_LEVELS } from '@/utils/constants';
 import { toast } from '@/hooks/useToast';
 import { queryClient } from '@/main';
 import type {
-  LoginRequest,
   RegisterRequest,
-  OtpRequest,
   EmailVerificationRequest,
   UpdatePasswordRequest,
 } from '@/types/auth.types';
@@ -84,7 +82,6 @@ export function useRegister() {
 }
 
 export function useVerifyOtp() {
-  const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
 
   return useMutation({

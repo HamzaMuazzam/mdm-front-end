@@ -15,10 +15,12 @@ const step1Schema = z.object({
 });
 
 const step2Schema = z.object({
-  email: z.string().email(),
   otp: z.string().length(6, 'OTP must be 6 digits'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
+
+type Step1FormData = z.infer<typeof step1Schema>;
+type Step2FormData = z.infer<typeof step2Schema>;
 
 export function ForgotPasswordPage() {
   const [step, setStep] = useState(1);
@@ -28,8 +30,8 @@ export function ForgotPasswordPage() {
   const sendOtpMutation = useSendOtp();
   const updatePasswordMutation = useUpdatePassword();
 
-  const form1 = useForm({ resolver: zodResolver(step1Schema) });
-  const form2 = useForm({ resolver: zodResolver(step2Schema) });
+  const form1 = useForm<Step1FormData>({ resolver: zodResolver(step1Schema) });
+  const form2 = useForm<Step2FormData>({ resolver: zodResolver(step2Schema) });
 
   const onSendOtp = async (data: { email: string }) => {
     try {

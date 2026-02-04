@@ -15,7 +15,7 @@ export const userService = {
     return response.data;
   },
 
-  async updateUser(id: number, data: UpdateManagerRequest): Promise<ApiResponse<Manager>> {
+  async updateUser(id: number, data: Omit<UpdateManagerRequest, 'id'>): Promise<ApiResponse<Manager>> {
     const response = await apiClient.put<ApiResponse<Manager>>(`/v1/users/${id}`, data);
     return response.data;
   },
