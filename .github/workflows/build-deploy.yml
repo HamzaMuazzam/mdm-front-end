@@ -25,24 +25,22 @@ jobs:
 
       - name: Restart Vite Dev Server via PM2
         shell: powershell
-        # This ensures all commands run inside your project folder
         working-directory: C:\Users\Administrator\Desktop\MDM-Projects\mdm-front-end
         run: |
           $PM2 = "C:\Users\Administrator\AppData\Roaming\npm\pm2.cmd"
           
           Write-Host "Checking PM2 app status..."
           
-          # Check for the app name in the list
           $pm2List = & $PM2 list
           $appExists = $pm2List | Select-String "mdm-react-vite"
-
+          
           if ($appExists) {
             Write-Host "App exists. Restarting..."
             & $PM2 restart mdm-react-vite
           } else {
             Write-Host "App not found. Starting fresh..."
-            # --env development ensures it uses your dev config
-            & $PM2 start npm --name "mdm-react-vite" -- run dev
+            # Using 'pm2 start npm' directly often requires the shell on Windows
+            & $PM2 start "npm" --name "mdm-react-vite" -- run dev
           }
-
+          
           & $PM2 save
