@@ -23,11 +23,18 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Reload PM2 App
-        shell: powershell
-        run: |
-          pm2 reload mdm-react-vite || pm2 restart mdm-react-vite
-          pm2 save
-
       - name: PM2 status
         run: pm2 status
+               - name: Restart PM2 App safely
+               shell: powershell
+               run: |
+                 $app = pm2 list | Select-String "mdm-react-vite"
+                 if ($app) {
+                   Write-Host "Reloading PM2 app..."
+                   pm2 reload mdm-react-vite
+                 } else {
+                   Write-Host "Starting PM2 app..."
+                   pm2 start ecosystem.config.js
+                 }
+                 pm2 save
+
