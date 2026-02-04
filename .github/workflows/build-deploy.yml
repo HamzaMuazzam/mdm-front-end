@@ -21,26 +21,29 @@ jobs:
           cache: npm
 
       - name: Install dependencies
+        # Running install in the workspace first
         run: npm install
 
       - name: Restart Vite Dev Server via PM2
         shell: powershell
+        # CRITICAL: This ensures PM2 is looking at the correct folder
         working-directory: C:\Users\Administrator\Desktop\MDM-Projects\mdm-front-end
         run: |
           $PM2 = "C:\Users\Administrator\AppData\Roaming\npm\pm2.cmd"
           
           Write-Host "Checking PM2 app status..."
           
+          # Use string matching to check if the app is already in the list
           $pm2List = & $PM2 list
           $appExists = $pm2List | Select-String "mdm-react-vite"
-          
+
           if ($appExists) {
-            Write-Host "App exists. Restarting..."
+            Write-Host "App exists. Restarting to apply new code..."
             & $PM2 restart mdm-react-vite
           } else {
-            Write-Host "App not found. Starting fresh..."
-            # Using 'pm2 start npm' directly often requires the shell on Windows
+            Write-Host "App not found. Starting fresh using shell interpreter..."
+            # We use 'npm' as the script and pass 'run dev' as arguments
             & $PM2 start "npm" --name "mdm-react-vite" -- run dev
           }
-          
+
           & $PM2 save
