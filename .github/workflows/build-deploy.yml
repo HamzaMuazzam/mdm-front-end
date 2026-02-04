@@ -23,5 +23,26 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run Vite Dev Server
-        run: npm run dev
+      # 🔴 Kill existing Vite server (port 5173)
+      - name: Kill existing Vite dev server
+        shell: powershell
+        run: |
+          $port = 5173
+          $connections = netstat -ano | Select-String ":$port"
+          if ($connections) {
+            foreach ($line in $connections) {
+              $parts = $line -split '\s+'
+              $pid = $parts[-1]
+              Write-Host "Killing process on port $port (PID $pid)"
+              taskkill /PID $pid /F
+            }
+          } else {
+            Write-Host "No process running on port $port"
+          }
+
+      # 🟢 Start Vite in background
+      - name: Start Vite dev server
+        shell: powershell
+        run: |
+          Write-Host "Starting Vite dev server..."
+          Start-Process npm -ArgumentList "run dev" -NoNewWindow
