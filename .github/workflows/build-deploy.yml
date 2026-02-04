@@ -26,19 +26,24 @@ jobs:
       - name: Restart Vite Dev Server via PM2
         shell: powershell
         run: |
+          $PM2 = "C:\Users\Administrator\AppData\Roaming\npm\pm2.cmd"
+
           Write-Host "Checking PM2 app status..."
 
-          $appExists = pm2 list | Select-String "mdm-react-vite"
+          $appExists = & $PM2 list | Select-String "mdm-react-vite"
 
           if ($appExists) {
             Write-Host "PM2 app exists. Reloading..."
-            pm2 reload mdm-react-vite
+            & $PM2 reload mdm-react-vite
           } else {
             Write-Host "PM2 app not found. Starting fresh..."
-            pm2 start ecosystem.config.js
+            & $PM2 start ecosystem.config.js
           }
 
-          pm2 save
+          & $PM2 save
 
       - name: Show PM2 status
-        run: pm2 status
+        shell: powershell
+        run: |
+          $PM2 = "C:\Users\Administrator\AppData\Roaming\npm\pm2.cmd"
+          & $PM2 status
