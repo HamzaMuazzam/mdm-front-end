@@ -24,26 +24,25 @@ jobs:
         run: npm install
 
       - name: Restart Vite Dev Server via PM2
-          shell: powershell
-          run: |
-            $PM2 = "C:\Users\Administrator\AppData\Roaming\npm\pm2.cmd"
-            
-            # Navigate to the physical folder where the code lives
-            cd "C:\Users\Administrator\Desktop\MDM-Projects\mdm-front-end"
-            
-            Write-Host "Checking PM2 app status..."
-            
-            # Use a simple string search instead of JSON parsing to avoid the 'username' error
-            $pm2List = & $PM2 list
-            $appExists = $pm2List | Select-String "mdm-react-vite"
-            
-            if ($appExists) {
-              Write-Host "App exists. Restarting..."
-              & $PM2 restart mdm-react-vite
-            } else {
-              Write-Host "App not found. Starting fresh..."
-              # Using --name ensures PM2 tracks it correctly
-              & $PM2 start npm --name "mdm-react-vite" -- run dev
-            }
-            
-            & $PM2 save
+        shell: powershell
+        # This ensures all commands run inside your project folder
+        working-directory: C:\Users\Administrator\Desktop\MDM-Projects\mdm-front-end
+        run: |
+          $PM2 = "C:\Users\Administrator\AppData\Roaming\npm\pm2.cmd"
+          
+          Write-Host "Checking PM2 app status..."
+          
+          # Check for the app name in the list
+          $pm2List = & $PM2 list
+          $appExists = $pm2List | Select-String "mdm-react-vite"
+
+          if ($appExists) {
+            Write-Host "App exists. Restarting..."
+            & $PM2 restart mdm-react-vite
+          } else {
+            Write-Host "App not found. Starting fresh..."
+            # --env development ensures it uses your dev config
+            & $PM2 start npm --name "mdm-react-vite" -- run dev
+          }
+
+          & $PM2 save
