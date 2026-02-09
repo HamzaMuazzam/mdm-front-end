@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { subscriptionService } from '@/api/services/subscription.service';
 import { toast } from '@/hooks/useToast';
 import { ROUTES } from '@/utils/constants';
+import { useAuthStore } from '@/store/authStore';
 import type { AssignPlanRequest } from '@/types/subscription.types';
 
 const SUBSCRIPTIONS_QUERY_KEY = ['subscriptions'];
@@ -36,6 +37,7 @@ export function useUserPlansQuery() {
 export function useAssignPlan() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const logout = useAuthStore((state) => state.logout);
 
   return useMutation({
     mutationFn: (data: AssignPlanRequest) => subscriptionService.assignPlan(data),
@@ -45,9 +47,10 @@ export function useAssignPlan() {
       toast({
         variant: 'success',
         title: 'Plan Assigned',
-        description: 'Subscription plan has been assigned successfully.',
+        description: 'Subscription plan has been assigned successfully. Please login to continue.',
       });
-      navigate(ROUTES.DASHBOARD);
+      logout();
+      navigate(ROUTES.LOGIN);
     },
     onError: (error: any) => {
       const message = error?.response?.data?.message || error?.message || 'Failed to assign plan. Please try again.';
