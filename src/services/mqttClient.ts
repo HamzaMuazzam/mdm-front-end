@@ -38,6 +38,7 @@ export function connectMqtt(): void {
   client = mqtt.connect(MQTT_BROKER_URL, {
     clientId: `mdm-web-${email}`,
     clean: true,
+    protocol: "ws",
     reconnectPeriod: 5000,
     connectTimeout: 10000,
   });
