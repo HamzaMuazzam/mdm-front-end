@@ -19,7 +19,7 @@ export function DeviceManagement() {
   useDeviceStatusMqtt();
   const deviceStatuses = useDeviceStatusStore((s) => s.statuses);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
-  const [userEmail, setUserEmail] = useState('');
+  const [userId, setUserId] = useState('');
   const qrRef = useRef<HTMLCanvasElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -70,9 +70,9 @@ export function DeviceManagement() {
     if (userStr) {
       try {
         const user = JSON.parse(userStr);
-        setUserEmail(user.email || '');
+        setUserId(user.id || '');
       } catch {
-        setUserEmail('');
+        setUserId('');
       }
     }
   }, []);
@@ -671,16 +671,16 @@ export function DeviceManagement() {
               </Button>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-4">
-              {userEmail ? (
+              {userId ? (
                 <>
                   <QRCodeCanvas
                     ref={qrRef}
-                    value={userEmail}
+                    value={userId}
                     size={200}
                     level="H"
                     includeMargin
                   />
-                  <p className="text-sm text-muted-foreground">{userEmail}</p>
+                  <p className="text-sm text-muted-foreground">{userId}</p>
                   <Button onClick={handleDownloadQr}>
                     <Download className="h-4 w-4 mr-2" />
                     Download QR Code
