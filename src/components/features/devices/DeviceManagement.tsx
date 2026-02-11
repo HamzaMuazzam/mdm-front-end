@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,13 +10,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText } from 'lucide-react';
+import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download } from 'lucide-react';
+import { QRCodeCanvas } from 'qrcode.react';
 import type { CreateDeviceRequest, UpdateDeviceRequest, Device, UpdateDeviceConfigurationRequest } from '@/types/device.types';
 
 export function DeviceManagement() {
   const navigate = useNavigate();
   useDeviceStatusMqtt();
   const deviceStatuses = useDeviceStatusStore((s) => s.statuses);
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
+  const qrRef = useRef<HTMLCanvasElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isToggleDialogOpen, setIsToggleDialogOpen] = useState(false);
@@ -59,6 +63,29 @@ export function DeviceManagement() {
   } = useForm<UpdateDeviceRequest>({
     resolver: zodResolver(updateDeviceSchema),
   });
+
+  // Load logged-in user email from localStorage on mount
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        setUserEmail(user.email || '');
+      } catch {
+        setUserEmail('');
+      }
+    }
+  }, []);
+
+  const handleDownloadQr = useCallback(() => {
+    const canvas = qrRef.current;
+    if (!canvas) return;
+    const url = canvas.toDataURL('image/png');
+    const link = document.createElement('a');
+    link.download = 'qr-code.png';
+    link.href = url;
+    link.click();
+  }, []);
 
   useEffect(() => {
     if (level2Users.length > 0) {
@@ -226,7 +253,13 @@ export function DeviceManagement() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Device Management</h1>
-        <Button onClick={() => setIsModalOpen(true)}>Add Device</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setIsQrModalOpen(true)}>
+            <QrCode className="h-4 w-4 mr-2" />
+            QR View
+          </Button>
+          <Button onClick={() => setIsModalOpen(true)}>Add Device</Button>
+        </div>
       </div>
 
       {/* Device Table */}
@@ -618,6 +651,44 @@ export function DeviceManagement() {
                       : 'Activate'}
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* QR Code Modal */}
+      {isQrModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-sm m-4">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Your QR Code</CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsQrModalOpen(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center gap-4">
+              {userEmail ? (
+                <>
+                  <QRCodeCanvas
+                    ref={qrRef}
+                    value={userEmail}
+                    size={200}
+                    level="H"
+                    includeMargin
+                  />
+                  <p className="text-sm text-muted-foreground">{userEmail}</p>
+                  <Button onClick={handleDownloadQr}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Download QR Code
+                  </Button>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">No user email found.</p>
+              )}
             </CardContent>
           </Card>
         </div>
