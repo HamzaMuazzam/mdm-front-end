@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download } from 'lucide-react';
-import { QRCodeCanvas } from 'qrcode.react';
+import QRCode from 'qrcode';
 import type { CreateDeviceRequest, UpdateDeviceRequest, Device, UpdateDeviceConfigurationRequest } from '@/types/device.types';
 
 export function DeviceManagement() {
@@ -19,8 +19,8 @@ export function DeviceManagement() {
   useDeviceStatusMqtt();
   const deviceStatuses = useDeviceStatusStore((s) => s.statuses);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
-  const [userId, setUserId] = useState('');
-  const qrRef = useRef<HTMLCanvasElement>(null);
+  const [userEmail, setUserEmail] = useState('');
+  const [qrDataUrl, setQrDataUrl] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isToggleDialogOpen, setIsToggleDialogOpen] = useState(false);
@@ -64,28 +64,35 @@ export function DeviceManagement() {
     resolver: zodResolver(updateDeviceSchema),
   });
 
-  // Load logged-in user email from localStorage on mount
+  // Load logged-in user email from localStorage and generate QR on mount
   useEffect(() => {
     const userStr = localStorage.getItem('user');
     if (userStr) {
       try {
         const user = JSON.parse(userStr);
-        setUserId(user.id || '');
+        const email = user.email || '';
+        setUserEmail(email);
+        if (email) {
+          QRCode.toDataURL(email, {
+            width: 300,
+            margin: 2,
+            color: { dark: '#000000', light: '#ffffff' },
+            errorCorrectionLevel: 'H',
+          }).then(setQrDataUrl).catch(() => setQrDataUrl(''));
+        }
       } catch {
-        setUserId('');
+        setUserEmail('');
       }
     }
   }, []);
 
   const handleDownloadQr = useCallback(() => {
-    const canvas = qrRef.current;
-    if (!canvas) return;
-    const url = canvas.toDataURL('image/png');
+    if (!qrDataUrl) return;
     const link = document.createElement('a');
     link.download = 'qr-code.png';
-    link.href = url;
+    link.href = qrDataUrl;
     link.click();
-  }, []);
+  }, [qrDataUrl]);
 
   useEffect(() => {
     if (level2Users.length > 0) {
@@ -214,7 +221,31 @@ export function DeviceManagement() {
   };
 
   const handleConfigInputChange = (field: keyof UpdateDeviceConfigurationRequest, value: any) => {
-    setConfigFormData(prev => ({ ...prev, [field]: value }));
+    setConfigFormData(prev => {
+      const newData = { ...prev, [field]: value };
+
+      // Logic to ensure WiFi and Mobile Data cannot be disabled at the same time
+      if (field === 'wifiStateId' || field === 'mobileDataStateId') {
+        const wifiDisabledId = featureStates.find(s => s.name === 'DISABLED')?.id;
+        const mobileDataDisabledId = featureStates.find(s => s.name === 'DISABLED')?.id;
+        const enabledId = featureStates.find(s => s.name === 'ENABLED')?.id;
+
+        if (wifiDisabledId !== undefined && mobileDataDisabledId !== undefined && enabledId !== undefined) {
+          const newWifiStateId = field === 'wifiStateId' ? value : prev.wifiStateId;
+          const newMobileDataStateId = field === 'mobileDataStateId' ? value : prev.mobileDataStateId;
+
+          if (newWifiStateId === wifiDisabledId && newMobileDataStateId === mobileDataDisabledId) {
+            // If both are being disabled, enable the other one
+            if (field === 'wifiStateId') {
+               newData.mobileDataStateId = enabledId;
+            } else {
+               newData.wifiStateId = enabledId;
+            }
+          }
+        }
+      }
+      return newData;
+    });
   };
 
   const handleViewApps = (device: Device) => {
@@ -671,16 +702,10 @@ export function DeviceManagement() {
               </Button>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-4">
-              {userId ? (
+              {qrDataUrl ? (
                 <>
-                  <QRCodeCanvas
-                    ref={qrRef}
-                    value={userId}
-                    size={200}
-                    level="H"
-                    includeMargin
-                  />
-                  <p className="text-sm text-muted-foreground">{userId}</p>
+                  <img src={qrDataUrl} alt="QR Code" className="w-[250px] h-[250px]" />
+                  <p className="text-sm text-muted-foreground">{userEmail}</p>
                   <Button onClick={handleDownloadQr}>
                     <Download className="h-4 w-4 mr-2" />
                     Download QR Code
@@ -952,14 +977,7 @@ export function DeviceManagement() {
                       onChange={(v) => handleConfigInputChange('hideSystemNotificationBarInLauncher', v)}
                       type="checkbox"
                     />
-                    <ConfigEditItem
-                      label="Show Launcher Notification Bar"
-                      value={<BooleanBadge value={deviceConfig.showLauncherOwnNotificationBar} />}
-                      editValue={configFormData.showLauncherOwnNotificationBar}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('showLauncherOwnNotificationBar', v)}
-                      type="checkbox"
-                    />
+
                   </div>
 
                   {/* Display Settings */}

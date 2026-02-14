@@ -89,7 +89,31 @@ export function ConfigurationManagement() {
   };
 
   const handleInputChange = (field: keyof UpdateDeviceConfigurationRequest, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => {
+      const newData = { ...prev, [field]: value };
+
+      // Logic to ensure WiFi and Mobile Data cannot be disabled at the same time
+      if (field === 'wifiStateId' || field === 'mobileDataStateId') {
+        const wifiDisabledId = featureStates.find(s => s.name === 'DISABLED')?.id;
+        const mobileDataDisabledId = featureStates.find(s => s.name === 'DISABLED')?.id;
+        const enabledId = featureStates.find(s => s.name === 'ENABLED')?.id;
+
+        if (wifiDisabledId !== undefined && mobileDataDisabledId !== undefined && enabledId !== undefined) {
+          const newWifiStateId = field === 'wifiStateId' ? value : prev.wifiStateId;
+          const newMobileDataStateId = field === 'mobileDataStateId' ? value : prev.mobileDataStateId;
+
+          if (newWifiStateId === wifiDisabledId && newMobileDataStateId === mobileDataDisabledId) {
+            // If both are being disabled, enable the other one
+            if (field === 'wifiStateId') {
+               newData.mobileDataStateId = enabledId;
+            } else {
+               newData.wifiStateId = enabledId;
+            }
+          }
+        }
+      }
+      return newData;
+    });
   };
 
   const handleCancel = () => {
@@ -392,14 +416,6 @@ export function ConfigurationManagement() {
                   editValue={formData.hideSystemNotificationBarInLauncher}
                   isEditMode={isEditMode}
                   onChange={(v) => handleInputChange('hideSystemNotificationBarInLauncher', v)}
-                  type="checkbox"
-                />
-                <ConfigEditItem
-                  label="Show Launcher Notification Bar"
-                  value={<BooleanBadge value={config.showLauncherOwnNotificationBar} />}
-                  editValue={formData.showLauncherOwnNotificationBar}
-                  isEditMode={isEditMode}
-                  onChange={(v) => handleInputChange('showLauncherOwnNotificationBar', v)}
                   type="checkbox"
                 />
               </div>
