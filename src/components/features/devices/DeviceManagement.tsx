@@ -203,6 +203,7 @@ export function DeviceManagement() {
         deviceAdminCode: deviceConfig.deviceAdminCode || '',
         isDeviceAdminCodeEnabled: deviceConfig.isDeviceAdminCodeEnabled,
         allowToAccessSensitiveSettings: deviceConfig.allowToAccessSensitiveSettings,
+        devicePassword: deviceConfig.devicePassword??'', // Initialize devicePassword
       });
     }
   }, [deviceConfig]);
@@ -795,6 +796,7 @@ export function DeviceManagement() {
                             deviceAdminCode: deviceConfig.deviceAdminCode || '',
                             isDeviceAdminCodeEnabled: deviceConfig.isDeviceAdminCodeEnabled,
                             allowToAccessSensitiveSettings: deviceConfig.allowToAccessSensitiveSettings,
+                            devicePassword: deviceConfig.devicePassword??'', // Initialize devicePassword
                           });
                         }
                       }}
@@ -977,7 +979,14 @@ export function DeviceManagement() {
                       onChange={(v) => handleConfigInputChange('hideSystemNotificationBarInLauncher', v)}
                       type="checkbox"
                     />
-
+                    <ConfigEditItem
+                      label="Show Launcher Notification Bar"
+                      value={<BooleanBadge value={deviceConfig.showLauncherOwnNotificationBar} />}
+                      editValue={configFormData.showLauncherOwnNotificationBar}
+                      isEditMode={isConfigEditMode}
+                      onChange={(v) => handleConfigInputChange('showLauncherOwnNotificationBar', v)}
+                      type="checkbox"
+                    />
                   </div>
 
                   {/* Display Settings */}
@@ -1099,9 +1108,24 @@ export function DeviceManagement() {
                       value={<BooleanBadge value={deviceConfig.enableScreenLock} />}
                       editValue={configFormData.enableScreenLock}
                       isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('enableScreenLock', v)}
+                      onChange={(v) => {
+                        handleConfigInputChange('enableScreenLock', v);
+                        if (!v) {
+                          handleConfigInputChange('devicePassword', '');
+                        }
+                      }}
                       type="checkbox"
                     />
+                    {(configFormData.enableScreenLock || (deviceConfig.enableScreenLock && isConfigEditMode)) && (
+                      <ConfigEditItem
+                        label="Device Password"
+                        value={deviceConfig.unlockPassword ? '********' : 'Not set'}
+                        editValue={configFormData.devicePassword || ''}
+                        isEditMode={isConfigEditMode}
+                        onChange={(v) => handleConfigInputChange('devicePassword', v)}
+                        type="text"
+                      />
+                    )}
                     <ConfigEditItem
                       label="Lock Power Button"
                       value={<BooleanBadge value={deviceConfig.lockPowerButton} />}
@@ -1148,6 +1172,38 @@ export function DeviceManagement() {
                       editValue={configFormData.allowToAccessSensitiveSettings}
                       isEditMode={isConfigEditMode}
                       onChange={(v) => handleConfigInputChange('allowToAccessSensitiveSettings', v)}
+                      type="checkbox"
+                    />
+                  </div>
+
+                  {/* Button Controls */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 text-lg font-semibold border-b pb-2">
+                      <Smartphone className="h-5 w-5 text-cyan-500" />
+                      Button Controls
+                    </div>
+                    <ConfigEditItem
+                      label="Enable Home Button"
+                      value={<BooleanBadge value={deviceConfig.enableHomeButton} />}
+                      editValue={configFormData.enableHomeButton}
+                      isEditMode={isConfigEditMode}
+                      onChange={(v) => handleConfigInputChange('enableHomeButton', v)}
+                      type="checkbox"
+                    />
+                    <ConfigEditItem
+                      label="Enable Recents Button"
+                      value={<BooleanBadge value={deviceConfig.enableRecentsButton} />}
+                      editValue={configFormData.enableRecentsButton}
+                      isEditMode={isConfigEditMode}
+                      onChange={(v) => handleConfigInputChange('enableRecentsButton', v)}
+                      type="checkbox"
+                    />
+                    <ConfigEditItem
+                      label="Enable Status Bar Info"
+                      value={<BooleanBadge value={deviceConfig.enableStatusBarInfo} />}
+                      editValue={configFormData.enableStatusBarInfo}
+                      isEditMode={isConfigEditMode}
+                      onChange={(v) => handleConfigInputChange('enableStatusBarInfo', v)}
                       type="checkbox"
                     />
                   </div>
