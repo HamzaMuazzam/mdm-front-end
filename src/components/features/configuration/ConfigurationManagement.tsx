@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useParentConfiguration, useUpdateDeviceConfiguration, useApplicationPermissionGranters, useFeatureStates, useLocationTrackingTypes, usePushNotificationProtocols } from '@/hooks/useDevices';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, Check, X, Pencil, Save, RefreshCw, Sliders, Shield, Database, Globe, Key, Users, ToggleLeft, Server } from 'lucide-react';
+import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, Check, X, Pencil, Save, RefreshCw } from 'lucide-react';
 import type { UpdateDeviceConfigurationRequest } from '@/types/device.types';
 
 type TabType = 'configuration' | 'settings';
@@ -179,40 +179,9 @@ export function ConfigurationManagement() {
     );
   }
 
-  const tabs = [
-    { id: 'configuration' as TabType, label: 'Configuration', icon: <Sliders className="h-5 w-5" /> },
-    { id: 'settings' as TabType, label: 'Settings', icon: <Settings className="h-5 w-5" /> },
-  ];
 
   return (
     <div className="flex gap-6 h-full">
-      {/* Left Sidebar - Tabs */}
-      <div className="w-64 flex-shrink-0">
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-          <div className="p-4 border-b border-slate-200 dark:border-slate-800">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Menu</h2>
-          </div>
-          <nav className="p-2">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all ${
-                  activeTab === tab.id
-                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium'
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
-                }`}
-              >
-                <span className={activeTab === tab.id ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'}>
-                  {tab.icon}
-                </span>
-                {tab.label}
-              </button>
-            ))}
-          </nav>
-        </div>
-      </div>
-
       {/* Right Content Area */}
       <div className="flex-1 min-w-0">
         {/* Header */}
@@ -255,10 +224,7 @@ export function ConfigurationManagement() {
           </div>
         </div>
 
-        {/* Tab Content */}
-        {activeTab === 'settings' ? (
-          <SettingsPanel />
-        ) : config && (
+
         <Card>
           <CardHeader className="border-b">
             <CardTitle className="flex items-center gap-2">
@@ -515,14 +481,6 @@ export function ConfigurationManagement() {
                   type="checkbox"
                 />
                 <ConfigEditItem
-                  label="Lock Power Button"
-                  value={<BooleanBadge value={config.lockPowerButton} />}
-                  editValue={formData.lockPowerButton}
-                  isEditMode={isEditMode}
-                  onChange={(v) => handleInputChange('lockPowerButton', v)}
-                  type="checkbox"
-                />
-                <ConfigEditItem
                   label="Block External Storage"
                   value={<BooleanBadge value={config.blockExternalStorage} />}
                   editValue={formData.blockExternalStorage}
@@ -617,208 +575,12 @@ export function ConfigurationManagement() {
             </div>
           </CardContent>
         </Card>
-        )}
+
       </div>
     </div>
   );
 }
 
-// Settings Panel Component
-function SettingsPanel() {
-  return (
-    <div className="space-y-6">
-      {/* General Settings Card */}
-      <Card>
-        <CardHeader className="border-b">
-          <CardTitle className="flex items-center gap-2">
-            <Globe className="h-5 w-5 text-blue-500" />
-            General Settings
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="space-y-4">
-            <SettingsItem
-              icon={<Server className="h-5 w-5 text-slate-500" />}
-              title="API Server"
-              description="Configure the API server endpoint for device communication"
-              action={<Button variant="outline" size="sm">Configure</Button>}
-            />
-            <SettingsItem
-              icon={<Database className="h-5 w-5 text-slate-500" />}
-              title="Data Sync"
-              description="Set up automatic data synchronization intervals"
-              action={
-                <select className="h-9 rounded-md border border-input bg-transparent px-3 text-sm">
-                  <option>Every 5 minutes</option>
-                  <option>Every 15 minutes</option>
-                  <option>Every 30 minutes</option>
-                  <option>Every hour</option>
-                </select>
-              }
-            />
-            <SettingsItem
-              icon={<Globe className="h-5 w-5 text-slate-500" />}
-              title="Language"
-              description="Select the default language for the application"
-              action={
-                <select className="h-9 rounded-md border border-input bg-transparent px-3 text-sm">
-                  <option>English</option>
-                  <option>Spanish</option>
-                  <option>French</option>
-                  <option>German</option>
-                </select>
-              }
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Security Settings Card */}
-      <Card>
-        <CardHeader className="border-b">
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-green-500" />
-            Security Settings
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="space-y-4">
-            <SettingsItem
-              icon={<Key className="h-5 w-5 text-slate-500" />}
-              title="Two-Factor Authentication"
-              description="Add an extra layer of security to your account"
-              action={<ToggleSwitch defaultChecked={true} />}
-            />
-            <SettingsItem
-              icon={<Lock className="h-5 w-5 text-slate-500" />}
-              title="Session Timeout"
-              description="Automatically log out after period of inactivity"
-              action={
-                <select className="h-9 rounded-md border border-input bg-transparent px-3 text-sm">
-                  <option>15 minutes</option>
-                  <option>30 minutes</option>
-                  <option>1 hour</option>
-                  <option>Never</option>
-                </select>
-              }
-            />
-            <SettingsItem
-              icon={<Shield className="h-5 w-5 text-slate-500" />}
-              title="Login Notifications"
-              description="Get notified when someone logs into your account"
-              action={<ToggleSwitch defaultChecked={false} />}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Notification Settings Card */}
-      <Card>
-        <CardHeader className="border-b">
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5 text-yellow-500" />
-            Notification Settings
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="space-y-4">
-            <SettingsItem
-              icon={<Bell className="h-5 w-5 text-slate-500" />}
-              title="Push Notifications"
-              description="Receive push notifications for important updates"
-              action={<ToggleSwitch defaultChecked={true} />}
-            />
-            <SettingsItem
-              icon={<Smartphone className="h-5 w-5 text-slate-500" />}
-              title="Device Alerts"
-              description="Get notified when device status changes"
-              action={<ToggleSwitch defaultChecked={true} />}
-            />
-            <SettingsItem
-              icon={<Users className="h-5 w-5 text-slate-500" />}
-              title="User Activity Alerts"
-              description="Receive alerts for user-related activities"
-              action={<ToggleSwitch defaultChecked={false} />}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Advanced Settings Card */}
-      <Card>
-        <CardHeader className="border-b">
-          <CardTitle className="flex items-center gap-2">
-            <Sliders className="h-5 w-5 text-purple-500" />
-            Advanced Settings
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="space-y-4">
-            <SettingsItem
-              icon={<ToggleLeft className="h-5 w-5 text-slate-500" />}
-              title="Debug Mode"
-              description="Enable debug mode for troubleshooting"
-              action={<ToggleSwitch defaultChecked={false} />}
-            />
-            <SettingsItem
-              icon={<Database className="h-5 w-5 text-slate-500" />}
-              title="Cache Settings"
-              description="Manage application cache and storage"
-              action={<Button variant="outline" size="sm">Clear Cache</Button>}
-            />
-            <SettingsItem
-              icon={<RefreshCw className="h-5 w-5 text-slate-500" />}
-              title="Auto Update"
-              description="Automatically download and install updates"
-              action={<ToggleSwitch defaultChecked={true} />}
-            />
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-// Settings Item Component
-interface SettingsItemProps {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  action: React.ReactNode;
-}
-
-function SettingsItem({ icon, title, description, action }: SettingsItemProps) {
-  return (
-    <div className="flex items-center justify-between py-3 border-b border-dashed border-muted last:border-0">
-      <div className="flex items-center gap-4">
-        <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
-          {icon}
-        </div>
-        <div>
-          <p className="font-medium text-slate-900 dark:text-white">{title}</p>
-          <p className="text-sm text-slate-500 dark:text-slate-400">{description}</p>
-        </div>
-      </div>
-      <div>{action}</div>
-    </div>
-  );
-}
-
-// Toggle Switch Component
-function ToggleSwitch({ defaultChecked = false }: { defaultChecked?: boolean }) {
-  const [checked, setChecked] = useState(defaultChecked);
-  return (
-    <label className="relative inline-flex items-center cursor-pointer">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => setChecked(e.target.checked)}
-        className="sr-only peer"
-      />
-      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-500"></div>
-    </label>
-  );
-}
 
 // Helper Components
 function ConfigItem({ label, value }: { label: string; value: React.ReactNode }) {
