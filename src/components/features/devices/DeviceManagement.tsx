@@ -1127,14 +1127,6 @@ export function DeviceManagement() {
                       type="checkbox"
                     />
                     <ConfigEditItem
-                      label="Installed as Device Owner"
-                      value={<BooleanBadge value={deviceConfig.isInstalledAsDeviceOwner} />}
-                      editValue={configFormData.isInstalledAsDeviceOwner}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('isInstalledAsDeviceOwner', v)}
-                      type="checkbox"
-                    />
-                    <ConfigEditItem
                       label="Device Admin Code Enabled"
                       value={<BooleanBadge value={deviceConfig.isDeviceAdminCodeEnabled} />}
                       editValue={configFormData.isDeviceAdminCodeEnabled}
@@ -1156,38 +1148,6 @@ export function DeviceManagement() {
                       editValue={configFormData.allowToAccessSensitiveSettings}
                       isEditMode={isConfigEditMode}
                       onChange={(v) => handleConfigInputChange('allowToAccessSensitiveSettings', v)}
-                      type="checkbox"
-                    />
-                  </div>
-
-                  {/* Button Controls */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-lg font-semibold border-b pb-2">
-                      <Smartphone className="h-5 w-5 text-cyan-500" />
-                      Button Controls
-                    </div>
-                    <ConfigEditItem
-                      label="Enable Home Button"
-                      value={<BooleanBadge value={deviceConfig.enableHomeButton} />}
-                      editValue={configFormData.enableHomeButton}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('enableHomeButton', v)}
-                      type="checkbox"
-                    />
-                    <ConfigEditItem
-                      label="Enable Recents Button"
-                      value={<BooleanBadge value={deviceConfig.enableRecentsButton} />}
-                      editValue={configFormData.enableRecentsButton}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('enableRecentsButton', v)}
-                      type="checkbox"
-                    />
-                    <ConfigEditItem
-                      label="Enable Status Bar Info"
-                      value={<BooleanBadge value={deviceConfig.enableStatusBarInfo} />}
-                      editValue={configFormData.enableStatusBarInfo}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('enableStatusBarInfo', v)}
                       type="checkbox"
                     />
                   </div>
