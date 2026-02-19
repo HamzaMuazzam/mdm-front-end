@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useParentConfiguration, useUpdateDeviceConfiguration, useApplicationPermissionGranters, useFeatureStates, useLocationTrackingTypes, usePushNotificationProtocols } from '@/hooks/useDevices';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, Check, X, Pencil, Save, RefreshCw } from 'lucide-react';
+import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, Check, X, Pencil, Save, RefreshCw, Eye } from 'lucide-react';
 import type { UpdateDeviceConfigurationRequest } from '@/types/device.types';
 
 type TabType = 'configuration' | 'settings';
@@ -13,6 +13,7 @@ export function ConfigurationManagement() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [formData, setFormData] = useState<UpdateDeviceConfigurationRequest>({});
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isBackgroundImageEnabled, setIsBackgroundImageEnabled] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: config, isLoading } = useParentConfiguration();
@@ -69,6 +70,7 @@ export function ConfigurationManagement() {
         isDeviceAdminCodeEnabled: config.isDeviceAdminCodeEnabled,
         allowToAccessSensitiveSettings: config.allowToAccessSensitiveSettings,
       });
+      setIsBackgroundImageEnabled(!!config.backgroundImageUrl);
     }
   }, [config]);
 
@@ -162,6 +164,7 @@ export function ConfigurationManagement() {
         isDeviceAdminCodeEnabled: config.isDeviceAdminCodeEnabled,
         allowToAccessSensitiveSettings: config.allowToAccessSensitiveSettings,
       });
+      setIsBackgroundImageEnabled(!!config.backgroundImageUrl);
     }
   };
 
@@ -432,6 +435,69 @@ export function ConfigurationManagement() {
                   onChange={(v) => handleInputChange('applicationNamesColor', v)}
                   type="color"
                 />
+                
+                {/* Background Image URL */}
+                <div className={`py-2 border-b border-dashed border-muted last:border-0 ${isEditMode ? 'flex justify-between items-center' : 'grid grid-cols-2'}`}>
+                  <span className="text-sm text-muted-foreground flex items-center">Background Image</span>
+                  {!isEditMode ? (
+                    <div className="flex items-center justify-end gap-2">
+                       <span className="text-sm font-medium text-right truncate max-w-[200px]">
+                         {config.backgroundImageUrl ? config.backgroundImageUrl : 'Not Set'}
+                       </span>
+                       {config.backgroundImageUrl && (
+                         <Button
+                           variant="ghost"
+                           size="icon"
+                           className="h-6 w-6"
+                           onClick={() => window.open(config.backgroundImageUrl, '_blank')}
+                         >
+                           <Eye className="h-4 w-4" />
+                         </Button>
+                       )}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                       <label className="relative inline-flex items-center cursor-pointer" title={isBackgroundImageEnabled ? "Disable" : "Enable"}>
+                          <input
+                            type="checkbox"
+                            checked={isBackgroundImageEnabled}
+                            onChange={(e) => {
+                              setIsBackgroundImageEnabled(e.target.checked);
+                              if (!e.target.checked) {
+                                handleInputChange('backgroundImageUrl', '');
+                              }
+                            }}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+                       </label>
+
+                       {isBackgroundImageEnabled && (
+                         <>
+                           <input
+                             type="text"
+                             value={formData.backgroundImageUrl || ''}
+                             onChange={(e) => handleInputChange('backgroundImageUrl', e.target.value)}
+                             placeholder="Image URL"
+                             className="h-8 w-48 rounded-md border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                           />
+                           {formData.backgroundImageUrl && (
+                             <Button
+                               variant="ghost"
+                               size="icon"
+                               className="h-8 w-8"
+                               onClick={() => window.open(formData.backgroundImageUrl, '_blank')}
+                               title="View Image"
+                             >
+                               <Eye className="h-4 w-4" />
+                             </Button>
+                           )}
+                         </>
+                       )}
+                    </div>
+                  )}
+                </div>
+
                 <ConfigEditItem
                   label="Screen Always On"
                   value={<BooleanBadge value={config.screenAlwaysOn} />}

@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download } from 'lucide-react';
+import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, Eye } from 'lucide-react';
 import QRCode from 'qrcode';
 import type { CreateDeviceRequest, UpdateDeviceRequest, Device, UpdateDeviceConfigurationRequest } from '@/types/device.types';
 
@@ -26,6 +26,7 @@ export function DeviceManagement() {
   const [isToggleDialogOpen, setIsToggleDialogOpen] = useState(false);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [isConfigEditMode, setIsConfigEditMode] = useState(false);
+  const [isBackgroundImageEnabled, setIsBackgroundImageEnabled] = useState(false);
   const [deviceToToggle, setDeviceToToggle] = useState<Device | null>(null);
   const [editingDevice, setEditingDevice] = useState<Device | null>(null);
   const [configDeviceId, setConfigDeviceId] = useState<number | null>(null);
@@ -205,6 +206,7 @@ export function DeviceManagement() {
         allowToAccessSensitiveSettings: deviceConfig.allowToAccessSensitiveSettings,
         devicePassword: deviceConfig.devicePassword??'', // Initialize devicePassword
       });
+      setIsBackgroundImageEnabled(!!deviceConfig.backgroundImageUrl);
     }
   }, [deviceConfig]);
 
@@ -798,6 +800,7 @@ export function DeviceManagement() {
                             allowToAccessSensitiveSettings: deviceConfig.allowToAccessSensitiveSettings,
                             devicePassword: deviceConfig.devicePassword??'', // Initialize devicePassword
                           });
+                          setIsBackgroundImageEnabled(!!deviceConfig.backgroundImageUrl);
                         }
                       }}
                     >
@@ -1035,6 +1038,67 @@ export function DeviceManagement() {
                       onChange={(v) => handleConfigInputChange('applicationNamesColor', v)}
                       type="color"
                     />
+                    {/* Background Image URL */}
+                    <div className={`py-2 border-b border-dashed border-muted last:border-0 ${isConfigEditMode ? 'flex justify-between items-center' : 'grid grid-cols-2'}`}>
+                      <span className="text-sm text-muted-foreground flex items-center">Background Image</span>
+                      {!isConfigEditMode ? (
+                        <div className="flex items-center justify-end gap-2">
+                           <span className="text-sm font-medium text-right truncate max-w-[200px]">
+                             {deviceConfig.backgroundImageUrl ? deviceConfig.backgroundImageUrl : 'Not Set'}
+                           </span>
+                           {deviceConfig.backgroundImageUrl && (
+                             <Button
+                               variant="ghost"
+                               size="icon"
+                               className="h-6 w-6"
+                               onClick={() => window.open(deviceConfig.backgroundImageUrl, '_blank')}
+                             >
+                               <Eye className="h-4 w-4" />
+                             </Button>
+                           )}
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                           <label className="relative inline-flex items-center cursor-pointer" title={isBackgroundImageEnabled ? "Disable" : "Enable"}>
+                              <input
+                                type="checkbox"
+                                checked={isBackgroundImageEnabled}
+                                onChange={(e) => {
+                                  setIsBackgroundImageEnabled(e.target.checked);
+                                  if (!e.target.checked) {
+                                    handleConfigInputChange('backgroundImageUrl', '');
+                                  }
+                                }}
+                                className="sr-only peer"
+                              />
+                              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+                           </label>
+
+                           {isBackgroundImageEnabled && (
+                             <>
+                               <input
+                                 type="text"
+                                 value={configFormData.backgroundImageUrl || ''}
+                                 onChange={(e) => handleConfigInputChange('backgroundImageUrl', e.target.value)}
+                                 placeholder="Image URL"
+                                 className="h-8 w-48 rounded-md border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                               />
+                               {configFormData.backgroundImageUrl && (
+                                 <Button
+                                   variant="ghost"
+                                   size="icon"
+                                   className="h-8 w-8"
+                                   onClick={() => window.open(configFormData.backgroundImageUrl, '_blank')}
+                                   title="View Image"
+                                 >
+                                   <Eye className="h-4 w-4" />
+                                 </Button>
+                               )}
+                             </>
+                           )}
+                        </div>
+                      )}
+                    </div>
                     <ConfigEditItem
                       label="Screen Always On"
                       value={<BooleanBadge value={deviceConfig.screenAlwaysOn} />}
@@ -1395,4 +1459,3 @@ function DeviceStatusDot({ status }: { status?: 'online' | 'offline' }) {
     </span>
   );
 }
-
