@@ -19,11 +19,11 @@ export function useLogin() {
   return useMutation({
     mutationFn: authService.login,
     onSuccess: async (data) => {
-      // Handle error code 0007 (unverified email)
+      // Handle error code 0007 (unverified email) — API returns 200 with errorCode
       if (data.errorCode === '0007') {
-        localStorage.setItem('pendingEmail', data.data.email);
+        localStorage.setItem('pendingEmail', data.data?.email || '');
         navigate(ROUTES.VERIFY_OTP);
-        throw new Error('Email not verified');
+        return;
       }
 
       if (data.success && data.data.token) {
@@ -50,8 +50,17 @@ export function useLogin() {
         window.location.href = ROUTES.DASHBOARD;
       }
     },
-    onError: (error: any) => {
+    onError: (error: any, variables) => {
       const message = error?.response?.data?.message || error?.message || 'Login failed. Please try again.';
+      const errorCode = error?.response?.data?.errorCode;
+
+      // Handle unverified email — API returns HTTP error with message or errorCode 0007
+      if (errorCode === '0007' || message === 'Email not verified') {
+        localStorage.setItem('pendingEmail', variables.login);
+        navigate(ROUTES.VERIFY_OTP);
+        return;
+      }
+
       toast({
         variant: 'destructive',
         title: 'Login Error',
