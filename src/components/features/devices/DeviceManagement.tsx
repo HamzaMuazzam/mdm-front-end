@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, Eye, BarChart3 } from 'lucide-react';
 import QRCode from 'qrcode';
 import type { CreateDeviceRequest, UpdateDeviceRequest, Device, UpdateDeviceConfigurationRequest } from '@/types/device.types';
-import { DeviceMonitorDashboardModal } from '@/components/features/devices/DeviceMonitorDashboardModal';
+import { ROUTES } from '@/utils/constants';
 
 export function DeviceManagement() {
   const navigate = useNavigate();
@@ -26,12 +26,10 @@ export function DeviceManagement() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isToggleDialogOpen, setIsToggleDialogOpen] = useState(false);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
-  const [isMonitorModalOpen, setIsMonitorModalOpen] = useState(false);
   const [isConfigEditMode, setIsConfigEditMode] = useState(false);
   const [isBackgroundImageEnabled, setIsBackgroundImageEnabled] = useState(false);
   const [deviceToToggle, setDeviceToToggle] = useState<Device | null>(null);
   const [editingDevice, setEditingDevice] = useState<Device | null>(null);
-  const [monitoringDevice, setMonitoringDevice] = useState<Device | null>(null);
   const [configDeviceId, setConfigDeviceId] = useState<number | null>(null);
   const [configFormData, setConfigFormData] = useState<UpdateDeviceConfigurationRequest>({});
   const { data: devices = [], isLoading } = useDevicesQuery();
@@ -263,8 +261,8 @@ export function DeviceManagement() {
   };
 
   const handleOpenMonitorDashboard = (device: Device) => {
-    setMonitoringDevice(device);
-    setIsMonitorModalOpen(true);
+    const monitorPath = ROUTES.DEVICE_MONITOR.replace(':deviceId', device.id.toString());
+    window.open(monitorPath, '_blank', 'noopener,noreferrer');
   };
 
   const onEditSubmit = async (data: UpdateDeviceRequest) => {
@@ -1316,15 +1314,6 @@ export function DeviceManagement() {
           </Card>
         </div>
       )}
-
-      <DeviceMonitorDashboardModal
-        device={monitoringDevice}
-        isOpen={isMonitorModalOpen}
-        onClose={() => {
-          setIsMonitorModalOpen(false);
-          setMonitoringDevice(null);
-        }}
-      />
 
     </div>
   );

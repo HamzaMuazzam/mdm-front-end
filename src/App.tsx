@@ -12,6 +12,7 @@ import { SubscriptionPlansPage } from './pages/SubscriptionPlansPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { DeviceApplicationsPage } from './pages/DeviceApplicationsPage';
 import { DeviceRequestsPage } from './pages/DeviceRequestsPage';
+import { DeviceMonitorDashboardPage } from './pages/DeviceMonitorDashboardPage';
 
 function App() {
   return (
@@ -53,6 +54,14 @@ function App() {
           element={
             <ProtectedRoute requiresSubscription>
               <DeviceRequestsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.DEVICE_MONITOR}
+          element={
+            <ProtectedRoute requiresSubscription>
+              <DeviceMonitorDashboardPage />
             </ProtectedRoute>
           }
         />
