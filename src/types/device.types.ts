@@ -215,6 +215,12 @@ export interface DashboardDevicesAnalytics {
   unverifiedDevices: number;
 }
 
+export interface DashboardUsersAnalytics {
+  totalUsersAdded: number;
+  activeUsers: number;
+  inactiveUsers: number;
+}
+
 export interface DashboardConnectivityAnalytics {
   onlineDevices: number;
   offlineDevices: number;
@@ -231,6 +237,7 @@ export interface DeviceDashboardAnalytics {
   generatedAt: string;
   subscription: DashboardSubscriptionAnalytics;
   devices: DashboardDevicesAnalytics;
+  users?: DashboardUsersAnalytics;
   connectivity: DashboardConnectivityAnalytics;
   sync: DashboardSyncAnalytics;
   enrollmentTrendLast7Days: DashboardTrendPoint[];

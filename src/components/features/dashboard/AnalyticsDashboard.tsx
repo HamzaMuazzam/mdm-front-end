@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Activity, CalendarClock, CheckCircle2, CloudOff, RefreshCw, ShieldCheck, Smartphone, Wifi, WifiOff } from 'lucide-react';
+import { Activity, CalendarClock, RefreshCw, ShieldCheck, Smartphone, UserCheck, UserRound, UserX, Wifi } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDeviceAnalyticsQuery } from '@/hooks/useDevices';
@@ -310,6 +310,11 @@ export function AnalyticsDashboard() {
   }
 
   const { subscription, devices, connectivity, sync, generatedAt, enrollmentTrendLast7Days, syncTrendLast7Days } = data;
+  const users = data.users ?? {
+    totalUsersAdded: 0,
+    activeUsers: 0,
+    inactiveUsers: 0,
+  };
 
   return (
     <div className="space-y-6">
@@ -363,16 +368,16 @@ export function AnalyticsDashboard() {
           icon={<ShieldCheck className="h-5 w-5" />}
         />
         <MetricCard
+          title="Total Users Added"
+          value={numberFormatter.format(users.totalUsersAdded)}
+          description={`${numberFormatter.format(users.activeUsers)} active users`}
+          icon={<UserRound className="h-5 w-5" />}
+        />
+        <MetricCard
           title="Plan Days Remaining"
           value={numberFormatter.format(subscription.packageDaysRemaining)}
           description={subscription.packageExpired ? 'Subscription is expired' : 'Subscription is active'}
           icon={<CalendarClock className="h-5 w-5" />}
-        />
-        <MetricCard
-          title="Devices Remaining"
-          value={numberFormatter.format(subscription.devicesRemaining)}
-          description={`${numberFormatter.format(subscription.devicesInUse)} in use of ${numberFormatter.format(subscription.allowedDevices)}`}
-          icon={<CheckCircle2 className="h-5 w-5" />}
         />
       </div>
 
@@ -458,31 +463,41 @@ export function AnalyticsDashboard() {
         />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="border-0 bg-emerald-50 shadow-md">
-          <CardContent className="flex items-center gap-3 p-5">
-            <Wifi className="h-5 w-5 text-emerald-700" />
-            <div>
-              <p className="text-sm text-emerald-700">Online Now</p>
-              <p className="text-xl font-bold text-emerald-900">{numberFormatter.format(connectivity.onlineDevices)}</p>
+      <div className="grid gap-6 xl:grid-cols-2">
+        <StackedBarCard
+          title="User State Distribution"
+          description="How your user base is split by status"
+          segments={[
+            { label: 'Active Users', value: users.activeUsers, color: '#16a34a' },
+            { label: 'Inactive Users', value: users.inactiveUsers, color: '#dc2626' },
+          ]}
+        />
+        <Card className="border-0 bg-white/85 shadow-lg backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="text-xl text-slate-900">User Snapshot</CardTitle>
+            <CardDescription className="text-slate-600">Current user counts from analytics service</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-lg bg-slate-50 p-3">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Total</p>
+              <p className="mt-2 flex items-center gap-2 text-xl font-bold text-slate-900">
+                <UserRound className="h-4 w-4" />
+                {numberFormatter.format(users.totalUsersAdded)}
+              </p>
             </div>
-          </CardContent>
-        </Card>
-        <Card className="border-0 bg-slate-100 shadow-md">
-          <CardContent className="flex items-center gap-3 p-5">
-            <WifiOff className="h-5 w-5 text-slate-700" />
-            <div>
-              <p className="text-sm text-slate-700">Offline Now</p>
-              <p className="text-xl font-bold text-slate-900">{numberFormatter.format(connectivity.offlineDevices)}</p>
+            <div className="rounded-lg bg-emerald-50 p-3">
+              <p className="text-xs uppercase tracking-wide text-emerald-700">Active</p>
+              <p className="mt-2 flex items-center gap-2 text-xl font-bold text-emerald-900">
+                <UserCheck className="h-4 w-4" />
+                {numberFormatter.format(users.activeUsers)}
+              </p>
             </div>
-          </CardContent>
-        </Card>
-        <Card className="border-0 bg-orange-50 shadow-md">
-          <CardContent className="flex items-center gap-3 p-5">
-            <CloudOff className="h-5 w-5 text-orange-700" />
-            <div>
-              <p className="text-sm text-orange-700">Never Synced</p>
-              <p className="text-xl font-bold text-orange-900">{numberFormatter.format(sync.neverSyncedDevices)}</p>
+            <div className="rounded-lg bg-rose-50 p-3">
+              <p className="text-xs uppercase tracking-wide text-rose-700">Inactive</p>
+              <p className="mt-2 flex items-center gap-2 text-xl font-bold text-rose-900">
+                <UserX className="h-4 w-4" />
+                {numberFormatter.format(users.inactiveUsers)}
+              </p>
             </div>
           </CardContent>
         </Card>
