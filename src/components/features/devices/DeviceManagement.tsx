@@ -10,9 +10,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, Eye } from 'lucide-react';
+import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, Eye, BarChart3 } from 'lucide-react';
 import QRCode from 'qrcode';
 import type { CreateDeviceRequest, UpdateDeviceRequest, Device, UpdateDeviceConfigurationRequest } from '@/types/device.types';
+import { DeviceMonitorDashboardModal } from '@/components/features/devices/DeviceMonitorDashboardModal';
 
 export function DeviceManagement() {
   const navigate = useNavigate();
@@ -25,10 +26,12 @@ export function DeviceManagement() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isToggleDialogOpen, setIsToggleDialogOpen] = useState(false);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  const [isMonitorModalOpen, setIsMonitorModalOpen] = useState(false);
   const [isConfigEditMode, setIsConfigEditMode] = useState(false);
   const [isBackgroundImageEnabled, setIsBackgroundImageEnabled] = useState(false);
   const [deviceToToggle, setDeviceToToggle] = useState<Device | null>(null);
   const [editingDevice, setEditingDevice] = useState<Device | null>(null);
+  const [monitoringDevice, setMonitoringDevice] = useState<Device | null>(null);
   const [configDeviceId, setConfigDeviceId] = useState<number | null>(null);
   const [configFormData, setConfigFormData] = useState<UpdateDeviceConfigurationRequest>({});
   const { data: devices = [], isLoading } = useDevicesQuery();
@@ -259,6 +262,11 @@ export function DeviceManagement() {
     navigate(`/device/${device.id}/requests`);
   };
 
+  const handleOpenMonitorDashboard = (device: Device) => {
+    setMonitoringDevice(device);
+    setIsMonitorModalOpen(true);
+  };
+
   const onEditSubmit = async (data: UpdateDeviceRequest) => {
     if (!editingDevice) return;
     try {
@@ -304,6 +312,7 @@ export function DeviceManagement() {
               <thead className="bg-muted/50">
                 <tr>
                   {/*<th className="px-4 py-3 text-left text-sm font-medium">ID</th>*/}
+                  <th className="px-4 py-3 text-center text-sm font-medium">Monitor</th>
                   <th className="px-4 py-3 text-center text-sm font-medium">Live</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Device UUID</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Phone</th>
@@ -326,6 +335,16 @@ export function DeviceManagement() {
                       className={`hover:bg-muted/50 ${!isActive ? 'opacity-50 bg-muted/30' : ''}`}
                     >
                       {/*<td className="px-4 py-3 text-sm">{device.id}</td>*/}
+                      <td className="px-4 py-3 text-sm text-center">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleOpenMonitorDashboard(device)}
+                          title="Open Monitor Dashboard"
+                        >
+                          <BarChart3 className="h-4 w-4" />
+                        </Button>
+                      </td>
                       <td className="px-4 py-3 text-sm text-center">
                         <DeviceStatusDot status={deviceStatuses[device.deviceUuid]} />
                       </td>
@@ -1049,9 +1068,13 @@ export function DeviceManagement() {
                            {deviceConfig.backgroundImageUrl && (
                              <Button
                                variant="ghost"
-                               size="icon"
-                               className="h-6 w-6"
-                               onClick={() => window.open(deviceConfig.backgroundImageUrl, '_blank')}
+                               size="sm"
+                               className="h-6 w-6 p-0"
+                               onClick={() => {
+                                 if (deviceConfig.backgroundImageUrl) {
+                                   window.open(deviceConfig.backgroundImageUrl, '_blank');
+                                 }
+                               }}
                              >
                                <Eye className="h-4 w-4" />
                              </Button>
@@ -1086,8 +1109,8 @@ export function DeviceManagement() {
                                {configFormData.backgroundImageUrl && (
                                  <Button
                                    variant="ghost"
-                                   size="icon"
-                                   className="h-8 w-8"
+                                   size="sm"
+                                   className="h-8 w-8 p-0"
                                    onClick={() => window.open(configFormData.backgroundImageUrl, '_blank')}
                                    title="View Image"
                                  >
@@ -1293,6 +1316,15 @@ export function DeviceManagement() {
           </Card>
         </div>
       )}
+
+      <DeviceMonitorDashboardModal
+        device={monitoringDevice}
+        isOpen={isMonitorModalOpen}
+        onClose={() => {
+          setIsMonitorModalOpen(false);
+          setMonitoringDevice(null);
+        }}
+      />
 
     </div>
   );

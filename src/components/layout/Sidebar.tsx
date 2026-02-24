@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useLogout } from '@/hooks/useAuth';
 import { USER_LEVELS } from '@/utils/constants';
 import { Button } from '@/components/ui/button';
 import {
+  LayoutDashboard,
   Users,
   Smartphone,
   CreditCard,
@@ -14,8 +15,8 @@ import {
 } from 'lucide-react';
 
 interface SidebarProps {
-  activeTab: 'users' | 'devices' | 'subscriptions' | 'configuration';
-  onTabChange: (tab: 'users' | 'devices' | 'subscriptions' | 'configuration') => void;
+  activeTab: 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration';
+  onTabChange: (tab: 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration') => void;
 }
 
 export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
@@ -86,6 +87,13 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
 
       {/* Navigation */}
       <nav className={`flex-1 space-y-2 ${isCollapsed ? 'px-2' : 'px-4'}`}>
+        <NavButton
+          icon={<LayoutDashboard className="h-5 w-5" />}
+          label="Analytics"
+          isActive={activeTab === 'analytics'}
+          isCollapsed={isCollapsed}
+          onClick={() => onTabChange('analytics')}
+        />
         {user?.userLevel === USER_LEVELS.L1 && (
           <>
             <NavButton
@@ -146,7 +154,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
 }
 
 interface NavButtonProps {
-  icon: React.ReactNode;
+  icon: ReactNode;
   label: string;
   isActive: boolean;
   isCollapsed: boolean;

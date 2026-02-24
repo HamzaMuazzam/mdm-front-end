@@ -1,6 +1,6 @@
 import { apiClient } from '../client';
-import type { Device, CreateDeviceRequest, UpdateDeviceRequest, DeviceConfiguration, UpdateDeviceConfigurationRequest, ConfigEnumItem, DeviceApplication, UpdateDeviceApplicationRequest, BlockedAppRequest, BlockedAppReviewRequest } from '@/types/device.types';
-import type { ApiResponse } from '@/types/api.types';
+import type { Device, CreateDeviceRequest, UpdateDeviceRequest, DeviceConfiguration, UpdateDeviceConfigurationRequest, ConfigEnumItem, DeviceApplication, UpdateDeviceApplicationRequest, BlockedAppRequest, BlockedAppReviewRequest, DeviceDashboardAnalytics, DeviceMonitorStateDashboard, DeviceAppUsageHistoryItem, DeviceAppUsageHistoryQuery } from '@/types/device.types';
+import type { ApiResponse, PaginatedResponse } from '@/types/api.types';
 
 export const deviceService = {
   async getAllDevices(): Promise<Device[]> {
@@ -77,5 +77,28 @@ export const deviceService = {
   async reviewBlockedAppRequest(requestId: number, data: BlockedAppReviewRequest): Promise<ApiResponse<BlockedAppRequest>> {
     const response = await apiClient.put<ApiResponse<BlockedAppRequest>>(`/v1/blocked-app-requests/${requestId}/review`, data);
     return response.data;
+  },
+
+  async getDashboardAnalytics(): Promise<DeviceDashboardAnalytics> {
+    const response = await apiClient.get<ApiResponse<DeviceDashboardAnalytics>>('/v1/devices/dashboard/analytics');
+    return response.data.data;
+  },
+
+  async getDeviceMonitorStateDashboard(deviceUuid: string): Promise<DeviceMonitorStateDashboard> {
+    const response = await apiClient.get<ApiResponse<DeviceMonitorStateDashboard>>(
+      `/v1/devices/monit/${deviceUuid}/state/dashboard`
+    );
+    return response.data.data;
+  },
+
+  async getDeviceAppUsageHistory(
+    deviceUuid: string,
+    params?: DeviceAppUsageHistoryQuery
+  ): Promise<PaginatedResponse<DeviceAppUsageHistoryItem>> {
+    const response = await apiClient.get<ApiResponse<PaginatedResponse<DeviceAppUsageHistoryItem>>>(
+      `/v1/devices/monit/${deviceUuid}/app-usage/history`,
+      { params }
+    );
+    return response.data.data;
   },
 };

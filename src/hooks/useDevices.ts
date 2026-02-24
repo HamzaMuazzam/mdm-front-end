@@ -1,15 +1,51 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { deviceService } from '@/api/services/device.service';
 import { toast } from '@/hooks/useToast';
-import type { CreateDeviceRequest, UpdateDeviceRequest, UpdateDeviceConfigurationRequest, UpdateDeviceApplicationRequest, BlockedAppReviewRequest } from '@/types/device.types';
+import type { CreateDeviceRequest, UpdateDeviceRequest, UpdateDeviceConfigurationRequest, UpdateDeviceApplicationRequest, BlockedAppReviewRequest, DeviceAppUsageHistoryQuery } from '@/types/device.types';
 
 const DEVICES_QUERY_KEY = ['devices'];
+const DEVICE_ANALYTICS_QUERY_KEY = ['deviceAnalytics'];
+const DEVICE_MONITOR_STATE_QUERY_KEY = ['deviceMonitorState'];
+const DEVICE_APP_USAGE_HISTORY_QUERY_KEY = ['deviceAppUsageHistory'];
 
 export function useDevicesQuery() {
   return useQuery({
     queryKey: DEVICES_QUERY_KEY,
     queryFn: deviceService.getAllDevices,
     staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+export function useDeviceAnalyticsQuery() {
+  return useQuery({
+    queryKey: DEVICE_ANALYTICS_QUERY_KEY,
+    queryFn: deviceService.getDashboardAnalytics,
+    staleTime: 60 * 1000,
+    refetchInterval: 2 * 60 * 1000,
+  });
+}
+
+export function useDeviceMonitorStateDashboardQuery(deviceUuid: string | null, enabled = true) {
+  return useQuery({
+    queryKey: [...DEVICE_MONITOR_STATE_QUERY_KEY, deviceUuid],
+    queryFn: () => deviceService.getDeviceMonitorStateDashboard(deviceUuid!),
+    enabled: enabled && !!deviceUuid,
+    staleTime: 20 * 1000,
+    refetchInterval: 30 * 1000,
+  });
+}
+
+export function useDeviceAppUsageHistoryQuery(
+  deviceUuid: string | null,
+  params: DeviceAppUsageHistoryQuery,
+  enabled = true
+) {
+  return useQuery({
+    queryKey: [...DEVICE_APP_USAGE_HISTORY_QUERY_KEY, deviceUuid, params],
+    queryFn: () => deviceService.getDeviceAppUsageHistory(deviceUuid!, params),
+    enabled: enabled && !!deviceUuid,
+    staleTime: 30 * 1000,
+    refetchInterval: 60 * 1000,
   });
 }
 

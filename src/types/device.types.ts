@@ -190,6 +190,86 @@ export interface BlockedAppReviewRequest {
   reviewRemarks: string;
 }
 
+export interface DashboardTrendPoint {
+  date: string;
+  value: number;
+}
+
+export interface DashboardSubscriptionAnalytics {
+  subscriptionId: number;
+  subscriptionName: string;
+  packageExpiryDate: string;
+  packageDaysRemaining: number;
+  packageExpired: boolean;
+  allowedDevices: number;
+  devicesInUse: number;
+  devicesRemaining: number;
+  utilizationPercent: number;
+}
+
+export interface DashboardDevicesAnalytics {
+  totalDevicesAdded: number;
+  activeDevices: number;
+  inactiveDevices: number;
+  verifiedDevices: number;
+  unverifiedDevices: number;
+}
+
+export interface DashboardConnectivityAnalytics {
+  onlineDevices: number;
+  offlineDevices: number;
+  onlinePercent: number;
+}
+
+export interface DashboardSyncAnalytics {
+  syncedInLast24Hours: number;
+  staleSyncDevices: number;
+  neverSyncedDevices: number;
+}
+
+export interface DeviceDashboardAnalytics {
+  generatedAt: string;
+  subscription: DashboardSubscriptionAnalytics;
+  devices: DashboardDevicesAnalytics;
+  connectivity: DashboardConnectivityAnalytics;
+  sync: DashboardSyncAnalytics;
+  enrollmentTrendLast7Days: DashboardTrendPoint[];
+  syncTrendLast7Days: DashboardTrendPoint[];
+}
+
+export interface DeviceMonitorStateDashboard {
+  deviceUuid: string;
+  batteryCharge: number;
+  isCharging: boolean;
+  wifiEnabled: boolean;
+  mobileDataEnabled: boolean;
+  bluetoothEnabled: boolean;
+  gpsEnabled: boolean;
+  accessibilityEnabled: boolean;
+  totalWifiDataBytes: number;
+  totalMobileDataBytes: number;
+  lastStateSyncTime: string;
+  lastUpdate: string;
+}
+
+export interface DeviceAppUsageHistoryItem {
+  id: number | null;
+  packageName: string;
+  appName: string;
+  foregroundTimeMillis: number;
+  usageStart: string;
+  usageEnd: string;
+  recordDate: string;
+  createdAt: string | null;
+}
+
+export interface DeviceAppUsageHistoryQuery {
+  from?: string;
+  to?: string;
+  page?: number;
+  size?: number;
+}
+
 export interface UpdateDeviceConfigurationRequest {
   userId?: number;
   deviceId?: number;

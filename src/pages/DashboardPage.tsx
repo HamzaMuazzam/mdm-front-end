@@ -9,8 +9,9 @@ import { UserManagement } from '@/components/features/users/UserManagement';
 import { DeviceManagement } from '@/components/features/devices/DeviceManagement';
 import { SubscriptionsManagement } from '@/components/features/subscriptions/SubscriptionsManagement';
 import { ConfigurationManagement } from '@/components/features/configuration/ConfigurationManagement';
+import { AnalyticsDashboard } from '@/components/features/dashboard/AnalyticsDashboard';
 
-type TabType = 'users' | 'devices' | 'subscriptions' | 'configuration';
+type TabType = 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration';
 
 interface LocationState {
   activeTab?: TabType;
@@ -26,7 +27,7 @@ export function DashboardPage() {
     if (locationState?.activeTab) {
       return locationState.activeTab;
     }
-    return user?.userLevel === USER_LEVELS.L1 ? 'users' : 'devices';
+    return 'analytics';
   };
 
   const [activeTab, setActiveTab] = useState<TabType>(getDefaultTab());
@@ -38,11 +39,13 @@ export function DashboardPage() {
     }
   }, [locationState]);
 
-  const handleTabChange = (tab: 'users' | 'devices' | 'subscriptions' | 'configuration') => {
+  const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
 
     // Invalidate queries to refresh data on each tab click
-    if (tab === 'users') {
+    if (tab === 'analytics') {
+      queryClient.invalidateQueries({ queryKey: ['deviceAnalytics'] });
+    } else if (tab === 'users') {
       queryClient.invalidateQueries({ queryKey: ['users'] });
     } else if (tab === 'devices') {
       queryClient.invalidateQueries({ queryKey: ['devices'] });
@@ -56,6 +59,7 @@ export function DashboardPage() {
   return (
     <DashboardLayout sidebar={<Sidebar activeTab={activeTab} onTabChange={handleTabChange} />}>
       <div className="p-8">
+        {activeTab === 'analytics' && <AnalyticsDashboard />}
         {activeTab === 'users' && user?.userLevel === USER_LEVELS.L1 && <UserManagement />}
         {activeTab === 'subscriptions' && user?.userLevel === USER_LEVELS.L1 && <SubscriptionsManagement />}
         {activeTab === 'devices' && <DeviceManagement />}
