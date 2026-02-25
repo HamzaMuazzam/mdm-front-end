@@ -204,6 +204,10 @@ export function DeviceMonitorDashboardPage() {
     () => topAppUsage.reduce((max, app) => Math.max(max, app.foregroundTimeMillis), 0),
     [topAppUsage]
   );
+  const totalAppUsageMillis = useMemo(
+    () => appUsageRows.reduce((sum, app) => sum + app.foregroundTimeMillis, 0),
+    [appUsageRows]
+  );
 
   useEffect(() => {
     setPage(0);
@@ -302,9 +306,6 @@ export function DeviceMonitorDashboardPage() {
                   <option value={100}>100</option>
                 </select>
               </div>
-              <div className="ml-2 whitespace-nowrap text-sm text-slate-500">
-                {numberFormatter.format(appUsageRows.length)} of {numberFormatter.format(usageData?.totalElements ?? 0)} entries
-              </div>
             </div>
 
             <div className="shrink-0">
@@ -318,8 +319,8 @@ export function DeviceMonitorDashboardPage() {
       </header>
 
       <main className="px-4 py-8 sm:px-6">
-        <div className="mb-8 flex flex-col gap-8 lg:flex-row">
-          <div className="flex-1">
+        <div className="mb-8 grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,700px)] xl:items-center">
+          <div className="min-w-0">
             <div className="flex items-center gap-4">
               <div className="rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 p-3 shadow-lg shadow-cyan-500/25">
                 <Activity className="h-8 w-8 text-white" />
@@ -331,8 +332,7 @@ export function DeviceMonitorDashboardPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 lg:w-auto lg:grid-cols-4">
-            <CompactStatCard label="Battery" value={stateData ? `${stateData.batteryCharge}%` : '-'} colorClass="text-slate-900" />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <CompactStatCard label="WiFi Data" value={stateData ? formatBytes(stateData.totalWifiDataBytes) : '-'} colorClass="text-sky-700" />
             <CompactStatCard label="Mobile Data" value={stateData ? formatBytes(stateData.totalMobileDataBytes) : '-'} colorClass="text-teal-700" />
             <CompactStatCard label="Last Sync" value={stateData ? formatDateTime(stateData.lastStateSyncTime) : '-'} colorClass="text-slate-900" />
@@ -350,7 +350,7 @@ export function DeviceMonitorDashboardPage() {
           </Card>
         )}
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           <TopMetric
             title="Battery"
             value={stateData ? `${stateData.batteryCharge}%` : '-'}
@@ -373,6 +373,12 @@ export function DeviceMonitorDashboardPage() {
             title="Usage Records"
             value={numberFormatter.format(usageData?.totalElements ?? 0)}
             helper={`Showing ${numberFormatter.format(appUsageRows.length)} entries`}
+            icon={<Activity className="h-5 w-5" />}
+          />
+          <TopMetric
+            title="Total Device Usage"
+            value={formatDuration(totalAppUsageMillis)}
+            helper="Sum of current filtered entries"
             icon={<Activity className="h-5 w-5" />}
           />
         </div>
