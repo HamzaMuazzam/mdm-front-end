@@ -1,8 +1,8 @@
 
 //TODO: for live server only
-export const WS = 'ws';
+export const WS = 'ws2';
 export const API_BASE_URL = 'http://10.10.10.32:9000';
-export const MQTT_BROKER_URL = `${WS}://10.10.10.32:8083/mqtt`;
+export const MQTT_BROKER_URL = `${WS}://10.10.10.32:8084/mqtt`;
 
 
 //TODO: for local development
