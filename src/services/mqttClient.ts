@@ -1,5 +1,5 @@
 import mqtt, { MqttClient } from 'mqtt';
-import { MQTT_BROKER_URL } from '@/utils/constants';
+import {MQTT_BROKER_URL, WS} from '@/utils/constants';
 
 export interface DeviceStatusEvent {
   clientId: string;
@@ -38,8 +38,7 @@ export function connectMqtt(): void {
   client = mqtt.connect(MQTT_BROKER_URL, {
     clientId: `mdm-web-${email}`,
     clean: true,
-    protocol: "ws",
-    // protocol: "wss",
+    protocol: WS,
     reconnectPeriod: 5000,
     connectTimeout: 10000,
   });

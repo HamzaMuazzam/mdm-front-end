@@ -1,15 +1,15 @@
 
-// MQTT broker URL (WebSocket) — adjust port if your broker uses a different WS port
-// http://10.10.10.32:9000/swagger-ui/index.html
-// export const API_BASE_URL = 'http://10.10.10.32:9000';
-// export const MQTT_BROKER_URL = 'wss://10.10.10.32:8084/mqtt';
-// export const MQTT_BROKER_URL = 'ws://10.10.10.32:8083/mqtt';
+//TODO: for live server only
+export const WS = 'wss';
+export const API_BASE_URL = 'https://mdm.dspl.pk/api';
+export const MQTT_BROKER_URL = `${WS}://mdm.dspl.pk:8084/mqtt`;
 
-export const API_BASE_URL = 'http://10.10.10.81:9000';
-export const MQTT_BROKER_URL = 'ws://10.10.10.81:8083/mqtt';
 
-// export const API_BASE_URL = 'http://192.168.100.38:9000';
-// export const MQTT_BROKER_URL = 'ws://192.168.100.38:8083/mqtt';
+//TODO: for local development
+// export const WS = 'ws';
+// export const API_BASE_URL = 'https://10.10.10.81';
+// export const MQTT_BROKER_URL = `${WS}://10.10.10.81:8083/mqtt`;
+
 
 
 export const ROUTES = {
