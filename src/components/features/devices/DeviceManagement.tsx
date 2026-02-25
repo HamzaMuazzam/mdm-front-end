@@ -14,11 +14,19 @@ import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, Aler
 import QRCode from 'qrcode';
 import type { CreateDeviceRequest, UpdateDeviceRequest, Device, UpdateDeviceConfigurationRequest } from '@/types/device.types';
 import { ROUTES } from '@/utils/constants';
+import { apiClient } from '@/api/client';
+
+interface MqttClientPresence {
+  clientId?: string | null;
+  deviceId?: string | null;
+  status?: string | null;
+}
 
 export function DeviceManagement() {
   const navigate = useNavigate();
   useDeviceStatusMqtt();
   const deviceStatuses = useDeviceStatusStore((s) => s.statuses);
+  const setDeviceStatus = useDeviceStatusStore((s) => s.setStatus);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [qrDataUrl, setQrDataUrl] = useState('');
@@ -101,6 +109,39 @@ export function DeviceManagement() {
       setValue('userId', level2Users[0].id);
     }
   }, [level2Users, setValue]);
+
+  // On page load/refresh, seed status map from backend client list so status is visible before MQTT events arrive
+  useEffect(() => {
+    if (devices.length === 0) return;
+
+    let cancelled = false;
+
+    const syncPresenceFromBackend = async () => {
+      try {
+        const response = await apiClient.get<MqttClientPresence[]>('/api/mqtt/clients');
+        if (cancelled) return;
+
+        const onlineDeviceIds = new Set(
+          response.data
+            .filter((client) => client.status?.toLowerCase() === 'online')
+            .map((client) => client.deviceId || client.clientId)
+            .filter((deviceId): deviceId is string => Boolean(deviceId))
+        );
+
+        devices.forEach((device) => {
+          setDeviceStatus(device.deviceUuid, onlineDeviceIds.has(device.deviceUuid) ? 'online' : 'offline');
+        });
+      } catch (error) {
+        console.error('Failed to sync device presence from /api/mqtt/clients', error);
+      }
+    };
+
+    syncPresenceFromBackend();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [devices, setDeviceStatus]);
 
   useEffect(() => {
     if (editingDevice && isEditModalOpen) {

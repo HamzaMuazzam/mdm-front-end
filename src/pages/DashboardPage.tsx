@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/authStore';
 import { USER_LEVELS } from '@/utils/constants';
@@ -17,13 +17,22 @@ interface LocationState {
   activeTab?: TabType;
 }
 
+function isTabType(value: string | null): value is TabType {
+  return value === 'analytics' || value === 'users' || value === 'devices' || value === 'subscriptions' || value === 'configuration';
+}
+
 export function DashboardPage() {
   const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const locationState = location.state as LocationState | null;
+  const tabFromQuery = searchParams.get('tab');
 
   const getDefaultTab = (): TabType => {
+    if (isTabType(tabFromQuery)) {
+      return tabFromQuery;
+    }
     if (locationState?.activeTab) {
       return locationState.activeTab;
     }
@@ -32,15 +41,37 @@ export function DashboardPage() {
 
   const [activeTab, setActiveTab] = useState<TabType>(getDefaultTab());
 
-  // Update tab when navigating back with state
+  // Sync tab from querystring changes
   useEffect(() => {
-    if (locationState?.activeTab) {
-      setActiveTab(locationState.activeTab);
+    if (isTabType(tabFromQuery) && tabFromQuery !== activeTab) {
+      setActiveTab(tabFromQuery);
     }
-  }, [locationState]);
+  }, [tabFromQuery, activeTab]);
+
+  // If URL tab is invalid, normalize it to default tab
+  useEffect(() => {
+    if (tabFromQuery && !isTabType(tabFromQuery)) {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.set('tab', 'analytics');
+      setSearchParams(nextParams, { replace: true });
+    }
+  }, [tabFromQuery, searchParams, setSearchParams]);
+
+  // Support existing navigate(..., { state: { activeTab } }) flows by moving state into query param
+  useEffect(() => {
+    if (locationState?.activeTab && tabFromQuery !== locationState.activeTab) {
+      setActiveTab(locationState.activeTab);
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.set('tab', locationState.activeTab);
+      setSearchParams(nextParams, { replace: true });
+    }
+  }, [locationState, tabFromQuery, searchParams, setSearchParams]);
 
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('tab', tab);
+    setSearchParams(nextParams, { replace: true });
 
     // Invalidate queries to refresh data on each tab click
     if (tab === 'analytics') {
