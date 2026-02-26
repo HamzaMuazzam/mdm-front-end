@@ -24,6 +24,8 @@ import {
   ShieldOff,
   Hash,
   LayoutGrid,
+  Clock3,
+  CalendarDays,
   Upload,
   Image as ImageIcon,
   Gamepad2,
@@ -71,6 +73,37 @@ const getCategoryIcon = (category: string) => {
 
 // All category options for filter
 const categoryOptions = Object.values(ApplicationCategoryInfo).map(info => info.label);
+
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+const toDateInputValue = (value?: string | null): string => {
+  if (!value) return '';
+
+  if (DATE_ONLY_PATTERN.test(value)) {
+    return value;
+  }
+
+  const [datePart] = value.split('T');
+  if (datePart && DATE_ONLY_PATTERN.test(datePart)) {
+    return datePart;
+  }
+
+  const parsedDate = new Date(value);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return '';
+  }
+
+  return parsedDate.toISOString().slice(0, 10);
+};
+
+const toEndOfDayIso = (dateValue: string): string => {
+  const [year, month, day] = dateValue.split('-').map((part) => Number(part));
+  if (!year || !month || !day) {
+    return '';
+  }
+
+  return new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999)).toISOString();
+};
 
 export function DeviceApplicationsPage() {
   const { deviceId } = useParams<{ deviceId: string }>();
@@ -133,11 +166,17 @@ export function DeviceApplicationsPage() {
       appName: app.appName,
       appPackageId: app.appPackageId,
       appVersion: app.appVersion,
+      isSystemApp: app.isSystemApp,
       isAllowed: app.isAllowed,
       showIcon: app.showIcon,
       orderNumberInLauncher: app.orderNumberInLauncher,
+      appCategory: app.appCategory,
       installUpdate: app.installUpdate,
       appIconBase64: app.appIconBase64,
+      isTimeLimited: app.isTimeLimited ?? false,
+      isTimeLimitDailyAllowed: app.isTimeLimitDailyAllowed ?? false,
+      allowedTimeLimitTillDate: app.allowedTimeLimitTillDate ?? null,
+      timeLimit: app.timeLimit ?? 0,
     });
   };
 
@@ -149,9 +188,22 @@ export function DeviceApplicationsPage() {
   const handleSave = async () => {
     if (!editingApp) return;
     try {
+      const payload: UpdateDeviceApplicationRequest = {
+        ...editFormData,
+        allowedTimeLimitTillDate: editFormData.allowedTimeLimitTillDate ?? null,
+      };
+      if (!payload.isAllowed || !payload.isTimeLimited) {
+        payload.isTimeLimitDailyAllowed = false;
+        payload.allowedTimeLimitTillDate = null;
+        payload.timeLimit = 0;
+        if (!payload.isAllowed) {
+          payload.isTimeLimited = false;
+        }
+      }
+
       await updateMutation.mutateAsync({
         appId: editingApp.id,
-        ...editFormData,
+        ...payload,
       });
       handleCloseEdit();
     } catch (err) {
@@ -442,6 +494,27 @@ export function DeviceApplicationsPage() {
                               <p className="text-xs text-slate-500 dark:text-slate-400 font-mono truncate max-w-[200px]">
                                 {app.appPackageId}
                               </p>
+                              {(app.isTimeLimited || app.isTimeLimitDailyAllowed || app.allowedTimeLimitTillDate) && (
+                                <div className="mt-1 flex flex-wrap gap-1.5">
+                                  {app.isTimeLimited && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">
+                                      <Clock3 className="h-3 w-3" />
+                                      {`${app.timeLimit ?? 0} min`}
+                                    </span>
+                                  )}
+                                  {app.isTimeLimitDailyAllowed && (
+                                    <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
+                                      Daily
+                                    </span>
+                                  )}
+                                  {app.allowedTimeLimitTillDate && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold text-violet-800 dark:bg-violet-900/50 dark:text-violet-300">
+                                      <CalendarDays className="h-3 w-3" />
+                                      Till {toDateInputValue(app.allowedTimeLimitTillDate)}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </td>
@@ -677,7 +750,15 @@ export function DeviceApplicationsPage() {
                     label="Allow Application"
                     description="User can access and use this application"
                     checked={editFormData.isAllowed || false}
-                    onChange={(checked) => handleInputChange('isAllowed', checked)}
+                    onChange={(checked) => {
+                      handleInputChange('isAllowed', checked);
+                      if (!checked) {
+                        handleInputChange('isTimeLimited', false);
+                        handleInputChange('isTimeLimitDailyAllowed', false);
+                        handleInputChange('allowedTimeLimitTillDate', null);
+                        handleInputChange('timeLimit', 0);
+                      }
+                    }}
                     icon={<Shield className="h-5 w-5" />}
                     activeColor="green"
                   />
@@ -699,6 +780,84 @@ export function DeviceApplicationsPage() {
                     icon={<Download className="h-5 w-5" />}
                     activeColor="blue"
                   />
+                </div>
+
+                {/* Time Limit Settings */}
+                <div
+                  className={`space-y-4 rounded-xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-700 dark:bg-slate-800/40 ${
+                    editFormData.isAllowed ? '' : 'opacity-50'
+                  }`}
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white">Usage Time Controls</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {editFormData.isAllowed
+                        ? 'Configure time limits for this app.'
+                        : 'Enable "Allow Application" to configure time limits.'}
+                    </p>
+                  </div>
+
+                  <ToggleOption
+                    label="Enable Time Limit"
+                    description="Restrict how long this app can be used"
+                    checked={editFormData.isTimeLimited || false}
+                    onChange={(checked) => {
+                      handleInputChange('isTimeLimited', checked);
+                      if (!checked) {
+                        handleInputChange('isTimeLimitDailyAllowed', false);
+                        handleInputChange('allowedTimeLimitTillDate', null);
+                        handleInputChange('timeLimit', 0);
+                      }
+                    }}
+                    icon={<Clock3 className="h-5 w-5" />}
+                    activeColor="blue"
+                    disabled={!editFormData.isAllowed}
+                  />
+
+                  <ToggleOption
+                    label="Daily Limit Mode"
+                    description="Apply limit as daily allowance"
+                    checked={editFormData.isTimeLimitDailyAllowed || false}
+                    onChange={(checked) => handleInputChange('isTimeLimitDailyAllowed', checked)}
+                    icon={<CalendarDays className="h-5 w-5" />}
+                    activeColor="purple"
+                    disabled={!editFormData.isAllowed || !editFormData.isTimeLimited}
+                  />
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        Allowed Till Date
+                      </Label>
+                      <Input
+                        type="date"
+                        value={toDateInputValue(editFormData.allowedTimeLimitTillDate)}
+                        onChange={(e) =>
+                          handleInputChange(
+                            'allowedTimeLimitTillDate',
+                            e.target.value ? toEndOfDayIso(e.target.value) : null
+                          )
+                        }
+                        className="bg-white dark:bg-slate-800"
+                        disabled={!editFormData.isAllowed || !editFormData.isTimeLimited}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        Time Limit (Minutes)
+                      </Label>
+                      <Input
+                        type="number"
+                        value={editFormData.timeLimit ?? 0}
+                        onChange={(e) => handleInputChange('timeLimit', parseInt(e.target.value, 10) || 0)}
+                        className="bg-white dark:bg-slate-800"
+                        min="0"
+                        step="1"
+                        disabled={!editFormData.isAllowed || !editFormData.isTimeLimited}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -842,9 +1001,10 @@ interface ToggleOptionProps {
   onChange: (checked: boolean) => void;
   icon: React.ReactNode;
   activeColor: 'green' | 'purple' | 'blue';
+  disabled?: boolean;
 }
 
-function ToggleOption({ label, description, checked, onChange, icon, activeColor }: ToggleOptionProps) {
+function ToggleOption({ label, description, checked, onChange, icon, activeColor, disabled = false }: ToggleOptionProps) {
   const activeClasses = {
     green: 'peer-checked:bg-emerald-500',
     purple: 'peer-checked:bg-purple-500',
@@ -857,8 +1017,12 @@ function ToggleOption({ label, description, checked, onChange, icon, activeColor
     blue: checked ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400',
   };
 
+  const containerClasses = disabled
+    ? 'cursor-not-allowed opacity-60'
+    : 'cursor-pointer hover:border-slate-300 dark:hover:border-slate-600';
+
   return (
-    <label className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
+    <label className={`flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors ${containerClasses}`}>
       <div className="flex items-center gap-3">
         <div className={iconColorClasses[activeColor]}>
           {icon}
@@ -873,6 +1037,7 @@ function ToggleOption({ label, description, checked, onChange, icon, activeColor
           type="checkbox"
           checked={checked}
           onChange={(e) => onChange(e.target.checked)}
+          disabled={disabled}
           className="sr-only peer"
         />
         <div className={`w-11 h-6 bg-slate-200 dark:bg-slate-700 rounded-full peer ${activeClasses[activeColor]} peer-focus:ring-2 peer-focus:ring-blue-300 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5`} />

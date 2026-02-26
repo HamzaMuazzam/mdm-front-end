@@ -117,6 +117,11 @@ export interface DeviceApplication {
   appIconBase64?: string;
   isSystemApp: boolean;
   applicationCategory: string;
+  appCategory?: number;
+  isTimeLimited?: boolean;
+  isTimeLimitDailyAllowed?: boolean;
+  allowedTimeLimitTillDate?: string | null;
+  timeLimit?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -134,11 +139,17 @@ export interface UpdateDeviceApplicationRequest {
   appName?: string;
   appPackageId?: string;
   appVersion?: string;
+  isSystemApp?: boolean;
   isAllowed?: boolean;
   showIcon?: boolean;
   orderNumberInLauncher?: number;
+  appCategory?: number;
   installUpdate?: boolean;
-  appIconBase64?: string;
+  appIconBase64?: string | null;
+  isTimeLimited?: boolean;
+  isTimeLimitDailyAllowed?: boolean;
+  allowedTimeLimitTillDate?: string | null;
+  timeLimit?: number;
 }
 
 export enum ApplicationCategory {

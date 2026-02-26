@@ -65,8 +65,17 @@ export const deviceService = {
   },
 
   async updateDeviceApplication(appId: number, data: UpdateDeviceApplicationRequest): Promise<ApiResponse<DeviceApplication>> {
-    const response = await apiClient.put<ApiResponse<DeviceApplication>>(`/v1/device-applications/${appId}`, data);
-    return response.data;
+    try {
+      const response = await apiClient.put<ApiResponse<DeviceApplication>>(`/v1/device-applications/${appId}`, data);
+      return response.data;
+    } catch (error: any) {
+      const status = error?.response?.status;
+      if (status === 404 || status === 405) {
+        const fallbackResponse = await apiClient.put<ApiResponse<DeviceApplication>>('/v1/device-applications', data);
+        return fallbackResponse.data;
+      }
+      throw error;
+    }
   },
 
   async getBlockedAppRequests(deviceId: number): Promise<BlockedAppRequest[]> {
