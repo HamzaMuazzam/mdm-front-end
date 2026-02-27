@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userService } from '@/api/services/user.service';
 import { toast } from '@/hooks/useToast';
-import type { CreateManagerRequest, UpdateManagerRequest } from '@/types/user.types';
+import type { CreateManagerRequest, UpdateManagerRequest, ResetUserPasswordRequest } from '@/types/user.types';
 
 const USERS_QUERY_KEY = ['users'];
 const LEVEL2_USERS_QUERY_KEY = ['level2-users'];
@@ -96,6 +96,30 @@ export function useDeleteUser() {
       toast({
         variant: 'destructive',
         title: isActivating ? 'Activate Error' : 'Delete Error',
+        description: message,
+      });
+    },
+  });
+}
+
+export function useResetUserPassword() {
+  return useMutation({
+    mutationFn: (data: ResetUserPasswordRequest) => userService.resetUserPassword(data),
+    onSuccess: () => {
+      toast({
+        variant: 'success',
+        title: 'Password Reset',
+        description: 'User password has been reset successfully.',
+      });
+    },
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to reset user password. Please try again.';
+      toast({
+        variant: 'destructive',
+        title: 'Reset Error',
         description: message,
       });
     },

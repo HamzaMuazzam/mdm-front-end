@@ -1,5 +1,5 @@
 import { apiClient } from '../client';
-import type { Manager, CreateManagerRequest, UpdateManagerRequest, Level2User } from '@/types/user.types';
+import type { Manager, CreateManagerRequest, UpdateManagerRequest, Level2User, ResetUserPasswordRequest } from '@/types/user.types';
 import type { ApiResponse } from '@/types/api.types';
 
 export const userService = {
@@ -28,5 +28,10 @@ export const userService = {
   async getUsersWithLevel2(): Promise<Level2User[]> {
     const response = await apiClient.get<ApiResponse<Level2User[]>>('/v1/users/get_user_with_level2');
     return response.data.data;
+  },
+
+  async resetUserPassword(data: ResetUserPasswordRequest): Promise<ApiResponse<void>> {
+    const response = await apiClient.post<ApiResponse<void>>('/v1/users/reset_password', data);
+    return response.data;
   },
 };

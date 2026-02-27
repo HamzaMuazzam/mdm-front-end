@@ -2,22 +2,29 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { userSchema } from '@/utils/validators';
-import { useUsersQuery, useCreateUser, useDeleteUser, useUpdateUser } from '@/hooks/useUsers';
+import { useUsersQuery, useCreateUser, useDeleteUser, useUpdateUser, useResetUserPassword } from '@/hooks/useUsers';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { MoreVertical, Pencil, RotateCcw, Trash2, CheckCircle } from 'lucide-react';
 import type { Manager, CreateManagerRequest, UpdateManagerRequest } from '@/types/user.types';
 
 export function UserManagement() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
+  const [openActionMenuUserId, setOpenActionMenuUserId] = useState<number | null>(null);
   const [selectedUser, setSelectedUser] = useState<Manager | null>(null);
+  const [resetPassword, setResetPassword] = useState('');
+  const [confirmResetPassword, setConfirmResetPassword] = useState('');
+  const [resetPasswordError, setResetPasswordError] = useState('');
   const { data: users = [], isLoading } = useUsersQuery();
   const createMutation = useCreateUser();
   const deleteMutation = useDeleteUser();
   const updateMutation = useUpdateUser();
+  const resetPasswordMutation = useResetUserPassword();
   const { user: currentUser } = useAuthStore();
   const isL1User = currentUser?.userLevel === 'L1';
 
@@ -47,6 +54,20 @@ export function UserManagement() {
     }
   }, [selectedUser, isEditModalOpen, setEditValue]);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (!target?.closest('[data-user-actions-menu]')) {
+        setOpenActionMenuUserId(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const onSubmit = async (data: CreateManagerRequest) => {
     try {
       await createMutation.mutateAsync(data);
@@ -58,20 +79,72 @@ export function UserManagement() {
   };
 
   const handleDelete = async (id: number) => {
+    setOpenActionMenuUserId(null);
     if (window.confirm('Are you sure you want to delete this user?')) {
       await deleteMutation.mutateAsync({ id, status: false });
     }
   };
 
   const handleActivate = async (id: number) => {
+    setOpenActionMenuUserId(null);
     if (window.confirm('Are you sure you want to activate this user?')) {
       await deleteMutation.mutateAsync({ id, status: true });
     }
   };
 
   const handleEdit = (user: Manager) => {
+    setOpenActionMenuUserId(null);
     setSelectedUser(user);
     setIsEditModalOpen(true);
+  };
+
+  const handleOpenActionsMenu = (userId: number) => {
+    setOpenActionMenuUserId((previous) => (previous === userId ? null : userId));
+  };
+
+  const handleOpenResetPassword = (user: Manager) => {
+    setOpenActionMenuUserId(null);
+    setSelectedUser(user);
+    setResetPassword('');
+    setConfirmResetPassword('');
+    setResetPasswordError('');
+    setIsResetPasswordModalOpen(true);
+  };
+
+  const handleCloseResetPassword = () => {
+    if (resetPasswordMutation.isPending) return;
+    setIsResetPasswordModalOpen(false);
+    setSelectedUser(null);
+    setResetPassword('');
+    setConfirmResetPassword('');
+    setResetPasswordError('');
+  };
+
+  const handleResetPasswordSubmit = async () => {
+    if (!selectedUser) return;
+
+    if (!resetPassword || !confirmResetPassword) {
+      setResetPasswordError('Both password fields are required.');
+      return;
+    }
+
+    if (resetPassword !== confirmResetPassword) {
+      setResetPasswordError('Passwords do not match.');
+      return;
+    }
+
+    setResetPasswordError('');
+
+    try {
+      await resetPasswordMutation.mutateAsync({
+        email: selectedUser.email,
+        password: resetPassword,
+      });
+      handleCloseResetPassword();
+    } catch (err) {
+      // handled by mutation toast
+      console.error('Failed to reset password', err);
+    }
   };
 
   const onEditSubmit = async (data: Omit<UpdateManagerRequest, 'id'>) => {
@@ -91,16 +164,16 @@ export function UserManagement() {
   }
 
   return (
-    <div>
+    <div className="flex h-full flex-col">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">User Management</h1>
         <Button onClick={() => setIsModalOpen(true)}>Add User</Button>
       </div>
 
       {/* User Table */}
-      <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
+      <Card className="flex-1 min-h-0">
+        <CardContent className="h-full p-0">
+          <div className="h-full overflow-auto">
             <table className="w-full">
               <thead className="bg-muted/50">
                 <tr>
@@ -136,34 +209,62 @@ export function UserManagement() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm">
-                      <div className="flex gap-2">
-                        {isL1User && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEdit(user)}
-                          >
-                            Edit
-                          </Button>
-                        )}
-                        {user.active ? (
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDelete(user.id)}
-                            disabled={deleteMutation.isPending}
-                          >
-                            Delete
-                          </Button>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="default"
-                            onClick={() => handleActivate(user.id)}
-                            disabled={deleteMutation.isPending}
-                          >
-                            Activate
-                          </Button>
+                      <div className="relative inline-block text-left" data-user-actions-menu>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleOpenActionsMenu(user.id)}
+                          title="More actions"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+
+                        {openActionMenuUserId === user.id && (
+                          <div className="absolute right-0 z-20 mt-2 w-52 overflow-hidden rounded-md border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
+                            {isL1User && (
+                              <button
+                                type="button"
+                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
+                                onClick={() => handleEdit(user)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                                Edit
+                              </button>
+                            )}
+
+                            <button
+                              type="button"
+                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
+                              onClick={() => handleOpenResetPassword(user)}
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                              Reset Password
+                            </button>
+
+                            <div className="my-1 h-px bg-slate-200 dark:bg-slate-700" />
+
+                            {user.active ? (
+                              <button
+                                type="button"
+                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/30"
+                                onClick={() => handleDelete(user.id)}
+                                disabled={deleteMutation.isPending}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                Delete
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-900/30"
+                                onClick={() => handleActivate(user.id)}
+                                disabled={deleteMutation.isPending}
+                              >
+                                <CheckCircle className="h-4 w-4" />
+                                Activate
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
                     </td>
@@ -304,6 +405,66 @@ export function UserManagement() {
                   </Button>
                 </div>
               </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Reset Password Modal */}
+      {isResetPasswordModalOpen && selectedUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md m-4">
+            <CardHeader>
+              <CardTitle>Reset Password</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="text-sm text-muted-foreground">
+                  User: <span className="font-medium text-foreground">{selectedUser.email}</span>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="reset-password">New Password</Label>
+                  <Input
+                    id="reset-password"
+                    type="password"
+                    value={resetPassword}
+                    onChange={(e) => setResetPassword(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="reset-confirm-password">Confirm Password</Label>
+                  <Input
+                    id="reset-confirm-password"
+                    type="password"
+                    value={confirmResetPassword}
+                    onChange={(e) => setConfirmResetPassword(e.target.value)}
+                  />
+                </div>
+
+                {resetPasswordError && (
+                  <p className="text-sm text-destructive">{resetPasswordError}</p>
+                )}
+
+                <div className="flex gap-2 justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCloseResetPassword}
+                    disabled={resetPasswordMutation.isPending}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleResetPasswordSubmit}
+                    disabled={resetPasswordMutation.isPending}
+                  >
+                    {resetPasswordMutation.isPending ? 'Submitting...' : 'Submit'}
+                  </Button>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>

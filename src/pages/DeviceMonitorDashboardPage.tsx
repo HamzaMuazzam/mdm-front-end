@@ -28,6 +28,8 @@ const percentFormatter = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 1,
 });
 
+const appUsagePalette = ['#06b6d4', '#3b82f6', '#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+
 function formatDateBoundaryForApi(value: string, boundary: 'start' | 'end'): string {
   if (!value) {
     return value;
@@ -97,6 +99,22 @@ function formatBytes(bytes: number): string {
   }
 
   return `${value.toFixed(value >= 100 ? 0 : value >= 10 ? 1 : 2)} ${units[unitIndex]}`;
+}
+
+function formatShortDate(value: string): string {
+  if (!value) {
+    return '-';
+  }
+
+  const date = safeDate(value.includes('T') ? value : `${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+  }).format(date);
 }
 
 function FeatureBadge({ label, enabled }: { label: string; enabled: boolean }) {
@@ -207,6 +225,84 @@ export function DeviceMonitorDashboardPage() {
   const totalAppUsageMillis = useMemo(
     () => appUsageRows.reduce((sum, app) => sum + app.foregroundTimeMillis, 0),
     [appUsageRows]
+  );
+  const topApp = topAppUsage[0];
+  const topThreeUsageMillis = useMemo(
+    () => [...appUsageRows].sort((a, b) => b.foregroundTimeMillis - a.foregroundTimeMillis).slice(0, 3).reduce((sum, app) => sum + app.foregroundTimeMillis, 0),
+    [appUsageRows]
+  );
+  const topThreeUsagePercent = useMemo(
+    () => (totalAppUsageMillis > 0 ? (topThreeUsageMillis / totalAppUsageMillis) * 100 : 0),
+    [topThreeUsageMillis, totalAppUsageMillis]
+  );
+  const avgUsagePerAppMillis = useMemo(
+    () => (appUsageRows.length > 0 ? totalAppUsageMillis / appUsageRows.length : 0),
+    [appUsageRows.length, totalAppUsageMillis]
+  );
+  const usageShareData = useMemo(() => {
+    if (totalAppUsageMillis <= 0) {
+      return [] as Array<{ label: string; value: number; percent: number; color: string }>;
+    }
+
+    const topFive = [...appUsageRows]
+      .sort((a, b) => b.foregroundTimeMillis - a.foregroundTimeMillis)
+      .slice(0, 5);
+
+    const topTotal = topFive.reduce((sum, app) => sum + app.foregroundTimeMillis, 0);
+    const otherTotal = Math.max(totalAppUsageMillis - topTotal, 0);
+
+    const rows = topFive.map((app, index) => ({
+      label: app.appName,
+      value: app.foregroundTimeMillis,
+      color: appUsagePalette[index % appUsagePalette.length],
+    }));
+
+    if (otherTotal > 0) {
+      rows.push({
+        label: 'Other Apps',
+        value: otherTotal,
+        color: '#94a3b8',
+      });
+    }
+
+    return rows.map((row) => ({
+      ...row,
+      percent: (row.value / totalAppUsageMillis) * 100,
+    }));
+  }, [appUsageRows, totalAppUsageMillis]);
+  const usageShareGradient = useMemo(() => {
+    if (usageShareData.length === 0) {
+      return '';
+    }
+
+    let cursor = 0;
+    return usageShareData
+      .map((item) => {
+        const start = cursor;
+        cursor += item.percent;
+        return `${item.color} ${start}% ${cursor}%`;
+      })
+      .join(', ');
+  }, [usageShareData]);
+  const usageTrendByDate = useMemo(() => {
+    const dailyUsage = new Map<string, number>();
+
+    appUsageRows.forEach((item) => {
+      const dateKey = item.recordDate?.slice(0, 10) || 'Unknown';
+      dailyUsage.set(dateKey, (dailyUsage.get(dateKey) ?? 0) + item.foregroundTimeMillis);
+    });
+
+    return [...dailyUsage.entries()]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([date, value]) => ({ date, value }));
+  }, [appUsageRows]);
+  const maxTrendValue = useMemo(
+    () => usageTrendByDate.reduce((max, point) => Math.max(max, point.value), 0),
+    [usageTrendByDate]
+  );
+  const hasUsageTrend = useMemo(
+    () => usageTrendByDate.length > 1 && maxTrendValue > 0,
+    [usageTrendByDate, maxTrendValue]
   );
 
   useEffect(() => {
@@ -518,6 +614,116 @@ export function DeviceMonitorDashboardPage() {
                   {stateData ? `${stateData.batteryCharge}%` : '-'}
                 </p>
               </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
+          <Card className="border-0 bg-white/90 shadow-md">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Usage Analytics Graphs</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isUsageLoading ? (
+                <p className="text-sm text-slate-500">Loading analytics graphs...</p>
+              ) : appUsageRows.length === 0 ? (
+                <p className="text-sm text-slate-500">No app usage data available for analytics graphs.</p>
+              ) : (
+                <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+                  <div className="mx-auto">
+                    <div
+                      className="relative h-44 w-44 rounded-full"
+                      style={{
+                        background: `conic-gradient(${usageShareGradient || '#cbd5e1 0 100%'})`,
+                      }}
+                    >
+                      <div className="absolute inset-6 rounded-full bg-white shadow-inner" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-center">
+                          <p className="text-xs uppercase tracking-wide text-slate-500">Total Usage</p>
+                          <p className="text-base font-bold text-slate-900">{formatDuration(totalAppUsageMillis)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {usageShareData.map((item) => (
+                      <div key={item.label} className="rounded-lg bg-slate-50 px-3 py-2">
+                        <div className="mb-1 flex items-center justify-between gap-2 text-sm">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: item.color }} />
+                            <span className="truncate font-medium text-slate-800">{item.label}</span>
+                          </div>
+                          <span className="whitespace-nowrap text-slate-500">{percentFormatter.format(item.percent)}%</span>
+                        </div>
+                        <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
+                          <div
+                            className="h-full rounded-full"
+                            style={{ width: `${Math.max(item.percent, 3)}%`, backgroundColor: item.color }}
+                          />
+                        </div>
+                        <div className="mt-1 text-xs text-slate-500">{formatDuration(item.value)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 bg-white/90 shadow-md">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Usage Insights</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isUsageLoading ? (
+                <p className="text-sm text-slate-500">Loading insights...</p>
+              ) : appUsageRows.length === 0 ? (
+                <p className="text-sm text-slate-500">No data available to explain usage patterns.</p>
+              ) : (
+                <div className="space-y-3">
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    <p className="text-xs uppercase tracking-wide text-slate-500">Most Used App</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900">{topApp?.appName || '-'}</p>
+                    <p className="text-xs text-slate-500">{topApp ? formatDuration(topApp.foregroundTimeMillis) : '-'}</p>
+                  </div>
+
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    <p className="text-xs uppercase tracking-wide text-slate-500">Top 3 Concentration</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900">{percentFormatter.format(topThreeUsagePercent)}%</p>
+                    <p className="text-xs text-slate-500">of total foreground usage</p>
+                  </div>
+
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    <p className="text-xs uppercase tracking-wide text-slate-500">Average Usage Per App</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900">{formatDuration(avgUsagePerAppMillis)}</p>
+                    <p className="text-xs text-slate-500">{numberFormatter.format(appUsageRows.length)} apps in current filter</p>
+                  </div>
+
+                  {hasUsageTrend && (
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                      <p className="mb-2 text-xs uppercase tracking-wide text-slate-500">Recent Trend</p>
+                      <div className="flex h-20 items-end gap-1.5">
+                        {usageTrendByDate.map((point, index) => {
+                          const ratio = maxTrendValue > 0 ? point.value / maxTrendValue : 0;
+                          const heightPercent = Math.max(10, ratio * 100);
+                          return (
+                            <div key={`${point.date}-${index}`} className="flex min-w-0 flex-1 flex-col items-center gap-1">
+                              <div
+                                className="w-full rounded-t bg-gradient-to-t from-cyan-600 to-blue-500"
+                                style={{ height: `${heightPercent}%` }}
+                                title={`${formatShortDate(point.date)}: ${formatDuration(point.value)}`}
+                              />
+                              <span className="text-[10px] text-slate-500">{formatShortDate(point.date)}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

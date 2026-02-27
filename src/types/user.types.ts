@@ -26,6 +26,11 @@ export interface UpdateManagerRequest {
   active?: boolean;
 }
 
+export interface ResetUserPasswordRequest {
+  email: string;
+  password: string;
+}
+
 export interface Level2User {
   id: number;
   login: string;
