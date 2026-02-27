@@ -89,7 +89,7 @@ export function DashboardPage() {
 
   return (
     <DashboardLayout sidebar={<Sidebar activeTab={activeTab} onTabChange={handleTabChange} />}>
-      <div className="p-8">
+      <div className={activeTab === 'devices' ? 'h-full p-8' : 'p-8'}>
         {activeTab === 'analytics' && <AnalyticsDashboard />}
         {activeTab === 'users' && user?.userLevel === USER_LEVELS.L1 && <UserManagement />}
         {activeTab === 'subscriptions' && user?.userLevel === USER_LEVELS.L1 && <SubscriptionsManagement />}

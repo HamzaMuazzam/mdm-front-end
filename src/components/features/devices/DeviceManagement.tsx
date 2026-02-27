@@ -10,17 +10,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, Eye, BarChart3 } from 'lucide-react';
+import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, Eye, BarChart3, MoreVertical, Power, RotateCcw } from 'lucide-react';
 import QRCode from 'qrcode';
 import type { CreateDeviceRequest, UpdateDeviceRequest, Device, UpdateDeviceConfigurationRequest } from '@/types/device.types';
 import { ROUTES } from '@/utils/constants';
-import { apiClient } from '@/api/client';
-
-interface MqttClientPresence {
-  clientId?: string | null;
-  deviceId?: string | null;
-  status?: string | null;
-}
+import { toast } from '@/hooks/useToast';
+import { sendDeviceCommandViaApi, type DeviceCommandType } from '@/services/deviceCommandMqtt';
+import { mqttService } from '@/api/services/mqtt.service';
 
 export function DeviceManagement() {
   const navigate = useNavigate();
@@ -33,10 +29,14 @@ export function DeviceManagement() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isToggleDialogOpen, setIsToggleDialogOpen] = useState(false);
+  const [isCommandDialogOpen, setIsCommandDialogOpen] = useState(false);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [isConfigEditMode, setIsConfigEditMode] = useState(false);
   const [isBackgroundImageEnabled, setIsBackgroundImageEnabled] = useState(false);
+  const [openActionMenuDeviceId, setOpenActionMenuDeviceId] = useState<number | null>(null);
   const [deviceToToggle, setDeviceToToggle] = useState<Device | null>(null);
+  const [commandTarget, setCommandTarget] = useState<{ device: Device; command: DeviceCommandType } | null>(null);
+  const [isCommandSending, setIsCommandSending] = useState(false);
   const [editingDevice, setEditingDevice] = useState<Device | null>(null);
   const [configDeviceId, setConfigDeviceId] = useState<number | null>(null);
   const [configFormData, setConfigFormData] = useState<UpdateDeviceConfigurationRequest>({});
@@ -110,6 +110,20 @@ export function DeviceManagement() {
     }
   }, [level2Users, setValue]);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (!target?.closest('[data-device-actions-menu]')) {
+        setOpenActionMenuDeviceId(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   // On page load/refresh, seed status map from backend client list so status is visible before MQTT events arrive
   useEffect(() => {
     if (devices.length === 0) return;
@@ -118,11 +132,11 @@ export function DeviceManagement() {
 
     const syncPresenceFromBackend = async () => {
       try {
-        const response = await apiClient.get<MqttClientPresence[]>('/api/mqtt/clients');
+        const clients = await mqttService.getClients();
         if (cancelled) return;
 
         const onlineDeviceIds = new Set(
-          response.data
+          clients
             .filter((client) => client.status?.toLowerCase() === 'online')
             .map((client) => client.deviceId || client.clientId)
             .filter((deviceId): deviceId is string => Boolean(deviceId))
@@ -132,7 +146,7 @@ export function DeviceManagement() {
           setDeviceStatus(device.deviceUuid, onlineDeviceIds.has(device.deviceUuid) ? 'online' : 'offline');
         });
       } catch (error) {
-        console.error('Failed to sync device presence from /api/mqtt/clients', error);
+        console.error('Failed to sync device presence from MQTT clients endpoint', error);
       }
     };
 
@@ -301,6 +315,55 @@ export function DeviceManagement() {
     navigate(`/device/${device.id}/requests`);
   };
 
+  const handleOpenActionsMenu = (deviceId: number) => {
+    setOpenActionMenuDeviceId((previous) => (previous === deviceId ? null : deviceId));
+  };
+
+  const closeActionsMenu = () => {
+    setOpenActionMenuDeviceId(null);
+  };
+
+  const handleOpenCommandDialog = (device: Device, command: DeviceCommandType) => {
+    setCommandTarget({ device, command });
+    setIsCommandDialogOpen(true);
+    closeActionsMenu();
+  };
+
+  const handleCloseCommandDialog = () => {
+    if (isCommandSending) return;
+    setIsCommandDialogOpen(false);
+    setCommandTarget(null);
+  };
+
+  const handleConfirmCommand = async () => {
+    if (!commandTarget) return;
+
+    try {
+      setIsCommandSending(true);
+      const result = await sendDeviceCommandViaApi({
+        deviceUuid: commandTarget.device.deviceUuid,
+        command: commandTarget.command,
+      });
+
+      toast({
+        variant: 'success',
+        title: `${commandTarget.command === 'reboot' ? 'Reboot' : 'Reset'} command sent`,
+        description: `Command sent via API for topic ${result.command}`,
+      });
+
+      setIsCommandDialogOpen(false);
+      setCommandTarget(null);
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Command failed',
+        description: error?.message || 'Unable to send command via API.',
+      });
+    } finally {
+      setIsCommandSending(false);
+    }
+  };
+
   const handleOpenMonitorDashboard = (device: Device) => {
     const monitorPath = ROUTES.DEVICE_MONITOR.replace(':deviceId', device.id.toString());
     window.open(monitorPath, '_blank', 'noopener,noreferrer');
@@ -331,7 +394,7 @@ export function DeviceManagement() {
   }
 
   return (
-    <div>
+    <div className="flex h-full flex-col">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Device Management</h1>
         <div className="flex gap-2">
@@ -344,14 +407,13 @@ export function DeviceManagement() {
       </div>
 
       {/* Device Table */}
-      <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
+      <Card className="flex-1 min-h-0">
+        <CardContent className="h-full p-0">
+          <div className="h-full overflow-auto">
             <table className="w-full">
               <thead className="bg-muted/50">
                 <tr>
                   {/*<th className="px-4 py-3 text-left text-sm font-medium">ID</th>*/}
-                  <th className="px-4 py-3 text-center text-sm font-medium">Monitor</th>
                   <th className="px-4 py-3 text-center text-sm font-medium">Live</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Device UUID</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Phone</th>
@@ -375,16 +437,6 @@ export function DeviceManagement() {
                     >
                       {/*<td className="px-4 py-3 text-sm">{device.id}</td>*/}
                       <td className="px-4 py-3 text-sm text-center">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleOpenMonitorDashboard(device)}
-                          title="Open Monitor Dashboard"
-                        >
-                          <BarChart3 className="h-4 w-4" />
-                        </Button>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-center">
                         <DeviceStatusDot status={deviceStatuses[device.deviceUuid]} />
                       </td>
                       <td className="px-4 py-3 text-sm">{device.deviceUuid}</td>
@@ -407,54 +459,124 @@ export function DeviceManagement() {
                       </td>
                       {/*<td className="px-4 py-3 text-sm">{device.deletedAt || '-'}</td>*/}
                       <td className="px-4 py-3 text-sm">
-                        <div className="flex gap-2">
+                        <div className="relative inline-block text-left" data-device-actions-menu>
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleShowCode(device.deviceVerificationCode)}
-                            title="Show Verification Code"
+                            onClick={() => handleOpenActionsMenu(device.id)}
+                            title="More actions"
                           >
-                            <Key className="h-4 w-4" />
+                            <MoreVertical className="h-4 w-4" />
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleViewConfig(device)}
-                            title="View Configuration"
-                          >
-                            <Settings className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleViewApps(device)}
-                            title="View Applications"
-                          >
-                            <AppWindow className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleViewRequests(device)}
-                            title="View Requests"
-                          >
-                            <FileText className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEdit(device)}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant={isActive ? 'destructive' : 'default'}
-                            onClick={() => handleToggleClick(device)}
-                            disabled={toggleStatusMutation.isPending}
-                          >
-                            {isActive ? 'Deactivate' : 'Activate'}
-                          </Button>
+
+                          {openActionMenuDeviceId === device.id && (
+                            <div className="absolute right-0 z-20 mt-2 w-52 overflow-hidden rounded-md border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
+                              <button
+                                type="button"
+                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
+                                onClick={() => {
+                                  closeActionsMenu();
+                                  handleOpenMonitorDashboard(device);
+                                }}
+                              >
+                                <BarChart3 className="h-4 w-4" />
+                                Open Monitor Dashboard
+                              </button>
+                              <button
+                                type="button"
+                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
+                                onClick={() => {
+                                  closeActionsMenu();
+                                  handleShowCode(device.deviceVerificationCode);
+                                }}
+                              >
+                                <Key className="h-4 w-4" />
+                                Show Verification Code
+                              </button>
+                              <button
+                                type="button"
+                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
+                                onClick={() => {
+                                  closeActionsMenu();
+                                  handleViewConfig(device);
+                                }}
+                              >
+                                <Settings className="h-4 w-4" />
+                                View Configuration
+                              </button>
+                              <button
+                                type="button"
+                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
+                                onClick={() => {
+                                  closeActionsMenu();
+                                  handleViewApps(device);
+                                }}
+                              >
+                                <AppWindow className="h-4 w-4" />
+                                View Applications
+                              </button>
+                              <button
+                                type="button"
+                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
+                                onClick={() => {
+                                  closeActionsMenu();
+                                  handleViewRequests(device);
+                                }}
+                              >
+                                <FileText className="h-4 w-4" />
+                                View Requests
+                              </button>
+                              <button
+                                type="button"
+                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
+                                onClick={() => {
+                                  closeActionsMenu();
+                                  handleEdit(device);
+                                }}
+                              >
+                                <Pencil className="h-4 w-4" />
+                                Edit Device
+                              </button>
+
+                              <div className="my-1 h-px bg-slate-200 dark:bg-slate-700" />
+
+                              <button
+                                type="button"
+                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
+                                onClick={() => handleOpenCommandDialog(device, 'reboot')}
+                              >
+                                <Power className="h-4 w-4" />
+                                Reboot
+                              </button>
+                              <button
+                                type="button"
+                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/30"
+                                onClick={() => handleOpenCommandDialog(device, 'reset')}
+                              >
+                                <RotateCcw className="h-4 w-4" />
+                                Reset
+                              </button>
+
+                              <div className="my-1 h-px bg-slate-200 dark:bg-slate-700" />
+
+                              <button
+                                type="button"
+                                className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm ${
+                                  isActive
+                                    ? 'text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/30'
+                                    : 'text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-900/30'
+                                }`}
+                                onClick={() => {
+                                  closeActionsMenu();
+                                  handleToggleClick(device);
+                                }}
+                                disabled={toggleStatusMutation.isPending}
+                              >
+                                {isActive ? <AlertCircle className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+                                {isActive ? 'Deactivate Device' : 'Activate Device'}
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -741,6 +863,41 @@ export function DeviceManagement() {
                     : !deviceToToggle.deletedAt
                       ? 'Deactivate'
                       : 'Activate'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Reboot / Reset Confirmation Dialog */}
+      {isCommandDialogOpen && commandTarget && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-sm m-4">
+            <CardHeader>
+              <CardTitle>
+                {commandTarget.command === 'reboot' ? 'Reboot Device' : 'Reset Device'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                {`Are you sure you want to send "${commandTarget.command}" command to device "${commandTarget.device.deviceUuid}"?`}
+              </p>
+              <div className="flex gap-2 justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCloseCommandDialog}
+                  disabled={isCommandSending}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant={commandTarget.command === 'reset' ? 'destructive' : 'default'}
+                  onClick={handleConfirmCommand}
+                  disabled={isCommandSending}
+                >
+                  {isCommandSending ? 'Sending...' : commandTarget.command === 'reboot' ? 'Confirm Reboot' : 'Confirm Reset'}
                 </Button>
               </div>
             </CardContent>
