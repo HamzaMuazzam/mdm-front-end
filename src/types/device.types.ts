@@ -4,6 +4,7 @@ export interface Device {
   phone: string;
   userEmail: string;
   userName: string;
+  deviceName: string;
   model: string;
   osVersion: string;
   userId: number;
@@ -40,6 +41,7 @@ export interface UpdateDeviceRequest {
   canAccessAccessibility?: boolean;
   model?: string;
   osVersion?: string;
+  deviceName: string;
   batteryCharge?: number;
   launcherVariant?: string;
   defaultLauncher?: string;

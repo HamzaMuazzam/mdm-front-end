@@ -28,7 +28,7 @@ mqttHttp.interceptors.request.use((config) => {
   return config;
 });
 
-const MQTT_CLIENTS_ENDPOINTS = ['/mqtt/clients', '/api/mqtt/clients'];
+const MQTT_CLIENTS_ENDPOINTS = ['/api/mqtt/clients'];
 const MQTT_COMMAND_ENDPOINTS = ['/api/mqtt/clients/command'];
 
 function canRetryOnAltEndpoint(error: unknown): boolean {

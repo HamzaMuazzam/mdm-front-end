@@ -416,8 +416,7 @@ export function DeviceManagement() {
                   {/*<th className="px-4 py-3 text-left text-sm font-medium">ID</th>*/}
                   <th className="px-4 py-3 text-center text-sm font-medium">Live</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Device UUID</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">Phone</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">User Name</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium">Device Name</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">User Email</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Model</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">OS Version</th>
@@ -440,8 +439,7 @@ export function DeviceManagement() {
                         <DeviceStatusDot status={deviceStatuses[device.deviceUuid]} />
                       </td>
                       <td className="px-4 py-3 text-sm">{device.deviceUuid}</td>
-                      <td className="px-4 py-3 text-sm">{device.phone}</td>
-                      <td className="px-4 py-3 text-sm">{device.userName}</td>
+                      <td className="px-4 py-3 text-sm">{device.deviceName}</td>
                       <td className="px-4 py-3 text-sm">{device.userEmail}</td>
                       <td className="px-4 py-3 text-sm">{device.model}</td>
                       <td className="px-4 py-3 text-sm">{device.osVersion}</td>
