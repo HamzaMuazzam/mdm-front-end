@@ -3,7 +3,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { userSchema } from '@/utils/validators';
 import { useUsersQuery, useCreateUser, useDeleteUser, useUpdateUser, useResetUserPassword } from '@/hooks/useUsers';
-import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,8 +24,6 @@ export function UserManagement() {
   const deleteMutation = useDeleteUser();
   const updateMutation = useUpdateUser();
   const resetPasswordMutation = useResetUserPassword();
-  const { user: currentUser } = useAuthStore();
-  const isL1User = currentUser?.userLevel === 'L1';
 
   const {
     register,
@@ -221,8 +218,7 @@ export function UserManagement() {
 
                         {openActionMenuUserId === user.id && (
                           <div className="absolute right-0 z-20 mt-2 w-52 overflow-hidden rounded-md border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
-                            {isL1User && (
-                              <button
+                            <button
                                 type="button"
                                 className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
                                 onClick={() => handleEdit(user)}
@@ -230,7 +226,6 @@ export function UserManagement() {
                                 <Pencil className="h-4 w-4" />
                                 Edit
                               </button>
-                            )}
 
                             <button
                               type="button"

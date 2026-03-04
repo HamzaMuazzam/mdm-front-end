@@ -7,8 +7,8 @@
 
 //TODO: for local development
 export const WS = 'ws';
-export const API_BASE_URL = 'http://192.168.100.38:9000/api';
-export const MQTT_BROKER_URL = `${WS}://192.168.100.38:8083/mqtt`;
+export const API_BASE_URL = 'http://10.10.10.81:9000/api';
+export const MQTT_BROKER_URL = `${WS}://10.10.10.81:8083/mqtt`;
 
 
 
@@ -22,11 +22,6 @@ export const ROUTES = {
   DEVICE_APPLICATIONS: '/device/:deviceId/applications',
   DEVICE_REQUESTS: '/device/:deviceId/requests',
   DEVICE_MONITOR: '/device/:deviceId/monitor',
-} as const;
-
-export const USER_LEVELS = {
-  L1: 'L1',
-  L2: 'L2',
 } as const;
 
 export const ERROR_MESSAGES = {

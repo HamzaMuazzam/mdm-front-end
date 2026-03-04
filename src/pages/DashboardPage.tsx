@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { useAuthStore } from '@/store/authStore';
-import { USER_LEVELS } from '@/utils/constants';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { UserManagement } from '@/components/features/users/UserManagement';
@@ -10,19 +8,28 @@ import { DeviceManagement } from '@/components/features/devices/DeviceManagement
 import { SubscriptionsManagement } from '@/components/features/subscriptions/SubscriptionsManagement';
 import { ConfigurationManagement } from '@/components/features/configuration/ConfigurationManagement';
 import { AnalyticsDashboard } from '@/components/features/dashboard/AnalyticsDashboard';
+import { SecurityGroupManagement } from '@/components/features/security-groups/SecurityGroupManagement';
+import { RoleManagement } from '@/components/features/roles/RoleManagement';
 
-type TabType = 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration';
+type TabType = 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'roles';
 
 interface LocationState {
   activeTab?: TabType;
 }
 
 function isTabType(value: string | null): value is TabType {
-  return value === 'analytics' || value === 'users' || value === 'devices' || value === 'subscriptions' || value === 'configuration';
+  return (
+    value === 'analytics' ||
+    value === 'users' ||
+    value === 'devices' ||
+    value === 'subscriptions' ||
+    value === 'configuration' ||
+    value === 'security-groups' ||
+    value === 'roles'
+  );
 }
 
 export function DashboardPage() {
-  const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -84,17 +91,23 @@ export function DashboardPage() {
       queryClient.invalidateQueries({ queryKey: ['userPlans'] });
     } else if (tab === 'configuration') {
       queryClient.invalidateQueries({ queryKey: ['parentConfiguration'] });
+    } else if (tab === 'security-groups') {
+      queryClient.invalidateQueries({ queryKey: ['security-groups'] });
+    } else if (tab === 'roles') {
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
     }
   };
 
   return (
     <DashboardLayout sidebar={<Sidebar activeTab={activeTab} onTabChange={handleTabChange} />}>
-      <div className={activeTab === 'devices' || activeTab === 'users' ? 'h-full p-8' : 'p-8'}>
+      <div className={activeTab === 'devices' || activeTab === 'users' || activeTab === 'security-groups' || activeTab === 'roles' ? 'h-full p-8' : 'p-8'}>
         {activeTab === 'analytics' && <AnalyticsDashboard />}
-        {activeTab === 'users' && user?.userLevel === USER_LEVELS.L1 && <UserManagement />}
-        {activeTab === 'subscriptions' && user?.userLevel === USER_LEVELS.L1 && <SubscriptionsManagement />}
+        {activeTab === 'users' && <UserManagement />}
+        {activeTab === 'subscriptions' && <SubscriptionsManagement />}
         {activeTab === 'devices' && <DeviceManagement />}
-        {activeTab === 'configuration' && user?.userLevel === USER_LEVELS.L1 && <ConfigurationManagement />}
+        {activeTab === 'configuration' && <ConfigurationManagement />}
+        {activeTab === 'security-groups' && <SecurityGroupManagement />}
+        {activeTab === 'roles' && <RoleManagement />}
       </div>
     </DashboardLayout>
   );

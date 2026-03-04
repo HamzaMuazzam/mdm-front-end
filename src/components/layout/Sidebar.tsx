@@ -1,7 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useLogout } from '@/hooks/useAuth';
-import { USER_LEVELS } from '@/utils/constants';
 import { Button } from '@/components/ui/button';
 import {
   LayoutDashboard,
@@ -11,12 +10,14 @@ import {
   Settings,
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ShieldCheck,
+  UserCog
 } from 'lucide-react';
 
 interface SidebarProps {
-  activeTab: 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration';
-  onTabChange: (tab: 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration') => void;
+  activeTab: 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'roles';
+  onTabChange: (tab: 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'roles') => void;
 }
 
 export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
@@ -80,7 +81,6 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
           <>
             <p className="text-sm text-gray-300">Signed in as</p>
             <p className="font-medium truncate">{user?.email}</p>
-            <p className="text-xs text-gray-400 mt-1">Level: {user?.userLevel}</p>
           </>
         )}
       </div>
@@ -94,24 +94,20 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
           isCollapsed={isCollapsed}
           onClick={() => onTabChange('analytics')}
         />
-        {user?.userLevel === USER_LEVELS.L1 && (
-          <>
-            <NavButton
-              icon={<Users className="h-5 w-5" />}
-              label="Users"
-              isActive={activeTab === 'users'}
-              isCollapsed={isCollapsed}
-              onClick={() => onTabChange('users')}
-            />
-            <NavButton
-              icon={<CreditCard className="h-5 w-5" />}
-              label="Subscriptions"
-              isActive={activeTab === 'subscriptions'}
-              isCollapsed={isCollapsed}
-              onClick={() => onTabChange('subscriptions')}
-            />
-          </>
-        )}
+        <NavButton
+          icon={<Users className="h-5 w-5" />}
+          label="Users"
+          isActive={activeTab === 'users'}
+          isCollapsed={isCollapsed}
+          onClick={() => onTabChange('users')}
+        />
+        <NavButton
+          icon={<CreditCard className="h-5 w-5" />}
+          label="Subscriptions"
+          isActive={activeTab === 'subscriptions'}
+          isCollapsed={isCollapsed}
+          onClick={() => onTabChange('subscriptions')}
+        />
         <NavButton
           icon={<Smartphone className="h-5 w-5" />}
           label="Devices"
@@ -119,15 +115,27 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
           isCollapsed={isCollapsed}
           onClick={() => onTabChange('devices')}
         />
-        {user?.userLevel === USER_LEVELS.L1 && (
-          <NavButton
-            icon={<Settings className="h-5 w-5" />}
-            label="Configuration"
-            isActive={activeTab === 'configuration'}
-            isCollapsed={isCollapsed}
-            onClick={() => onTabChange('configuration')}
-          />
-        )}
+        <NavButton
+          icon={<Settings className="h-5 w-5" />}
+          label="Configuration"
+          isActive={activeTab === 'configuration'}
+          isCollapsed={isCollapsed}
+          onClick={() => onTabChange('configuration')}
+        />
+        <NavButton
+          icon={<ShieldCheck className="h-5 w-5" />}
+          label="Security Groups"
+          isActive={activeTab === 'security-groups'}
+          isCollapsed={isCollapsed}
+          onClick={() => onTabChange('security-groups')}
+        />
+        <NavButton
+          icon={<UserCog className="h-5 w-5" />}
+          label="Roles"
+          isActive={activeTab === 'roles'}
+          isCollapsed={isCollapsed}
+          onClick={() => onTabChange('roles')}
+        />
       </nav>
 
       {/* Logout Button */}

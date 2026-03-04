@@ -5,7 +5,6 @@ export interface Manager {
   userName: string;
   phone: string;
   active: boolean;
-  userLevel?: 'L1' | 'L2';
 }
 
 export interface CreateManagerRequest {
@@ -38,7 +37,6 @@ export interface Level2User {
   userName: string;
   phone: string;
   profileImg?: string | null;
-  userLevel: 'L1' | 'L2';
   active: boolean;
   createdAt: string;
   updatedAt: string;

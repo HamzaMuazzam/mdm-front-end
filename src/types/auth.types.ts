@@ -4,7 +4,6 @@ export interface User {
   login: string;
   userName?: string;
   phone?: string;
-  userLevel: 'L1' | 'L2';
   active: boolean;
 }
 
