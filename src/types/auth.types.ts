@@ -5,6 +5,7 @@ export interface User {
   userName?: string;
   phone?: string;
   active: boolean;
+  roleName?: string;
 }
 
 export interface LoginRequest {

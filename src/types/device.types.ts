@@ -208,6 +208,14 @@ export interface DashboardTrendPoint {
   value: number;
 }
 
+export interface DashboardPlanAnalytics {
+  totalPlansBought: number;
+  activePlans: number;
+  expiredPlans: number;
+  expiringThisWeek: number;
+  expiringThisMonth: number;
+}
+
 export interface DashboardSubscriptionAnalytics {
   subscriptionId: number;
   subscriptionName: string;
@@ -248,11 +256,12 @@ export interface DashboardSyncAnalytics {
 
 export interface DeviceDashboardAnalytics {
   generatedAt: string;
-  subscription: DashboardSubscriptionAnalytics;
+  subscription?: DashboardSubscriptionAnalytics | null;
   devices: DashboardDevicesAnalytics;
   users?: DashboardUsersAnalytics;
   connectivity: DashboardConnectivityAnalytics;
   sync: DashboardSyncAnalytics;
+  planAnalytics?: DashboardPlanAnalytics | null;
   enrollmentTrendLast7Days: DashboardTrendPoint[];
   syncTrendLast7Days: DashboardTrendPoint[];
 }

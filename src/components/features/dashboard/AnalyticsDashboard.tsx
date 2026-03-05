@@ -3,7 +3,7 @@ import { Activity, CalendarClock, RefreshCw, ShieldCheck, Smartphone, UserCheck,
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDeviceAnalyticsQuery } from '@/hooks/useDevices';
-import type { DashboardTrendPoint } from '@/types/device.types';
+import type { DashboardPlanAnalytics, DashboardTrendPoint } from '@/types/device.types';
 
 const numberFormatter = new Intl.NumberFormat('en-US');
 const percentFormatter = new Intl.NumberFormat('en-US', {
@@ -256,6 +256,43 @@ function TrendChart({ title, description, points, strokeColor, gradientStart }: 
   );
 }
 
+interface PlanAnalyticsCardProps {
+  plan: DashboardPlanAnalytics;
+}
+
+function PlanAnalyticsCard({ plan }: PlanAnalyticsCardProps) {
+  return (
+    <Card className="border-0 bg-white/85 shadow-lg backdrop-blur-sm">
+      <CardHeader>
+        <CardTitle className="text-xl text-slate-900">Plan Analytics</CardTitle>
+        <CardDescription className="text-slate-600">Overview of subscription plans across your organization</CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="rounded-lg bg-slate-50 p-3">
+          <p className="text-xs uppercase tracking-wide text-slate-500">Total Bought</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{numberFormatter.format(plan.totalPlansBought)}</p>
+        </div>
+        <div className="rounded-lg bg-emerald-50 p-3">
+          <p className="text-xs uppercase tracking-wide text-emerald-700">Active</p>
+          <p className="mt-1 text-2xl font-bold text-emerald-900">{numberFormatter.format(plan.activePlans)}</p>
+        </div>
+        <div className="rounded-lg bg-rose-50 p-3">
+          <p className="text-xs uppercase tracking-wide text-rose-700">Expired</p>
+          <p className="mt-1 text-2xl font-bold text-rose-900">{numberFormatter.format(plan.expiredPlans)}</p>
+        </div>
+        <div className="rounded-lg bg-amber-50 p-3">
+          <p className="text-xs uppercase tracking-wide text-amber-700">Expiring This Week</p>
+          <p className="mt-1 text-2xl font-bold text-amber-900">{numberFormatter.format(plan.expiringThisWeek)}</p>
+        </div>
+        <div className="rounded-lg bg-orange-50 p-3">
+          <p className="text-xs uppercase tracking-wide text-orange-700">Expiring This Month</p>
+          <p className="mt-1 text-2xl font-bold text-orange-900">{numberFormatter.format(plan.expiringThisMonth)}</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function AnalyticsSkeleton() {
   return (
     <div className="space-y-6">
@@ -309,7 +346,8 @@ export function AnalyticsDashboard() {
     );
   }
 
-  const { subscription, devices, connectivity, sync, generatedAt, enrollmentTrendLast7Days, syncTrendLast7Days } = data;
+  const { subscription, devices, connectivity, sync, generatedAt, enrollmentTrendLast7Days, syncTrendLast7Days, planAnalytics } = data;
+  const hasSubscription = subscription != null;
   const users = data.users ?? {
     totalUsersAdded: 0,
     activeUsers: 0,
@@ -373,54 +411,62 @@ export function AnalyticsDashboard() {
           description={`${numberFormatter.format(users.activeUsers)} active users`}
           icon={<UserRound className="h-5 w-5" />}
         />
-        <MetricCard
-          title="Plan Days Remaining"
-          value={numberFormatter.format(subscription.packageDaysRemaining)}
-          description={subscription.packageExpired ? 'Subscription is expired' : 'Subscription is active'}
-          icon={<CalendarClock className="h-5 w-5" />}
-        />
+        {hasSubscription && (
+          <MetricCard
+            title="Plan Days Remaining"
+            value={numberFormatter.format(subscription!.packageDaysRemaining)}
+            description={subscription!.packageExpired ? 'Subscription is expired' : 'Subscription is active'}
+            icon={<CalendarClock className="h-5 w-5" />}
+          />
+        )}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-3">
-        <RingChart
-          label="Subscription Utilization"
-          value={subscription.utilizationPercent}
-          color="#1d4ed8"
-          helperText={`${numberFormatter.format(subscription.devicesInUse)} devices currently assigned`}
-        />
+      <div className={`grid gap-6 ${hasSubscription ? 'xl:grid-cols-3' : 'xl:grid-cols-1'}`}>
+        {hasSubscription && (
+          <RingChart
+            label="Subscription Utilization"
+            value={subscription!.utilizationPercent}
+            color="#1d4ed8"
+            helperText={`${numberFormatter.format(subscription!.devicesInUse)} devices currently assigned`}
+          />
+        )}
         <RingChart
           label="Connectivity Ratio"
           value={connectivity.onlinePercent}
           color="#0891b2"
           helperText={`${numberFormatter.format(connectivity.onlineDevices)} online out of ${numberFormatter.format(devices.totalDevicesAdded)}`}
         />
-        <Card className="border-0 bg-white/85 shadow-lg backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-xl text-slate-900">Subscription Snapshot</CardTitle>
-            <CardDescription className="text-slate-600">Current package and capacity details</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <div className="rounded-lg bg-slate-50 p-3">
-              <p className="text-xs uppercase tracking-wide text-slate-500">Package</p>
-              <p className="mt-1 text-base font-semibold text-slate-900">{subscription.subscriptionName}</p>
-            </div>
-            <div className="rounded-lg bg-slate-50 p-3">
-              <p className="text-xs uppercase tracking-wide text-slate-500">Expires</p>
-              <p className="mt-1 text-base font-semibold text-slate-900">{formatDateTime(subscription.packageExpiryDate)}</p>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-lg bg-emerald-50 p-3">
-                <p className="text-xs uppercase tracking-wide text-emerald-700">In Use</p>
-                <p className="mt-1 text-lg font-bold text-emerald-900">{numberFormatter.format(subscription.devicesInUse)}</p>
+        {hasSubscription && (
+          <Card className="border-0 bg-white/85 shadow-lg backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="text-xl text-slate-900">Subscription Snapshot</CardTitle>
+              <CardDescription className="text-slate-600">Current package and capacity details</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <div className="rounded-lg bg-slate-50 p-3">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Package</p>
+                <p className="mt-1 text-base font-semibold text-slate-900">{subscription!.subscriptionName}</p>
               </div>
-              <div className="rounded-lg bg-blue-50 p-3">
-                <p className="text-xs uppercase tracking-wide text-blue-700">Available</p>
-                <p className="mt-1 text-lg font-bold text-blue-900">{numberFormatter.format(subscription.devicesRemaining)}</p>
+              <div className="rounded-lg bg-slate-50 p-3">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Expires</p>
+                <p className="mt-1 text-base font-semibold text-slate-900">{formatDateTime(subscription!.packageExpiryDate)}</p>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-lg bg-emerald-50 p-3">
+                  <p className="text-xs uppercase tracking-wide text-emerald-700">In Use</p>
+                  <p className="mt-1 text-lg font-bold text-emerald-900">{numberFormatter.format(subscription!.devicesInUse)}</p>
+                </div>
+                <div className="rounded-lg bg-blue-50 p-3">
+                  <p className="text-xs uppercase tracking-wide text-blue-700">Available</p>
+                  <p className="mt-1 text-lg font-bold text-blue-900">{numberFormatter.format(subscription!.devicesRemaining)}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
+
+      {planAnalytics != null && <PlanAnalyticsCard plan={planAnalytics} />}
 
       <div className="grid gap-6 xl:grid-cols-2">
         <TrendChart
