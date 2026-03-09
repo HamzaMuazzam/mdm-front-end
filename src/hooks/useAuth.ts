@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { authService } from '@/api/services/auth.service';
 import { subscriptionService } from '@/api/services/subscription.service';
 import { useAuthStore } from '@/store/authStore';
-import { ROUTES, isAdminRole } from '@/utils/constants';
+import { usePermissionStore } from '@/store/permissionStore';
+import { ROUTES } from '@/utils/constants';
 import { toast } from '@/hooks/useToast';
 import { queryClient } from '@/main';
 import type {
@@ -33,15 +34,12 @@ export function useLogin() {
         // Clear React Query cache from previous session
         queryClient.clear();
 
-        // Admins (Admin / Super Admin) skip the subscription check
-        if (!isAdminRole(user.roleName)) {
-          const userPlan = await subscriptionService.getUserPlan();
-          if (!userPlan) {
-            const plans = await subscriptionService.getSubscriptionPlans();
-            localStorage.setItem('subscriptionPlans', JSON.stringify(plans));
-            window.location.href = ROUTES.SUBSCRIPTIONS;
-            return;
-          }
+        const userPlan = await subscriptionService.getUserPlan();
+        if (!userPlan) {
+          const plans = await subscriptionService.getSubscriptionPlans();
+          localStorage.setItem('subscriptionPlans', JSON.stringify(plans));
+          window.location.href = ROUTES.SUBSCRIPTIONS;
+          return;
         }
 
         // Force page reload to ensure fresh data
@@ -155,16 +153,13 @@ export function useUpdatePassword() {
 
 export function useLogout() {
   const logout = useAuthStore((state) => state.logout);
+  const clearPermissions = usePermissionStore((state) => state.clearPermissions);
   const navigate = useNavigate();
 
   return () => {
-    // Clear auth state and localStorage
     logout();
-
-    // Clear React Query cache to remove all cached data
+    clearPermissions();
     queryClient.clear();
-
-    // Navigate to login
     navigate(ROUTES.LOGIN);
   };
 }

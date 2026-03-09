@@ -3,11 +3,13 @@ import { useUserPlansQuery, useChangePlan } from '@/hooks/useSubscriptions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check } from 'lucide-react';
+import { usePermissionStore } from '@/store/permissionStore';
 
 export function SubscriptionsManagement() {
   const { data: plans = [], isLoading } = useUserPlansQuery();
   const changePlanMutation = useChangePlan();
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
+  const hasPermission = usePermissionStore((state) => state.hasPermission);
 
   const handleChangePlan = (planId: number) => {
     if (window.confirm('Are you sure you want to change to this plan?')) {
@@ -80,7 +82,7 @@ export function SubscriptionsManagement() {
                 <Button className="w-full" variant="outline" disabled>
                   Current Plan
                 </Button>
-              ) : (
+              ) : hasPermission('subscriptions:update') ? (
                 <Button
                   className="w-full"
                   onClick={() => handleChangePlan(plan.id)}
@@ -90,7 +92,7 @@ export function SubscriptionsManagement() {
                     ? 'Changing...'
                     : 'Change Plan'}
                 </Button>
-              )}
+              ) : null}
             </CardContent>
           </Card>
         ))}

@@ -24,15 +24,6 @@ export const ROUTES = {
   DEVICE_MONITOR: '/device/:deviceId/monitor',
 } as const;
 
-export const ADMIN_ROLES = ['admin', 'superadmin'] as const;
-
-/** Returns true when the role name is Admin or Super Admin (case-insensitive). */
-export function isAdminRole(roleName?: string): boolean {
-  if (!roleName) return false;
-  const normalized = roleName.toLowerCase().replace(/[\s_-]/g, '');
-  return ADMIN_ROLES.some((r) => normalized === r);
-}
-
 export const ERROR_MESSAGES = {
   NETWORK_ERROR: 'Server not reachable. Please try again later.',
   LOGIN_FAILED: 'Invalid credentials. Please check your email and password.',

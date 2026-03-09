@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, ShieldCheck, Plus, X, CheckCircle2, Circle, Loader2, Pencil } from 'lucide-react';
 import type { SecurityGroup, PermissionItem } from '@/types/security-group.types';
+import { usePermissionStore } from '@/store/permissionStore';
 
 export function SecurityGroupManagement() {
   const [selectedGroup, setSelectedGroup] = useState<SecurityGroup | null>(null);
@@ -31,6 +32,7 @@ export function SecurityGroupManagement() {
 
   const [togglingPermissionId, setTogglingPermissionId] = useState<number | null>(null);
 
+  const hasPermission = usePermissionStore((state) => state.hasPermission);
   const { data: groups = [], isLoading: groupsLoading } = useSecurityGroupsQuery();
   const { data: matrix, isLoading: permissionsLoading } = useSecurityGroupPermissionsQuery(
     selectedGroup?.id ?? null
@@ -110,10 +112,12 @@ export function SecurityGroupManagement() {
     <div className="flex h-full flex-col">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Security Groups</h1>
-        <Button onClick={() => setIsCreateOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Group
-        </Button>
+        {hasPermission('security-group:create') && (
+          <Button onClick={() => setIsCreateOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Group
+          </Button>
+        )}
       </div>
 
       <div className="flex gap-4 flex-1 min-h-0">
@@ -148,14 +152,16 @@ export function SecurityGroupManagement() {
                         <p className="text-xs text-muted-foreground mt-0.5 truncate">{group.description}</p>
                       )}
                     </div>
-                    <button
-                      type="button"
-                      onClick={(e) => handleOpenEdit(group, e)}
-                      className="ml-2 p-1.5 rounded-md opacity-50 hover:opacity-100 hover:bg-muted transition-all shrink-0"
-                      title="Edit group"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
+                    {hasPermission('security-group:update') && (
+                      <button
+                        type="button"
+                        onClick={(e) => handleOpenEdit(group, e)}
+                        className="ml-2 p-1.5 rounded-md opacity-50 hover:opacity-100 hover:bg-muted transition-all shrink-0"
+                        title="Edit group"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -201,11 +207,13 @@ export function SecurityGroupManagement() {
                           return (
                             <li
                               key={perm.permissionId}
-                              onClick={() => handleTogglePermission(perm)}
+                              onClick={() => hasPermission('security-group:update') && handleTogglePermission(perm)}
                               className={`flex items-start gap-2 px-2 py-1.5 rounded-md transition-colors select-none ${
-                                togglingPermissionId !== null
-                                  ? 'cursor-not-allowed opacity-60'
-                                  : 'cursor-pointer hover:bg-muted/50'
+                                !hasPermission('security-group:update')
+                                  ? 'cursor-default'
+                                  : togglingPermissionId !== null
+                                    ? 'cursor-not-allowed opacity-60'
+                                    : 'cursor-pointer hover:bg-muted/50'
                               }`}
                             >
                               {isToggling ? (

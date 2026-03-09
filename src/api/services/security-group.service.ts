@@ -27,6 +27,13 @@ export const securityGroupService = {
     return response.data.data;
   },
 
+  async getUserPermissions(userId: number): Promise<SecurityGroupPermissionMatrix> {
+    const response = await apiClient.get<ApiResponse<SecurityGroupPermissionMatrix>>(
+      `/v1/security-group-permissions/user/${userId}`
+    );
+    return response.data.data;
+  },
+
   async addPermission(securityGroupId: number, permissionId: number): Promise<ApiResponse<unknown>> {
     const response = await apiClient.post<ApiResponse<unknown>>('/v1/security-group-permissions', {
       securityGroupId,

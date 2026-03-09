@@ -17,6 +17,7 @@ import { ROUTES } from '@/utils/constants';
 import { toast } from '@/hooks/useToast';
 import { sendDeviceCommandViaApi, type DeviceCommandType } from '@/services/deviceCommandMqtt';
 import { mqttService } from '@/api/services/mqtt.service';
+import { usePermissionStore } from '@/store/permissionStore';
 
 export function DeviceManagement() {
   const navigate = useNavigate();
@@ -40,6 +41,7 @@ export function DeviceManagement() {
   const [editingDevice, setEditingDevice] = useState<Device | null>(null);
   const [configDeviceId, setConfigDeviceId] = useState<number | null>(null);
   const [configFormData, setConfigFormData] = useState<UpdateDeviceConfigurationRequest>({});
+  const hasPermission = usePermissionStore((state) => state.hasPermission);
   const { data: devices = [], isLoading } = useDevicesQuery();
   const { data: deviceConfig, isLoading: isLoadingConfig } = useDeviceConfiguration(configDeviceId);
   const { data: level2Users = [], isLoading: isLoadingUsers } = useLevel2UsersQuery();
@@ -402,7 +404,9 @@ export function DeviceManagement() {
             <QrCode className="h-4 w-4 mr-2" />
             QR View
           </Button>
-          <Button onClick={() => setIsModalOpen(true)}>Add Device</Button>
+          {hasPermission('devices:create') && (
+            <Button onClick={() => setIsModalOpen(true)}>Add Device</Button>
+          )}
         </div>
       </div>
 
@@ -469,17 +473,19 @@ export function DeviceManagement() {
 
                           {openActionMenuDeviceId === device.id && (
                             <div className="absolute right-0 z-20 mt-2 w-52 overflow-hidden rounded-md border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
-                              <button
-                                type="button"
-                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
-                                onClick={() => {
-                                  closeActionsMenu();
-                                  handleOpenMonitorDashboard(device);
-                                }}
-                              >
-                                <BarChart3 className="h-4 w-4" />
-                                Open Monitor Dashboard
-                              </button>
+                              {hasPermission('devices:monitoring') && (
+                                <button
+                                  type="button"
+                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
+                                  onClick={() => {
+                                    closeActionsMenu();
+                                    handleOpenMonitorDashboard(device);
+                                  }}
+                                >
+                                  <BarChart3 className="h-4 w-4" />
+                                  Open Monitor Dashboard
+                                </button>
+                              )}
                               <button
                                 type="button"
                                 className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
@@ -491,28 +497,32 @@ export function DeviceManagement() {
                                 <Key className="h-4 w-4" />
                                 Show Verification Code
                               </button>
-                              <button
-                                type="button"
-                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
-                                onClick={() => {
-                                  closeActionsMenu();
-                                  handleViewConfig(device);
-                                }}
-                              >
-                                <Settings className="h-4 w-4" />
-                                View Configuration
-                              </button>
-                              <button
-                                type="button"
-                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
-                                onClick={() => {
-                                  closeActionsMenu();
-                                  handleViewApps(device);
-                                }}
-                              >
-                                <AppWindow className="h-4 w-4" />
-                                View Applications
-                              </button>
+                              {hasPermission('devices:configurations:read') && (
+                                <button
+                                  type="button"
+                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
+                                  onClick={() => {
+                                    closeActionsMenu();
+                                    handleViewConfig(device);
+                                  }}
+                                >
+                                  <Settings className="h-4 w-4" />
+                                  View Configuration
+                                </button>
+                              )}
+                              {hasPermission('devices:applications:read') && (
+                                <button
+                                  type="button"
+                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
+                                  onClick={() => {
+                                    closeActionsMenu();
+                                    handleViewApps(device);
+                                  }}
+                                >
+                                  <AppWindow className="h-4 w-4" />
+                                  View Applications
+                                </button>
+                              )}
                               <button
                                 type="button"
                                 className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
@@ -524,55 +534,63 @@ export function DeviceManagement() {
                                 <FileText className="h-4 w-4" />
                                 View Requests
                               </button>
-                              <button
-                                type="button"
-                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
-                                onClick={() => {
-                                  closeActionsMenu();
-                                  handleEdit(device);
-                                }}
-                              >
-                                <Pencil className="h-4 w-4" />
-                                Edit Device
-                              </button>
+                              {hasPermission('devices:update') && (
+                                <button
+                                  type="button"
+                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
+                                  onClick={() => {
+                                    closeActionsMenu();
+                                    handleEdit(device);
+                                  }}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                  Edit Device
+                                </button>
+                              )}
 
-                              <div className="my-1 h-px bg-slate-200 dark:bg-slate-700" />
+                              {(hasPermission('devices:update')) && (
+                                <>
+                                  <div className="my-1 h-px bg-slate-200 dark:bg-slate-700" />
+                                  <button
+                                    type="button"
+                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
+                                    onClick={() => handleOpenCommandDialog(device, 'reboot')}
+                                  >
+                                    <Power className="h-4 w-4" />
+                                    Reboot
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/30"
+                                    onClick={() => handleOpenCommandDialog(device, 'reset')}
+                                  >
+                                    <RotateCcw className="h-4 w-4" />
+                                    Reset
+                                  </button>
+                                </>
+                              )}
 
-                              <button
-                                type="button"
-                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
-                                onClick={() => handleOpenCommandDialog(device, 'reboot')}
-                              >
-                                <Power className="h-4 w-4" />
-                                Reboot
-                              </button>
-                              <button
-                                type="button"
-                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/30"
-                                onClick={() => handleOpenCommandDialog(device, 'reset')}
-                              >
-                                <RotateCcw className="h-4 w-4" />
-                                Reset
-                              </button>
-
-                              <div className="my-1 h-px bg-slate-200 dark:bg-slate-700" />
-
-                              <button
-                                type="button"
-                                className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm ${
-                                  isActive
-                                    ? 'text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/30'
-                                    : 'text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-900/30'
-                                }`}
-                                onClick={() => {
-                                  closeActionsMenu();
-                                  handleToggleClick(device);
-                                }}
-                                disabled={toggleStatusMutation.isPending}
-                              >
-                                {isActive ? <AlertCircle className="h-4 w-4" /> : <Check className="h-4 w-4" />}
-                                {isActive ? 'Deactivate Device' : 'Activate Device'}
-                              </button>
+                              {hasPermission('devices:delete') && (
+                                <>
+                                  <div className="my-1 h-px bg-slate-200 dark:bg-slate-700" />
+                                  <button
+                                    type="button"
+                                    className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm ${
+                                      isActive
+                                        ? 'text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/30'
+                                        : 'text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-900/30'
+                                    }`}
+                                    onClick={() => {
+                                      closeActionsMenu();
+                                      handleToggleClick(device);
+                                    }}
+                                    disabled={toggleStatusMutation.isPending}
+                                  >
+                                    {isActive ? <AlertCircle className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+                                    {isActive ? 'Deactivate Device' : 'Activate Device'}
+                                  </button>
+                                </>
+                              )}
                             </div>
                           )}
                         </div>
@@ -951,7 +969,7 @@ export function DeviceManagement() {
                 )}
               </div>
               <div className="flex gap-2">
-                {deviceConfig && !isConfigEditMode && (
+                {deviceConfig && !isConfigEditMode && hasPermission('devices:configurations:update') && (
                   <Button
                     variant="outline"
                     size="sm"

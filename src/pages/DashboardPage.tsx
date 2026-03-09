@@ -9,9 +9,10 @@ import { SubscriptionsManagement } from '@/components/features/subscriptions/Sub
 import { ConfigurationManagement } from '@/components/features/configuration/ConfigurationManagement';
 import { AnalyticsDashboard } from '@/components/features/dashboard/AnalyticsDashboard';
 import { SecurityGroupManagement } from '@/components/features/security-groups/SecurityGroupManagement';
-import { RoleManagement } from '@/components/features/roles/RoleManagement';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
+import { usePermissionsQuery } from '@/hooks/usePermissions';
 
-type TabType = 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'roles';
+type TabType = 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups';
 
 interface LocationState {
   activeTab?: TabType;
@@ -24,13 +25,14 @@ function isTabType(value: string | null): value is TabType {
     value === 'devices' ||
     value === 'subscriptions' ||
     value === 'configuration' ||
-    value === 'security-groups' ||
-    value === 'roles'
+    value === 'security-groups'
   );
 }
 
 export function DashboardPage() {
   const queryClient = useQueryClient();
+  // Fetch user permissions on every page load/refresh
+  usePermissionsQuery();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const locationState = location.state as LocationState | null;
@@ -93,21 +95,42 @@ export function DashboardPage() {
       queryClient.invalidateQueries({ queryKey: ['parentConfiguration'] });
     } else if (tab === 'security-groups') {
       queryClient.invalidateQueries({ queryKey: ['security-groups'] });
-    } else if (tab === 'roles') {
-      queryClient.invalidateQueries({ queryKey: ['roles'] });
     }
   };
 
   return (
     <DashboardLayout sidebar={<Sidebar activeTab={activeTab} onTabChange={handleTabChange} />}>
-      <div className={activeTab === 'devices' || activeTab === 'users' || activeTab === 'security-groups' || activeTab === 'roles' ? 'h-full p-8' : 'p-8'}>
-        {activeTab === 'analytics' && <AnalyticsDashboard />}
-        {activeTab === 'users' && <UserManagement />}
-        {activeTab === 'subscriptions' && <SubscriptionsManagement />}
-        {activeTab === 'devices' && <DeviceManagement />}
-        {activeTab === 'configuration' && <ConfigurationManagement />}
-        {activeTab === 'security-groups' && <SecurityGroupManagement />}
-        {activeTab === 'roles' && <RoleManagement />}
+      <div className={activeTab === 'devices' || activeTab === 'users' || activeTab === 'security-groups' ? 'h-full p-8' : 'p-8'}>
+        {activeTab === 'analytics' && (
+          <ErrorBoundary moduleName="Analytics">
+            <AnalyticsDashboard />
+          </ErrorBoundary>
+        )}
+        {activeTab === 'users' && (
+          <ErrorBoundary moduleName="User Management">
+            <UserManagement />
+          </ErrorBoundary>
+        )}
+        {activeTab === 'subscriptions' && (
+          <ErrorBoundary moduleName="Subscriptions">
+            <SubscriptionsManagement />
+          </ErrorBoundary>
+        )}
+        {activeTab === 'devices' && (
+          <ErrorBoundary moduleName="Device Management">
+            <DeviceManagement />
+          </ErrorBoundary>
+        )}
+        {activeTab === 'configuration' && (
+          <ErrorBoundary moduleName="Configuration">
+            <ConfigurationManagement />
+          </ErrorBoundary>
+        )}
+        {activeTab === 'security-groups' && (
+          <ErrorBoundary moduleName="Security Groups">
+            <SecurityGroupManagement />
+          </ErrorBoundary>
+        )}
       </div>
     </DashboardLayout>
   );

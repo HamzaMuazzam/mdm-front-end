@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, Check, X, Pencil, Save, RefreshCw, Eye } from 'lucide-react';
 import type { UpdateDeviceConfigurationRequest } from '@/types/device.types';
+import { usePermissionStore } from '@/store/permissionStore';
 
 type TabType = 'configuration' | 'settings';
 
@@ -16,6 +17,7 @@ export function ConfigurationManagement() {
   const [isBackgroundImageEnabled, setIsBackgroundImageEnabled] = useState(false);
   const queryClient = useQueryClient();
 
+  const hasPermission = usePermissionStore((state) => state.hasPermission);
   const { data: config, isLoading } = useParentConfiguration();
   const updateConfigMutation = useUpdateDeviceConfiguration();
 
@@ -204,7 +206,7 @@ export function ConfigurationManagement() {
               <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
-            {activeTab === 'configuration' && (
+            {activeTab === 'configuration' && hasPermission('configuration:update') && (
               <>
                 {!isEditMode ? (
                   <Button onClick={() => setIsEditMode(true)}>

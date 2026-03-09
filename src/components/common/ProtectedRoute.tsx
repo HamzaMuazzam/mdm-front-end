@@ -1,6 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
-import { ROUTES, isAdminRole } from '@/utils/constants';
+import { ROUTES } from '@/utils/constants';
 import { useUserPlanQuery } from '@/hooks/useSubscriptions';
 
 interface ProtectedRouteProps {
@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, requiresSubscription = false }: ProtectedRouteProps) {
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
   const location = useLocation();
   const { data: userPlan, isLoading } = useUserPlanQuery();
 
@@ -18,13 +18,9 @@ export function ProtectedRoute({ children, requiresSubscription = false }: Prote
     return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />;
   }
 
-  // Admins (Admin / Super Admin) always have access — skip subscription gate
-  const isAdmin = isAdminRole(user?.roleName);
-
-  // Non-admin with no active subscription — redirect to plans
+  // No active subscription — redirect to plans
   if (
     requiresSubscription &&
-    !isAdmin &&
     !isLoading &&
     !userPlan &&
     location.pathname !== ROUTES.SUBSCRIPTIONS

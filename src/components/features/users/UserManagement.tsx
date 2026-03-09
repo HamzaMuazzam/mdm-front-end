@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MoreVertical, Pencil, RotateCcw, Trash2, CheckCircle } from 'lucide-react';
 import type { Manager, CreateManagerRequest, UpdateManagerRequest } from '@/types/user.types';
+import { usePermissionStore } from '@/store/permissionStore';
 
 export function UserManagement() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -24,6 +25,7 @@ export function UserManagement() {
   const deleteMutation = useDeleteUser();
   const updateMutation = useUpdateUser();
   const resetPasswordMutation = useResetUserPassword();
+  const hasPermission = usePermissionStore((state) => state.hasPermission);
 
   const {
     register,
@@ -164,7 +166,9 @@ export function UserManagement() {
     <div className="flex h-full flex-col">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">User Management</h1>
-        <Button onClick={() => setIsModalOpen(true)}>Add User</Button>
+        {hasPermission('user:create') && (
+          <Button onClick={() => setIsModalOpen(true)}>Add User</Button>
+        )}
       </div>
 
       {/* User Table */}
@@ -218,7 +222,8 @@ export function UserManagement() {
 
                         {openActionMenuUserId === user.id && (
                           <div className="absolute right-0 z-20 mt-2 w-52 overflow-hidden rounded-md border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
-                            <button
+                            {hasPermission('user:update') && (
+                              <button
                                 type="button"
                                 className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
                                 onClick={() => handleEdit(user)}
@@ -226,38 +231,44 @@ export function UserManagement() {
                                 <Pencil className="h-4 w-4" />
                                 Edit
                               </button>
+                            )}
 
-                            <button
-                              type="button"
-                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
-                              onClick={() => handleOpenResetPassword(user)}
-                            >
-                              <RotateCcw className="h-4 w-4" />
-                              Reset Password
-                            </button>
-
-                            <div className="my-1 h-px bg-slate-200 dark:bg-slate-700" />
-
-                            {user.active ? (
+                            {hasPermission('user:update') && (
                               <button
                                 type="button"
-                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/30"
-                                onClick={() => handleDelete(user.id)}
-                                disabled={deleteMutation.isPending}
+                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
+                                onClick={() => handleOpenResetPassword(user)}
                               >
-                                <Trash2 className="h-4 w-4" />
-                                Delete
+                                <RotateCcw className="h-4 w-4" />
+                                Reset Password
                               </button>
-                            ) : (
-                              <button
-                                type="button"
-                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-900/30"
-                                onClick={() => handleActivate(user.id)}
-                                disabled={deleteMutation.isPending}
-                              >
-                                <CheckCircle className="h-4 w-4" />
-                                Activate
-                              </button>
+                            )}
+
+                            {hasPermission('user:delete') && (
+                              <>
+                                <div className="my-1 h-px bg-slate-200 dark:bg-slate-700" />
+                                {user.active ? (
+                                  <button
+                                    type="button"
+                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/30"
+                                    onClick={() => handleDelete(user.id)}
+                                    disabled={deleteMutation.isPending}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                    Delete
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-900/30"
+                                    onClick={() => handleActivate(user.id)}
+                                    disabled={deleteMutation.isPending}
+                                  >
+                                    <CheckCircle className="h-4 w-4" />
+                                    Activate
+                                  </button>
+                                )}
+                              </>
                             )}
                           </div>
                         )}
