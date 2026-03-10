@@ -4,7 +4,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { deviceSchema, updateDeviceSchema } from '@/utils/validators';
 import { useDevicesQuery, useCreateDevice, useToggleDeviceStatus, useUpdateDevice, useDeviceConfiguration, useUpdateDeviceConfiguration, useApplicationPermissionGranters, useFeatureStates, useLocationTrackingTypes, usePushNotificationProtocols } from '@/hooks/useDevices';
-import { useLevel2UsersQuery } from '@/hooks/useUsers';
 import { useDeviceStatusMqtt, useDeviceStatusStore } from '@/hooks/useDeviceStatus';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,7 +43,6 @@ export function DeviceManagement() {
   const hasPermission = usePermissionStore((state) => state.hasPermission);
   const { data: devices = [], isLoading } = useDevicesQuery();
   const { data: deviceConfig, isLoading: isLoadingConfig } = useDeviceConfiguration(configDeviceId);
-  const { data: level2Users = [], isLoading: isLoadingUsers } = useLevel2UsersQuery();
   const createMutation = useCreateDevice();
   const updateMutation = useUpdateDevice();
   const toggleStatusMutation = useToggleDeviceStatus();
@@ -60,7 +58,6 @@ export function DeviceManagement() {
     register,
     handleSubmit,
     reset,
-    setValue,
     formState: { errors },
   } = useForm<CreateDeviceRequest>({
     resolver: zodResolver(deviceSchema),
@@ -105,12 +102,6 @@ export function DeviceManagement() {
     link.href = qrDataUrl;
     link.click();
   }, [qrDataUrl]);
-
-  useEffect(() => {
-    if (level2Users.length > 0) {
-      setValue('userId', level2Users[0].id);
-    }
-  }, [level2Users, setValue]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -173,7 +164,6 @@ export function DeviceManagement() {
       setEditValue('batteryCharge', editingDevice.batteryCharge || 0);
       setEditValue('launcherVariant', editingDevice.launcherVariant || '');
       setEditValue('defaultLauncher', editingDevice.defaultLauncher || '');
-      setEditValue('userId', editingDevice.userId);
     }
   }, [editingDevice, isEditModalOpen, setEditValue]);
 
@@ -636,29 +626,6 @@ export function DeviceManagement() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="userId">Assign User</Label>
-                  <select
-                    id="userId"
-                    {...register('userId', { valueAsNumber: true })}
-                    className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    disabled={isLoadingUsers}
-                  >
-                    {isLoadingUsers ? (
-                      <option value="">Loading users...</option>
-                    ) : (
-                      level2Users.map((user) => (
-                        <option key={user.id} value={user.id}>
-                          {user.userName} ({user.email})
-                        </option>
-                      ))
-                    )}
-                  </select>
-                  {errors.userId && (
-                    <p className="text-sm text-destructive">{errors.userId.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
                   <Label htmlFor="model">Model</Label>
                   <Input id="model" {...register('model')} />
                   {errors.model && <p className="text-sm text-destructive">{errors.model.message}</p>}
@@ -758,29 +725,6 @@ export function DeviceManagement() {
                     type="number"
                     {...registerEdit('batteryCharge', { valueAsNumber: true })}
                   />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="edit-userId">Assign User</Label>
-                  <select
-                    id="edit-userId"
-                    {...registerEdit('userId', { valueAsNumber: true })}
-                    className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    disabled={isLoadingUsers}
-                  >
-                    {isLoadingUsers ? (
-                      <option value="">Loading users...</option>
-                    ) : (
-                      level2Users.map((user) => (
-                        <option key={user.id} value={user.id}>
-                          {user.userName} ({user.email})
-                        </option>
-                      ))
-                    )}
-                  </select>
-                  {editErrors.userId && (
-                    <p className="text-sm text-destructive">{editErrors.userId.message}</p>
-                  )}
                 </div>
 
                 <div className="space-y-3">

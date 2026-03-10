@@ -1,40 +1,59 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { userSchema } from '@/utils/validators';
 import { useUsersQuery, useCreateUser, useDeleteUser, useUpdateUser, useResetUserPassword } from '@/hooks/useUsers';
+import { useSecurityGroupsQuery } from '@/hooks/useSecurityGroups';
+import { useAllPlansQuery } from '@/hooks/useSubscriptions';
+import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MoreVertical, Pencil, RotateCcw, Trash2, CheckCircle } from 'lucide-react';
-import type { Manager, CreateManagerRequest, UpdateManagerRequest } from '@/types/user.types';
+import type { UpdateUserRequest } from '@/types/user.types';
+import type { User } from '@/types/auth.types';
 import { usePermissionStore } from '@/store/permissionStore';
+
+interface CreateUserForm {
+  email: string;
+  userName: string;
+  phone: string;
+  password: string;
+  securityGroupId: number | '';
+  copyConfiguration: boolean;
+  planId: number | '';
+}
+
+const EMPTY_CREATE_FORM: CreateUserForm = {
+  email: '',
+  userName: '',
+  phone: '',
+  password: '',
+  securityGroupId: '',
+  copyConfiguration: true,
+  planId: '',
+};
 
 export function UserManagement() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
   const [openActionMenuUserId, setOpenActionMenuUserId] = useState<number | null>(null);
-  const [selectedUser, setSelectedUser] = useState<Manager | null>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [resetPassword, setResetPassword] = useState('');
   const [confirmResetPassword, setConfirmResetPassword] = useState('');
   const [resetPasswordError, setResetPasswordError] = useState('');
-  const { data: users = [], isLoading } = useUsersQuery();
+  const [createForm, setCreateForm] = useState<CreateUserForm>(EMPTY_CREATE_FORM);
+  const [createFormError, setCreateFormError] = useState('');
+
+  const loggedInUser = useAuthStore((state) => state.user);
+  const hasPermission = usePermissionStore((state) => state.hasPermission);
+  const { data: users = [], isLoading, isError } = useUsersQuery();
+  const { data: securityGroups = [] } = useSecurityGroupsQuery();
+  const { data: allPlans = [] } = useAllPlansQuery();
   const createMutation = useCreateUser();
   const deleteMutation = useDeleteUser();
   const updateMutation = useUpdateUser();
   const resetPasswordMutation = useResetUserPassword();
-  const hasPermission = usePermissionStore((state) => state.hasPermission);
-
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<CreateManagerRequest>({
-    resolver: zodResolver(userSchema),
-  });
 
   const {
     register: registerEdit,
@@ -42,7 +61,7 @@ export function UserManagement() {
     reset: resetEdit,
     setValue: setEditValue,
     formState: { errors: editErrors },
-  } = useForm<Omit<UpdateManagerRequest, 'id'>>();
+  } = useForm<Omit<UpdateUserRequest, 'id'>>();
 
   useEffect(() => {
     if (selectedUser && isEditModalOpen) {
@@ -67,14 +86,39 @@ export function UserManagement() {
     };
   }, []);
 
-  const onSubmit = async (data: CreateManagerRequest) => {
+  const handleCreateFieldChange = (field: keyof CreateUserForm, value: string | number | boolean) => {
+    setCreateForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleCreateSubmit = async () => {
+    if (!createForm.email.trim()) { setCreateFormError('Email is required.'); return; }
+    if (!createForm.password || createForm.password.length < 8) { setCreateFormError('Password must be at least 8 characters.'); return; }
+    setCreateFormError('');
     try {
-      await createMutation.mutateAsync(data);
+      await createMutation.mutateAsync({
+        login: createForm.email,
+        email: createForm.email,
+        userName: createForm.userName || undefined,
+        password: createForm.password,
+        phone: createForm.phone || undefined,
+        parentId: loggedInUser?.id ?? null,
+        copyConfiguration: createForm.copyConfiguration,
+        securityGroupId: createForm.securityGroupId !== '' ? Number(createForm.securityGroupId) : null,
+        planId: createForm.planId !== '' ? Number(createForm.planId) : null,
+        active: true,
+      });
       setIsModalOpen(false);
-      reset();
+      setCreateForm(EMPTY_CREATE_FORM);
     } catch (err) {
       console.error('Failed to create user', err);
     }
+  };
+
+  const handleCloseCreate = () => {
+    if (createMutation.isPending) return;
+    setIsModalOpen(false);
+    setCreateForm(EMPTY_CREATE_FORM);
+    setCreateFormError('');
   };
 
   const handleDelete = async (id: number) => {
@@ -91,7 +135,7 @@ export function UserManagement() {
     }
   };
 
-  const handleEdit = (user: Manager) => {
+  const handleEdit = (user: User) => {
     setOpenActionMenuUserId(null);
     setSelectedUser(user);
     setIsEditModalOpen(true);
@@ -101,7 +145,7 @@ export function UserManagement() {
     setOpenActionMenuUserId((previous) => (previous === userId ? null : userId));
   };
 
-  const handleOpenResetPassword = (user: Manager) => {
+  const handleOpenResetPassword = (user: User) => {
     setOpenActionMenuUserId(null);
     setSelectedUser(user);
     setResetPassword('');
@@ -146,7 +190,7 @@ export function UserManagement() {
     }
   };
 
-  const onEditSubmit = async (data: Omit<UpdateManagerRequest, 'id'>) => {
+  const onEditSubmit = async (data: Omit<UpdateUserRequest, 'id'>) => {
     if (!selectedUser) return;
     try {
       await updateMutation.mutateAsync({ id: selectedUser.id, ...data });
@@ -160,6 +204,10 @@ export function UserManagement() {
 
   if (isLoading) {
     return <div>Loading users...</div>;
+  }
+
+  if (isError) {
+    return <div className="p-6 text-destructive">Failed to load users. You may not have permission to view this page.</div>;
   }
 
   return (
@@ -179,7 +227,6 @@ export function UserManagement() {
               <thead className="bg-muted/50">
                 <tr>
                   <th className="px-4 py-3 text-left text-sm font-medium">ID</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">Login</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Email</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">User Name</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Phone</th>
@@ -194,7 +241,6 @@ export function UserManagement() {
                     className={`hover:bg-muted/50 ${!user.active ? 'bg-gray-100 text-gray-400' : ''}`}
                   >
                     <td className="px-4 py-3 text-sm">{user.id}</td>
-                    <td className="px-4 py-3 text-sm">{user.login}</td>
                     <td className="px-4 py-3 text-sm">{user.email}</td>
                     <td className="px-4 py-3 text-sm">{user.userName}</td>
                     <td className="px-4 py-3 text-sm">{user.phone}</td>
@@ -285,62 +331,122 @@ export function UserManagement() {
       {/* Add User Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md m-4">
+          <Card className="w-full max-w-md m-4 max-h-[90vh] overflow-y-auto">
             <CardHeader>
               <CardTitle>Add New User</CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="login">Login</Label>
-                  <Input id="login" {...register('login')} />
-                  {errors.login && <p className="text-sm text-destructive">{errors.login.message}</p>}
+                  <Label htmlFor="cu-email">Email <span className="text-destructive">*</span></Label>
+                  <Input
+                    id="cu-email"
+                    type="email"
+                    placeholder="user@example.com"
+                    value={createForm.email}
+                    onChange={(e) => handleCreateFieldChange('email', e.target.value)}
+                  />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" {...register('email')} />
-                  {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+                  <Label htmlFor="cu-userName">User Name <span className="text-muted-foreground text-xs">(optional)</span></Label>
+                  <Input
+                    id="cu-userName"
+                    placeholder="Display name"
+                    value={createForm.userName}
+                    onChange={(e) => handleCreateFieldChange('userName', e.target.value)}
+                  />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="userName">User Name</Label>
-                  <Input id="userName" {...register('userName')} />
-                  {errors.userName && (
-                    <p className="text-sm text-destructive">{errors.userName.message}</p>
-                  )}
+                  <Label htmlFor="cu-phone">Phone <span className="text-muted-foreground text-xs">(optional)</span></Label>
+                  <Input
+                    id="cu-phone"
+                    type="tel"
+                    placeholder="+1234567890"
+                    value={createForm.phone}
+                    onChange={(e) => handleCreateFieldChange('phone', e.target.value)}
+                  />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input id="phone" {...register('phone')} />
-                  {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
+                  <Label htmlFor="cu-password">Password <span className="text-destructive">*</span></Label>
+                  <Input
+                    id="cu-password"
+                    type="password"
+                    placeholder="Min 8 characters"
+                    value={createForm.password}
+                    onChange={(e) => handleCreateFieldChange('password', e.target.value)}
+                  />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input id="password" type="password" {...register('password')} />
-                  {errors.password && (
-                    <p className="text-sm text-destructive">{errors.password.message}</p>
-                  )}
-                </div>
+                {hasPermission('user:allow to assign security group') && (
+                  <div className="space-y-2">
+                    <Label htmlFor="cu-sg">Security Group <span className="text-muted-foreground text-xs">(optional)</span></Label>
+                    <select
+                      id="cu-sg"
+                      value={createForm.securityGroupId}
+                      onChange={(e) => handleCreateFieldChange('securityGroupId', e.target.value === '' ? '' : Number(e.target.value))}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    >
+                      <option value="">No security group</option>
+                      {securityGroups.map((sg) => (
+                        <option key={sg.id} value={sg.id}>
+                          {sg.groupName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {hasPermission('user:allow to assign a plan') && (
+                  <div className="space-y-2">
+                    <Label htmlFor="cu-plan">Subscription Plan <span className="text-muted-foreground text-xs">(optional)</span></Label>
+                    <select
+                      id="cu-plan"
+                      value={createForm.planId}
+                      onChange={(e) => handleCreateFieldChange('planId', e.target.value === '' ? '' : Number(e.target.value))}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    >
+                      <option value="">No plan</option>
+                      {allPlans.map((plan) => (
+                        <option key={plan.id} value={plan.id}>
+                          {plan.subscriptionName} — {plan.currency}{plan.price} / {plan.validityDays}d
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {hasPermission('user:allow to copy configurations') && (
+                  <div className="flex items-center justify-between rounded-md border px-4 py-3">
+                    <div>
+                      <p className="text-sm font-medium">Copy Configuration</p>
+                      <p className="text-xs text-muted-foreground">Copy parent configuration to this user</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={createForm.copyConfiguration}
+                        onChange={(e) => handleCreateFieldChange('copyConfiguration', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary" />
+                    </label>
+                  </div>
+                )}
+
+                {createFormError && <p className="text-sm text-destructive">{createFormError}</p>}
 
                 <div className="flex gap-2 justify-end">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setIsModalOpen(false);
-                      reset();
-                    }}
-                  >
+                  <Button type="button" variant="outline" onClick={handleCloseCreate} disabled={createMutation.isPending}>
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={createMutation.isPending}>
+                  <Button type="button" onClick={handleCreateSubmit} disabled={createMutation.isPending}>
                     {createMutation.isPending ? 'Creating...' : 'Create User'}
                   </Button>
                 </div>
-              </form>
+              </div>
             </CardContent>
           </Card>
         </div>

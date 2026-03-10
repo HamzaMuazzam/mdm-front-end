@@ -28,7 +28,6 @@ export interface CreateDeviceRequest {
   model: string;
   osVersion: string;
   description?: string;
-  userId: number;
 }
 
 export interface UpdateDeviceRequest {
@@ -45,7 +44,6 @@ export interface UpdateDeviceRequest {
   batteryCharge?: number;
   launcherVariant?: string;
   defaultLauncher?: string;
-  userId?: number;
 }
 
 export interface DeviceConfiguration {

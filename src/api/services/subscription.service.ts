@@ -4,17 +4,19 @@ import type {
   UserSubscriptionPlan,
   UserPlanSubscription,
   AssignPlanRequest,
+  CreateSubscriptionRequest,
 } from '@/types/subscription.types';
 import type { ApiResponse, PaginatedResponse } from '@/types/api.types';
 
 export const subscriptionService = {
   async getSubscriptionPlans(
     page = 0,
-    size = 10,
-    sort = 'subscriptionName,asc'
+    size = 100,
+    sort = 'subscriptionName,asc',
+    includeCustomPlan = false
   ): Promise<Subscription[]> {
     const response = await apiClient.get<ApiResponse<PaginatedResponse<Subscription>>>(
-      `/v1/subscriptions?page=${page}&size=${size}&sort=${sort}`
+      `/v1/subscriptions?page=${page}&size=${size}&sort=${sort}&includeCustomPlan=${includeCustomPlan}`
     );
     return response.data.data.content;
   },
@@ -43,5 +45,10 @@ export const subscriptionService = {
       '/v1/subscriptions/user-plans'
     );
     return response.data.data;
+  },
+
+  async createPlan(data: CreateSubscriptionRequest): Promise<ApiResponse<Subscription>> {
+    const response = await apiClient.post<ApiResponse<Subscription>>('/v1/subscriptions', data);
+    return response.data;
   },
 };

@@ -4,7 +4,7 @@ import { subscriptionService } from '@/api/services/subscription.service';
 import { toast } from '@/hooks/useToast';
 import { ROUTES } from '@/utils/constants';
 import { useAuthStore } from '@/store/authStore';
-import type { AssignPlanRequest } from '@/types/subscription.types';
+import type { AssignPlanRequest, CreateSubscriptionRequest } from '@/types/subscription.types';
 
 const SUBSCRIPTIONS_QUERY_KEY = ['subscriptions'];
 const USER_PLAN_QUERY_KEY = ['userPlan'];
@@ -14,7 +14,16 @@ export function useSubscriptionPlansQuery() {
   return useQuery({
     queryKey: SUBSCRIPTIONS_QUERY_KEY,
     queryFn: () => subscriptionService.getSubscriptionPlans(),
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
+// Fetches all plans including custom ones — used in admin dropdowns
+export function useAllPlansQuery() {
+  return useQuery({
+    queryKey: [...SUBSCRIPTIONS_QUERY_KEY, 'includeCustom'],
+    queryFn: () => subscriptionService.getSubscriptionPlans(0, 100, 'subscriptionName,asc', true),
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -57,6 +66,31 @@ export function useAssignPlan() {
       toast({
         variant: 'destructive',
         title: 'Assignment Error',
+        description: message,
+      });
+    },
+  });
+}
+
+export function useCreateSubscriptionPlan() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateSubscriptionRequest) => subscriptionService.createPlan(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: SUBSCRIPTIONS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: USER_PLANS_QUERY_KEY });
+      toast({
+        variant: 'success',
+        title: 'Plan Created',
+        description: 'Subscription plan has been created successfully.',
+      });
+    },
+    onError: (error: any) => {
+      const message = error?.response?.data?.message || error?.message || 'Failed to create plan.';
+      toast({
+        variant: 'destructive',
+        title: 'Create Error',
         description: message,
       });
     },

@@ -12,8 +12,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 
 interface RegisterForm {
   email: string;
+  userName?: string;
   password: string;
-  phone: string;
+  phone?: string;
 }
 
 export function RegisterPage() {
@@ -34,8 +35,10 @@ export function RegisterPage() {
       await registerMutation.mutateAsync({
         login: data.email,
         email: data.email,
+        userName: data.userName || undefined,
         password: data.password,
-        phone: data.phone,
+        phone: data.phone || undefined,
+        copyConfiguration: true,
         active: true,
       });
     } catch (err: any) {
@@ -65,6 +68,12 @@ export function RegisterPage() {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="userName">Username <span className="text-muted-foreground text-xs">(optional)</span></Label>
+              <Input id="userName" placeholder="Display name" {...register('userName')} />
+              {errors.userName && <p className="text-sm text-destructive">{errors.userName.message}</p>}
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
@@ -78,8 +87,8 @@ export function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input id="phone" type="tel" placeholder="10-15 digits" {...register('phone')} />
+              <Label htmlFor="phone">Phone Number <span className="text-muted-foreground text-xs">(optional)</span></Label>
+              <Input id="phone" type="tel" placeholder="+1234567890" {...register('phone')} />
               {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
             </div>
 

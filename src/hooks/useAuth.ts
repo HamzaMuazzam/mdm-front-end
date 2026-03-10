@@ -21,7 +21,8 @@ export function useLogin() {
     mutationFn: authService.login,
     onSuccess: async (data) => {
       // Handle error code 0007 (unverified email) — API returns 200 with errorCode
-      if (data.errorCode === '0007') {
+      // Skip OTP if the user is already active
+      if (!data.data?.active) {
         localStorage.setItem('pendingEmail', data.data?.email || '');
         navigate(ROUTES.VERIFY_OTP);
         return;

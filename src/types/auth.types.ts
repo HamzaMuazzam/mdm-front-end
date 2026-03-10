@@ -24,9 +24,15 @@ export interface LoginResponse {
 export interface RegisterRequest {
   login: string;
   email: string;
+  userName?: string;
   password: string;
-  phone: string;
+  phone?: string;
+  profileImg?: string;
+  parentId?: number | null;
+  copyConfiguration: boolean;
   active: boolean;
+  securityGroupId?: number | null;
+  planId?: number | null;
 }
 
 export interface OtpRequest {

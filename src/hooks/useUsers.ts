@@ -1,24 +1,20 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userService } from '@/api/services/user.service';
 import { toast } from '@/hooks/useToast';
-import type { CreateManagerRequest, UpdateManagerRequest, ResetUserPasswordRequest } from '@/types/user.types';
+import { useAuthStore } from '@/store/authStore';
+import type { UpdateUserRequest, ResetUserPasswordRequest } from '@/types/user.types';
+import type { RegisterRequest } from '@/types/auth.types';
 
 const USERS_QUERY_KEY = ['users'];
-const LEVEL2_USERS_QUERY_KEY = ['level2-users'];
 
 export function useUsersQuery() {
+  const token = useAuthStore((state) => state.token);
   return useQuery({
     queryKey: USERS_QUERY_KEY,
-    queryFn: userService.getAllManagers,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-}
-
-export function useLevel2UsersQuery() {
-  return useQuery({
-    queryKey: LEVEL2_USERS_QUERY_KEY,
-    queryFn: userService.getUsersWithLevel2,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    queryFn: () => userService.getAll(),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+    enabled: !!token,
   });
 }
 
@@ -26,7 +22,7 @@ export function useCreateUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateManagerRequest) => userService.createManager(data),
+    mutationFn: (data: RegisterRequest) => userService.createUser(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: USERS_QUERY_KEY });
       toast({
@@ -50,7 +46,7 @@ export function useUpdateUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, ...data }: UpdateManagerRequest) => userService.updateUser(id, data),
+    mutationFn: ({ id, ...data }: UpdateUserRequest) => userService.updateUser(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: USERS_QUERY_KEY });
       toast({
@@ -74,7 +70,7 @@ export function useDeleteUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, status }: { id: number; status: true | false }) =>
+    mutationFn: ({ id, status }: { id: number; status: boolean }) =>
       userService.deleteUser(id, status),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: USERS_QUERY_KEY });
@@ -92,7 +88,7 @@ export function useDeleteUser() {
       const message =
         error?.response?.data?.message ||
         error?.message ||
-        `Failed to ${isActivating ? 'activate' : 'delete'} user. Please try again.`;
+        `Failed to ${isActivating ? 'activate' : 'delete'} user.`;
       toast({
         variant: 'destructive',
         title: isActivating ? 'Activate Error' : 'Delete Error',

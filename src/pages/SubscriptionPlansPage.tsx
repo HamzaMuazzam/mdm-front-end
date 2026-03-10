@@ -51,7 +51,7 @@ export function SubscriptionPlansPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Validity:</span>
-                    <span className="font-medium">{plan.validity} days</span>
+                    <span className="font-medium">{plan.validityDays} days</span>
                   </div>
                 </div>
                 <Button

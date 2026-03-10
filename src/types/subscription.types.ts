@@ -1,9 +1,14 @@
 export interface Subscription {
   id: number;
   subscriptionName: string;
+  description: string;
+  type: string;
   seats: number;
-  validity: number;
+  noOfDevices: number;
+  validityDays: number;
   price: number;
+  currency: string;
+  isCustomPlan: boolean;
 }
 
 export interface UserPlanSubscription {
@@ -34,4 +39,17 @@ export interface UserSubscriptionPlan {
 
 export interface AssignPlanRequest {
   subscriptionId: number;
+  userId?: number;
+}
+
+export interface CreateSubscriptionRequest {
+  subscriptionName: string;
+  description: string;
+  type: string;
+  seats: number;
+  noOfDevices: number;
+  validityDays: number;
+  price: number;
+  currency: string;
+  isCustomPlan: boolean;
 }

@@ -11,12 +11,13 @@ export const loginSchema = z.object({
 
 export const registerSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Invalid email format'),
+  userName: z.string().max(100, 'Username cannot exceed 100 characters').optional(),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   phone: z
     .string()
-    .min(10, 'Phone must be at least 10 digits')
-    .max(15, 'Phone must be at most 15 digits')
-    .regex(/^\d+$/, 'Phone must contain only digits'),
+    .regex(/^\+?[0-9]{10,15}$/, 'Phone must be 10-15 digits, optionally starting with +')
+    .optional()
+    .or(z.literal('')),
 });
 
 export const otpSchema = z.object({
@@ -30,7 +31,6 @@ export const forgotPasswordSchema = z.object({
 });
 
 export const userSchema = z.object({
-  login: z.string().min(1, 'Login is required'),
   email: z.string().email('Invalid email format'),
   userName: z.string().min(1, 'User name is required'),
   phone: z.string().min(10).max(15).regex(/^\d+$/, 'Invalid phone number'),
@@ -45,7 +45,6 @@ export const deviceSchema = z.object({
   model: z.string().min(1, 'Model is required'),
   osVersion: z.string().min(1, 'OS Version is required'),
   description: z.string().optional(),
-  userId: z.number().min(1, 'User is required'),
 });
 
 export const updateDeviceSchema = z.object({
@@ -61,7 +60,6 @@ export const updateDeviceSchema = z.object({
   batteryCharge: z.number().optional(),
   launcherVariant: z.string().optional(),
   defaultLauncher: z.string().optional(),
-  userId: z.number().min(1, 'User is required').optional(),
 });
 
 // Validation functions

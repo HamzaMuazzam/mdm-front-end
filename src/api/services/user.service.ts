@@ -1,33 +1,28 @@
 import { apiClient } from '../client';
-import type { Manager, CreateManagerRequest, UpdateManagerRequest, Level2User, ResetUserPasswordRequest } from '@/types/user.types';
-import type { ApiResponse } from '@/types/api.types';
+import type { UpdateUserRequest, ResetUserPasswordRequest } from '@/types/user.types';
+import type { RegisterRequest } from '@/types/auth.types';
+import type { User } from '@/types/auth.types';
+import type { ApiResponse, PaginatedResponse } from '@/types/api.types';
 
 export const userService = {
-  async getAllManagers(): Promise<Manager[]> {
-    const response = await apiClient.get<ApiResponse<Manager[]>>(
-      '/v1/users/get-all-managers-by-user-id'
-    );
-    return response.data.data;
+  async getAll(): Promise<User[]> {
+    const response = await apiClient.get<ApiResponse<PaginatedResponse<User>>>('/v1/users');
+    return response.data.data.content;
   },
 
-  async createManager(data: CreateManagerRequest): Promise<ApiResponse<Manager>> {
-    const response = await apiClient.post<ApiResponse<Manager>>('/v1/users/create-manager', data);
+  async createUser(data: RegisterRequest): Promise<ApiResponse<User>> {
+    const response = await apiClient.post<ApiResponse<User>>('/v1/users', data);
     return response.data;
   },
 
-  async updateUser(id: number, data: Omit<UpdateManagerRequest, 'id'>): Promise<ApiResponse<Manager>> {
-    const response = await apiClient.put<ApiResponse<Manager>>(`/v1/users/${id}`, data);
+  async updateUser(id: number, data: Omit<UpdateUserRequest, 'id'>): Promise<ApiResponse<User>> {
+    const response = await apiClient.put<ApiResponse<User>>(`/v1/users/${id}`, data);
     return response.data;
   },
 
-  async deleteUser(id: number, status: true | false ): Promise<ApiResponse<void>> {
+  async deleteUser(id: number, status: boolean): Promise<ApiResponse<void>> {
     const response = await apiClient.delete<ApiResponse<void>>(`/v1/users/${id}?status=${status}`);
     return response.data;
-  },
-
-  async getUsersWithLevel2(): Promise<Level2User[]> {
-    const response = await apiClient.get<ApiResponse<Level2User[]>>('/v1/users/get_user_with_level2');
-    return response.data.data;
   },
 
   async resetUserPassword(data: ResetUserPasswordRequest): Promise<ApiResponse<void>> {
