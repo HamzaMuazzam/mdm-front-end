@@ -33,13 +33,9 @@ export function SecurityGroupManagement() {
   const [togglingPermissionId, setTogglingPermissionId] = useState<number | null>(null);
 
   const hasPermission = usePermissionStore((state) => state.hasPermission);
-  const userSecurityGroupId = usePermissionStore((state) => state.userSecurityGroupId);
-  const canFetchOthers = hasPermission('security-group:fetch others');
 
   const { data: allGroups = [], isLoading: groupsLoading } = useSecurityGroupsQuery();
-  const groups = canFetchOthers
-    ? allGroups
-    : allGroups.filter((g) => g.id === userSecurityGroupId);
+  const groups = allGroups;
   const { data: matrix, isLoading: permissionsLoading } = useSecurityGroupPermissionsQuery(
     selectedGroup?.id ?? null
   );
