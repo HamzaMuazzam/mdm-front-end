@@ -449,7 +449,7 @@ export function DeviceMonitorDashboardPage() {
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           <TopMetric
             title="Battery"
-            value={stateData ? `${stateData.batteryCharge}%` : '-'}
+            value={stateData ? `${stateData.batteryCharge??"N/A "}%` : '-'}
             helper={stateData?.isCharging ? 'Charging now' : 'Not charging'}
             icon={stateData?.isCharging ? <BatteryCharging className="h-5 w-5" /> : <BatteryMedium className="h-5 w-5" />}
           />
@@ -611,7 +611,7 @@ export function DeviceMonitorDashboardPage() {
                 <p className="text-xs uppercase tracking-wide text-slate-500">Battery Health</p>
                 <p className="mt-1 flex items-center gap-2 text-sm font-semibold text-slate-900">
                   <Gauge className="h-4 w-4" />
-                  {stateData ? `${stateData.batteryCharge}%` : '-'}
+                  {stateData ? `${stateData.batteryCharge??"N/A "}%` : '-'}
                 </p>
               </div>
             </CardContent>
