@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, ShieldCheck, Plus, X, CheckCircle2, Circle, Loader2, Pencil } from 'lucide-react';
 import type { SecurityGroup, PermissionItem } from '@/types/security-group.types';
 import { usePermissionStore } from '@/store/permissionStore';
+import { Divider } from '@/components/ui/divider';
 
 export function SecurityGroupManagement() {
   const [selectedGroup, setSelectedGroup] = useState<SecurityGroup | null>(null);
@@ -137,34 +138,37 @@ export function SecurityGroupManagement() {
             ) : groups.length === 0 ? (
               <div className="p-4 text-sm text-muted-foreground">No security groups found.</div>
             ) : (
-              <ul className="divide-y">
-                {groups.map((group) => (
-                  <li
-                    key={group.id}
-                    onClick={() => setSelectedGroup(group)}
-                    className={`flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors ${
-                      selectedGroup?.id === group.id
-                        ? 'bg-muted border-l-4 border-primary'
-                        : 'border-l-4 border-transparent'
-                    }`}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-sm">{group.groupName}</p>
-                      {group.description && (
-                        <p className="text-xs text-muted-foreground mt-0.5 truncate">{group.description}</p>
+              <ul className="">
+                {groups.map((group, index) => (
+                  <>
+                    <li
+                      key={group.id}
+                      onClick={() => setSelectedGroup(group)}
+                      className={`flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors ${
+                        selectedGroup?.id === group.id
+                          ? 'bg-muted border-l-4 border-primary'
+                          : 'border-l-4 border-transparent'
+                      }`}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-sm">{group.groupName}</p>
+                        {group.description && (
+                          <p className="text-xs text-muted-foreground mt-0.5 truncate">{group.description}</p>
+                        )}
+                      </div>
+                      {hasPermission('security-group:update') && (
+                        <button
+                          type="button"
+                          onClick={(e) => handleOpenEdit(group, e)}
+                          className="ml-2 p-1.5 rounded-md opacity-50 hover:opacity-100 hover:bg-muted transition-all shrink-0"
+                          title="Edit group"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
                       )}
-                    </div>
-                    {hasPermission('security-group:update') && (
-                      <button
-                        type="button"
-                        onClick={(e) => handleOpenEdit(group, e)}
-                        className="ml-2 p-1.5 rounded-md opacity-50 hover:opacity-100 hover:bg-muted transition-all shrink-0"
-                        title="Edit group"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                    )}
-                  </li>
+                    </li>
+                    {index < groups.length - 1 && <Divider />}
+                  </>
                 ))}
               </ul>
             )}
