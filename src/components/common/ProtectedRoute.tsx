@@ -11,17 +11,20 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children, requiresSubscription = false }: ProtectedRouteProps) {
   const { isAuthenticated } = useAuthStore();
   const location = useLocation();
-  const { data: userPlan, isLoading } = useUserPlanQuery();
+  const { data: userPlan, isLoading, isError } = useUserPlanQuery();
 
   // Not authenticated - redirect to login
   if (!isAuthenticated) {
     return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />;
   }
 
-  // No active subscription — redirect to plans
+  // No active subscription — redirect to plans.
+  // Skip redirect if there was a network error (backend down) to avoid
+  // incorrectly sending the user to /subscriptions on page refresh.
   if (
     requiresSubscription &&
     !isLoading &&
+    !isError &&
     !userPlan &&
     location.pathname !== ROUTES.SUBSCRIPTIONS
   ) {

@@ -27,8 +27,13 @@ export const subscriptionService = {
         '/v1/user-subscription-plans/user/plan'
       );
       return response.data.data;
-    } catch (error) {
-      return null; // No active plan
+    } catch (error: any) {
+      if (error.response) {
+        // Server responded (e.g. 404 = no active plan) — treat as no plan
+        return null;
+      }
+      // Network error (server down) — propagate so ProtectedRoute can distinguish
+      throw error;
     }
   },
 

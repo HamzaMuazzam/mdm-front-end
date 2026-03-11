@@ -210,16 +210,20 @@ export function SecurityGroupManagement() {
                       <ul className="space-y-1">
                         {group.permissions.map((perm) => {
                           const isToggling = togglingPermissionId === perm.permissionId;
+                          const isDisabled = matrix.securityGroupId !== 1 && !perm.isAllocated && !perm.isAllowed;
                           return (
                             <li
                               key={perm.permissionId}
-                              onClick={() => hasPermission('security-group:update') && handleTogglePermission(perm)}
+                              onClick={() => !isDisabled && hasPermission('security-group:update') && handleTogglePermission(perm)}
+                              title={isDisabled ? 'This permission is not available for your security group' : undefined}
                               className={`flex items-start gap-2 px-2 py-1.5 rounded-md transition-colors select-none ${
-                                !hasPermission('security-group:update')
-                                  ? 'cursor-default'
-                                  : togglingPermissionId !== null
-                                    ? 'cursor-not-allowed opacity-60'
-                                    : 'cursor-pointer hover:bg-muted/50'
+                                isDisabled
+                                  ? 'cursor-not-allowed opacity-40'
+                                  : !hasPermission('security-group:update')
+                                    ? 'cursor-default'
+                                    : togglingPermissionId !== null
+                                      ? 'cursor-not-allowed opacity-60'
+                                      : 'cursor-pointer hover:bg-muted/50'
                               }`}
                             >
                               {isToggling ? (

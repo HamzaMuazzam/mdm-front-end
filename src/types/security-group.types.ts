@@ -14,6 +14,7 @@ export interface PermissionItem {
   permissionName: string;
   description: string;
   isAllocated: boolean;
+  isAllowed: boolean;
 }
 
 export interface PermissionGroup {
