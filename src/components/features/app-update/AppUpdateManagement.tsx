@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { appUpdateService } from '@/api/services/app-update.service';
 import type { AppUpdate, UpdatePlatform, UpdateType } from '@/types/app-update.types';
+import { usePermissionStore } from '@/store/permissionStore';
 
 const PLATFORMS: UpdatePlatform[] = ['ANDROID', 'IOS'];
 const UPDATE_TYPES: UpdateType[] = ['NORMAL', 'CRITICAL'];
@@ -57,6 +58,8 @@ function StatusBadge({ isActive }: { isActive: boolean }) {
 
 export function AppUpdateManagement() {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const hasPermission = usePermissionStore((state) => state.hasPermission);
+  const canUpload = hasPermission('app-updates:upload');
   const [platform, setPlatform] = useState<UpdatePlatform>('ANDROID');
 
   // Upload form
@@ -198,8 +201,8 @@ export function AppUpdateManagement() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Upload Card */}
-        <Card>
+        {/* Upload Card — visible only with app-updates:upload permission */}
+        {canUpload && <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Upload className="h-5 w-5 text-primary" />
@@ -289,10 +292,10 @@ export function AppUpdateManagement() {
               {uploading ? 'Uploading...' : 'Upload Update'}
             </Button>
           </CardContent>
-        </Card>
+        </Card>}
 
         {/* Latest Update Card */}
-        <Card>
+        <Card className={!canUpload ? 'lg:col-span-2' : ''}>
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg">Latest Update</CardTitle>

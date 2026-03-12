@@ -143,13 +143,15 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
             onClick={() => onTabChange('security-groups')}
           />
         )}
-        <NavButton
-          icon={<RefreshCw className="h-5 w-5" />}
-          label="App Update"
-          isActive={activeTab === 'app-update'}
-          isCollapsed={isCollapsed}
-          onClick={() => onTabChange('app-update')}
-        />
+        {hasPermission('app-updates:upload') && (
+          <NavButton
+            icon={<RefreshCw className="h-5 w-5" />}
+            label="App Update"
+            isActive={activeTab === 'app-update'}
+            isCollapsed={isCollapsed}
+            onClick={() => onTabChange('app-update')}
+          />
+        )}
       </nav>
 
       {/* Logout Button */}
