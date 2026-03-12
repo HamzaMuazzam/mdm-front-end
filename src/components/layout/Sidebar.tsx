@@ -13,11 +13,12 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
+  RefreshCw,
 } from 'lucide-react';
 
 interface SidebarProps {
-  activeTab: 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups';
-  onTabChange: (tab: 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups') => void;
+  activeTab: 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update';
+  onTabChange: (tab: 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update') => void;
 }
 
 export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
@@ -142,6 +143,13 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
             onClick={() => onTabChange('security-groups')}
           />
         )}
+        <NavButton
+          icon={<RefreshCw className="h-5 w-5" />}
+          label="App Update"
+          isActive={activeTab === 'app-update'}
+          isCollapsed={isCollapsed}
+          onClick={() => onTabChange('app-update')}
+        />
       </nav>
 
       {/* Logout Button */}

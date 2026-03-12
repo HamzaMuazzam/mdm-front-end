@@ -9,10 +9,11 @@ import { SubscriptionsManagement } from '@/components/features/subscriptions/Sub
 import { ConfigurationManagement } from '@/components/features/configuration/ConfigurationManagement';
 import { AnalyticsDashboard } from '@/components/features/dashboard/AnalyticsDashboard';
 import { SecurityGroupManagement } from '@/components/features/security-groups/SecurityGroupManagement';
+import { AppUpdateManagement } from '@/components/features/app-update/AppUpdateManagement';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { usePermissionsQuery } from '@/hooks/usePermissions';
 
-type TabType = 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups';
+type TabType = 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update';
 
 interface LocationState {
   activeTab?: TabType;
@@ -25,7 +26,8 @@ function isTabType(value: string | null): value is TabType {
     value === 'devices' ||
     value === 'subscriptions' ||
     value === 'configuration' ||
-    value === 'security-groups'
+    value === 'security-groups' ||
+    value === 'app-update'
   );
 }
 
@@ -129,6 +131,11 @@ export function DashboardPage() {
         {activeTab === 'security-groups' && (
           <ErrorBoundary moduleName="Security Groups">
             <SecurityGroupManagement />
+          </ErrorBoundary>
+        )}
+        {activeTab === 'app-update' && (
+          <ErrorBoundary moduleName="Application Update">
+            <AppUpdateManagement />
           </ErrorBoundary>
         )}
       </div>
