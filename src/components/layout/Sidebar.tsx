@@ -14,11 +14,12 @@ import {
   ChevronRight,
   ShieldCheck,
   RefreshCw,
+  PackageSearch,
 } from 'lucide-react';
 
 interface SidebarProps {
-  activeTab: 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update';
-  onTabChange: (tab: 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update') => void;
+  activeTab: 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management';
+  onTabChange: (tab: 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management') => void;
 }
 
 export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
@@ -150,6 +151,15 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
             isActive={activeTab === 'app-update'}
             isCollapsed={isCollapsed}
             onClick={() => onTabChange('app-update')}
+          />
+        )}
+        {(hasPermission('app-management:read') || hasPermission('app-management:upload') || hasPermission('app-management:deploy')) && (
+          <NavButton
+            icon={<PackageSearch className="h-5 w-5" />}
+            label="App Management"
+            isActive={activeTab === 'app-management'}
+            isCollapsed={isCollapsed}
+            onClick={() => onTabChange('app-management')}
           />
         )}
       </nav>

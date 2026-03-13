@@ -10,10 +10,11 @@ import { ConfigurationManagement } from '@/components/features/configuration/Con
 import { AnalyticsDashboard } from '@/components/features/dashboard/AnalyticsDashboard';
 import { SecurityGroupManagement } from '@/components/features/security-groups/SecurityGroupManagement';
 import { AppUpdateManagement } from '@/components/features/app-update/AppUpdateManagement';
+import { AppManagement } from '@/components/features/app-management/AppManagement';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { usePermissionsQuery } from '@/hooks/usePermissions';
 
-type TabType = 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update';
+type TabType = 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management';
 
 interface LocationState {
   activeTab?: TabType;
@@ -27,7 +28,8 @@ function isTabType(value: string | null): value is TabType {
     value === 'subscriptions' ||
     value === 'configuration' ||
     value === 'security-groups' ||
-    value === 'app-update'
+    value === 'app-update' ||
+    value === 'app-management'
   );
 }
 
@@ -97,12 +99,14 @@ export function DashboardPage() {
       queryClient.invalidateQueries({ queryKey: ['parentConfiguration'] });
     } else if (tab === 'security-groups') {
       queryClient.invalidateQueries({ queryKey: ['security-groups'] });
+    } else if (tab === 'app-management') {
+      queryClient.invalidateQueries({ queryKey: ['app-management'] });
     }
   };
 
   return (
     <DashboardLayout sidebar={<Sidebar activeTab={activeTab} onTabChange={handleTabChange} />}>
-      <div className={activeTab === 'devices' || activeTab === 'users' || activeTab === 'security-groups' ? 'h-full p-8' : 'p-8'}>
+      <div className={activeTab === 'devices' || activeTab === 'users' || activeTab === 'security-groups' || activeTab === 'app-management' ? 'h-full p-8' : 'p-8'}>
         {activeTab === 'analytics' && (
           <ErrorBoundary moduleName="Analytics">
             <AnalyticsDashboard />
@@ -136,6 +140,11 @@ export function DashboardPage() {
         {activeTab === 'app-update' && (
           <ErrorBoundary moduleName="Application Update">
             <AppUpdateManagement />
+          </ErrorBoundary>
+        )}
+        {activeTab === 'app-management' && (
+          <ErrorBoundary moduleName="App Management">
+            <AppManagement />
           </ErrorBoundary>
         )}
       </div>
