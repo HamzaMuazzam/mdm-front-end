@@ -130,6 +130,9 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
   const selectedNodeRef = useRef<FileNode | null>(null);
   useEffect(() => { selectedNodeRef.current = selectedNode; }, [selectedNode]);
 
+  const currentPathRef = useRef(currentPath);
+  useEffect(() => { currentPathRef.current = currentPath; }, [currentPath]);
+
   const sendCommand = useSendFileCommand(deviceUuid);
   const { data: polledCommand } = usePollCommand(pendingCommandId, pendingCommandId !== null);
   const { data: polledTransfer } = usePollTransfer(activeTransferId, activeTransferId !== null);
@@ -272,6 +275,8 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
       toast({ variant: 'success', title: inline ? 'Opening in browser…' : 'Downloading…', description: transferData.fileName });
     } else if (type === 'UPLOAD') {
       toast({ variant: 'success', title: 'Uploaded', description: `${transferData.fileName} sent to device.` });
+      // Refresh current directory so the new file appears
+      navigateTo(currentPathRef.current);
     }
   }, [transferData?.id, transferData?.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -374,7 +379,8 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
 
   const handleUpload = async () => {
     if (!uploadFile) return;
-    const destDir = selectedNode?.isDirectory ? selectedNode.path : currentPath || '/storage/emulated/0/Download';
+    // Use the current browsed path as destination; fall back to root storage
+    const destDir = currentPath || '/storage/emulated/0';
     try {
       const res = await fileManagerService.uploadToDevice(deviceUuid, destDir, uploadFile);
       const transfer = res.data;
@@ -608,10 +614,7 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
                     onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
                   />
                   <span className="text-xs text-gray-500 shrink-0 truncate max-w-[140px]">
-                    →{' '}
-                    {selectedNode?.isDirectory
-                      ? selectedNode.path
-                      : currentPath || '/storage/emulated/0/Download'}
+                    → {currentPath || '/storage/emulated/0'}
                   </span>
                   <Button
                     size="sm"
