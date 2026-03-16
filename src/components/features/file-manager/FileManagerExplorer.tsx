@@ -233,9 +233,9 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
         }
         case 'MOVE_FILE': {
           const moved = selectedNodeRef.current;
-          if (moved) setFileItems((prev) => prev.filter((n) => n.path !== moved.path));
           setSelectedNode(null);
           toast({ variant: 'success', title: 'Moved', description: `"${moved?.name}" moved.` });
+          navigateTo(currentPathRef.current);
           break;
         }
         case 'UPLOAD_FILE':
