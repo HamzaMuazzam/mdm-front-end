@@ -3,6 +3,7 @@ import type { ApiResponse, PaginatedResponse } from '@/types/api.types';
 import type {
   FileCommandResponse,
   FileEventResponse,
+  FileTransferResponse,
   SendFileCommandRequest,
 } from '@/types/file-manager.types';
 
@@ -56,5 +57,40 @@ export const fileManagerService = {
       `${BASE}/events/device/${deviceUuid}?page=${page}&size=${size}`
     );
     return response.data;
+  },
+
+  /** Admin requests a file FROM the device */
+  async requestDownload(deviceUuid: string, filePath: string): Promise<ApiResponse<FileTransferResponse>> {
+    const response = await apiClient.post<ApiResponse<FileTransferResponse>>(
+      `/v1/file-transfer/request-download?deviceUuid=${encodeURIComponent(deviceUuid)}&filePath=${encodeURIComponent(filePath)}`
+    );
+    return response.data;
+  },
+
+  /** Poll transfer status */
+  async getTransferStatus(transferId: string): Promise<ApiResponse<FileTransferResponse>> {
+    const response = await apiClient.get<ApiResponse<FileTransferResponse>>(
+      `/v1/file-transfer/${transferId}/status`
+    );
+    return response.data;
+  },
+
+  /** Admin sends a file TO the device */
+  async uploadToDevice(deviceUuid: string, destinationPath: string, file: File): Promise<ApiResponse<FileTransferResponse>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('deviceUuid', deviceUuid);
+    formData.append('destinationPath', destinationPath);
+    const response = await apiClient.post<ApiResponse<FileTransferResponse>>(
+      `/v1/file-transfer/upload-to-device`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
+    return response.data;
+  },
+
+  /** Download URL for a completed DOWNLOAD transfer - returns the URL directly */
+  getDownloadUrl(transferId: string): string {
+    return `/v1/file-transfer/${transferId}/download`;
   },
 };

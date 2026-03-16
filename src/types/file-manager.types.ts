@@ -58,6 +58,23 @@ export interface FileEventResponse {
   receivedAt: string;
 }
 
+// ── HTTP File Transfer (replaces Base64-over-MQTT for download/upload) ───────
+
+export interface FileTransferResponse {
+  id: string;
+  deviceUuid: string;
+  transferType: 'DOWNLOAD' | 'UPLOAD';
+  devicePath: string;
+  fileName: string;
+  mimeType: string | null;
+  fileSize: number | null;
+  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+  errorMessage: string | null;
+  createdAt: string;
+  completedAt: string | null;
+  downloadUrl: string | null;
+}
+
 // ── Parsed device response (from responsePayload JSON) ───────────────────────
 
 export interface DeviceFileResponse {

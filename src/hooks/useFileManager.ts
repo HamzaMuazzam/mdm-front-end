@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fileManagerService } from '@/api/services/file-manager.service';
 import { toast } from '@/hooks/useToast';
-import type { SendFileCommandRequest, FileCommandStatus } from '@/types/file-manager.types';
+import type { SendFileCommandRequest, FileCommandStatus, FileTransferResponse } from '@/types/file-manager.types';
+import type { ApiResponse } from '@/types/api.types';
 
 const COMMANDS_KEY = (deviceUuid: string) => ['fileManagerCommands', deviceUuid];
 const EVENTS_KEY   = (deviceUuid: string) => ['fileEvents', deviceUuid];
@@ -53,6 +54,24 @@ export function usePollCommand(
       const status: FileCommandStatus | undefined = data?.data?.status;
       if (status === 'COMPLETED' || status === 'FAILED') return false;
       return 2000; // poll every 2 s
+    },
+    staleTime: 0,
+  });
+}
+
+/**
+ * Poll a file transfer by ID until status is terminal (COMPLETED | FAILED).
+ * Stops polling automatically once the transfer settles.
+ */
+export function usePollTransfer(transferId: string | null, enabled = true) {
+  return useQuery<ApiResponse<FileTransferResponse>>({
+    queryKey: ['fileTransfer', transferId],
+    queryFn: () => fileManagerService.getTransferStatus(transferId!),
+    enabled: enabled && transferId !== null,
+    refetchInterval: (query) => {
+      const status = query.state.data?.data?.status;
+      if (status === 'COMPLETED' || status === 'FAILED') return false;
+      return 2000;
     },
     staleTime: 0,
   });

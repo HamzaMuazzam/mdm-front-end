@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Folder,
   FileText,
@@ -7,32 +7,36 @@ import {
   Upload,
   MoveRight,
   RefreshCw,
-  ChevronRight,
-  ChevronDown,
   AlertCircle,
   CheckCircle,
   Clock,
-  FolderOpen,
   HardDrive,
   Activity,
+  ChevronRight,
+  ArrowLeft,
+  Home,
+  X,
+  Eye,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { useSendFileCommand, usePollCommand, useFileEventsByDevice } from '@/hooks/useFileManager';
+import { useSendFileCommand, usePollCommand, useFileEventsByDevice, usePollTransfer } from '@/hooks/useFileManager';
+import { fileManagerService } from '@/api/services/file-manager.service';
 import { toast } from '@/hooks/useToast';
 import type {
   FileNode,
   FileCommandResponse,
   DeviceFileResponse,
   FileCommandType,
+  SendFileCommandRequest,
 } from '@/types/file-manager.types';
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 interface FileManagerExplorerProps {
   deviceUuid: string;
-  deviceName?: string;
+  deviceName?: string | null;
 }
 
 // ── Status badge ──────────────────────────────────────────────────────────────
@@ -40,74 +44,66 @@ interface FileManagerExplorerProps {
 function StatusBadge({ status }: { status: FileCommandResponse['status'] | null }) {
   if (!status) return null;
   const map = {
-    PENDING:   { color: 'text-yellow-400', icon: <Clock className="h-3 w-3 mr-1" />,         label: 'Pending' },
-    SENT:      { color: 'text-blue-400',   icon: <RefreshCw className="h-3 w-3 mr-1 animate-spin" />, label: 'Waiting…' },
-    COMPLETED: { color: 'text-green-400',  icon: <CheckCircle className="h-3 w-3 mr-1" />,   label: 'Done' },
-    FAILED:    { color: 'text-red-400',    icon: <AlertCircle className="h-3 w-3 mr-1" />,    label: 'Failed' },
+    PENDING:   { color: 'text-yellow-400', icon: <Clock className="h-3 w-3" />,                            label: 'Pending' },
+    SENT:      { color: 'text-blue-400',   icon: <RefreshCw className="h-3 w-3 animate-spin" />,           label: 'Waiting…' },
+    COMPLETED: { color: 'text-green-400',  icon: <CheckCircle className="h-3 w-3" />,                      label: 'Done' },
+    FAILED:    { color: 'text-red-400',    icon: <AlertCircle className="h-3 w-3" />,                      label: 'Failed' },
   } as const;
   const s = map[status];
   return (
-    <span className={`inline-flex items-center text-xs font-medium ${s.color}`}>
+    <span className={`inline-flex items-center gap-1 text-xs font-medium ${s.color}`}>
       {s.icon}{s.label}
     </span>
   );
 }
 
-// ── File-tree node ────────────────────────────────────────────────────────────
+// ── File row ──────────────────────────────────────────────────────────────────
 
-interface FileTreeNodeProps {
+interface FileRowProps {
   node: FileNode;
-  depth: number;
-  selectedPath: string | null;
-  onSelect: (path: string, isDir: boolean) => void;
+  isSelected: boolean;
+  onSelect: () => void;
+  onEnter: () => void;
 }
 
-function FileTreeNode({ node, depth, selectedPath, onSelect }: FileTreeNodeProps) {
-  const [expanded, setExpanded] = useState(depth < 2);
-  const isSelected = selectedPath === node.path;
-
-  const toggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (node.isDirectory) setExpanded(!expanded);
-  };
-
+function FileRow({ node, isSelected, onSelect, onEnter }: FileRowProps) {
   return (
-    <div>
-      <div
-        className={`flex items-center gap-1 py-1 px-2 rounded cursor-pointer text-sm hover:bg-white/5 transition-colors ${
-          isSelected ? 'bg-blue-500/20 text-blue-300' : 'text-gray-300'
-        }`}
-        style={{ paddingLeft: `${(depth + 1) * 14}px` }}
-        onClick={() => onSelect(node.path, node.isDirectory)}
-      >
-        {node.isDirectory ? (
-          <span onClick={toggle} className="mr-1 text-gray-400">
-            {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+    <div
+      onClick={() => { onSelect(); if (node.isDirectory) onEnter(); }}
+      className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer select-none transition-colors group ${
+        isSelected
+          ? 'bg-blue-500/15 text-blue-200'
+          : 'hover:bg-white/5 text-gray-300'
+      }`}
+    >
+      {node.isDirectory ? (
+        <Folder className={`h-4 w-4 shrink-0 transition-colors ${isSelected ? 'text-yellow-300' : 'text-yellow-400 group-hover:text-yellow-300'}`} />
+      ) : (
+        <FileText className={`h-4 w-4 shrink-0 ${isSelected ? 'text-blue-300' : 'text-gray-500'}`} />
+      )}
+
+      <span className="flex-1 text-sm truncate font-medium">
+        {node.name}
+      </span>
+
+      {!node.isDirectory && (
+        <>
+          <span className="text-xs text-gray-600 shrink-0 uppercase">
+            {node.extension || '—'}
           </span>
-        ) : (
-          <span className="mr-1 w-3" />
-        )}
-        {node.isDirectory
-          ? (expanded ? <FolderOpen className="h-4 w-4 text-yellow-400 shrink-0" /> : <Folder className="h-4 w-4 text-yellow-400 shrink-0" />)
-          : <FileText className="h-4 w-4 text-blue-300 shrink-0" />}
-        <span className="ml-1 truncate max-w-[200px]" title={node.name}>
-          {node.name}
-        </span>
-        {!node.isDirectory && (
-          <span className="ml-auto text-xs text-gray-500 shrink-0">
+          <span className="text-xs text-gray-500 shrink-0 w-16 text-right">
             {formatSize(node.size)}
           </span>
-        )}
-      </div>
-      {node.isDirectory && expanded && node.children.map((child) => (
-        <FileTreeNode
-          key={child.path}
-          node={child}
-          depth={depth + 1}
-          selectedPath={selectedPath}
-          onSelect={onSelect}
-        />
-      ))}
+        </>
+      )}
+
+      <span className="text-xs text-gray-600 shrink-0 w-24 text-right hidden sm:block">
+        {new Date(node.lastModified).toLocaleDateString()}
+      </span>
+
+      {node.isDirectory && (
+        <ChevronRight className={`h-3.5 w-3.5 shrink-0 transition-colors ${isSelected ? 'text-blue-400' : 'text-gray-600'}`} />
+      )}
     </div>
   );
 }
@@ -115,222 +111,435 @@ function FileTreeNode({ node, depth, selectedPath, onSelect }: FileTreeNodeProps
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplorerProps) {
-  const [currentPath, setCurrentPath] = useState('');
-  const [selectedPath, setSelectedPath] = useState<string | null>(null);
-  const [selectedIsDir, setSelectedIsDir] = useState(false);
-  const [fileTree, setFileTree] = useState<FileNode[]>([]);
-  const [pendingCommandId, setPendingCommandId] = useState<number | null>(null);
-  const [pendingCommandType, setPendingCommandType] = useState<FileCommandType | null>(null);
-  const [moveDest, setMoveDest] = useState('');
-  const [showMoveInput, setShowMoveInput] = useState(false);
-  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [fileItems, setFileItems]             = useState<FileNode[]>([]);
+  const [currentPath, setCurrentPath]         = useState('');
+  const [pathHistory, setPathHistory]         = useState<string[]>([]);
+  const [selectedNode, setSelectedNode]       = useState<FileNode | null>(null);
+  const [hasLoaded, setHasLoaded]             = useState(false);
+  const [pendingCommandId, setPendingCommandId]       = useState<number | null>(null);
+  const [pendingCommandType, setPendingCommandType]   = useState<FileCommandType | null>(null);
+  const [moveDest, setMoveDest]               = useState('');
+  const [showMoveInput, setShowMoveInput]     = useState(false);
+  const [uploadFile, setUploadFile]           = useState<File | null>(null);
   const [showUploadPanel, setShowUploadPanel] = useState(false);
-  const [activeSection, setActiveSection] = useState<'explorer' | 'events'>('explorer');
+  const [activeSection, setActiveSection]     = useState<'explorer' | 'events'>('explorer');
+  const [activeTransferId, setActiveTransferId]         = useState<string | null>(null);
+  const [activeTransferType, setActiveTransferType]     = useState<'DOWNLOAD' | 'VIEW' | 'UPLOAD' | null>(null);
+
+  // Refs to avoid stale closures in effects
+  const selectedNodeRef = useRef<FileNode | null>(null);
+  useEffect(() => { selectedNodeRef.current = selectedNode; }, [selectedNode]);
 
   const sendCommand = useSendFileCommand(deviceUuid);
-  const { data: events } = useFileEventsByDevice(deviceUuid);
-
-  // ── Poll result ───────────────────────────────────────────────────────────
-
   const { data: polledCommand } = usePollCommand(pendingCommandId, pendingCommandId !== null);
+  const { data: polledTransfer } = usePollTransfer(activeTransferId, activeTransferId !== null);
+  const { data: events } = useFileEventsByDevice(deviceUuid);
+  const transferData = polledTransfer?.data;
 
-  const commandData = polledCommand?.data;
+  const commandData: FileCommandResponse | undefined = polledCommand?.data;
 
-  // Process completed result
-  if (
-    commandData &&
-    (commandData.status === 'COMPLETED' || commandData.status === 'FAILED') &&
-    pendingCommandId !== null
-  ) {
-    if (commandData.status === 'COMPLETED' && commandData.responsePayload) {
-      processCommandResult(pendingCommandType, commandData.responsePayload);
-    } else if (commandData.status === 'FAILED') {
-      toast({ variant: 'destructive', title: 'Command Failed', description: commandData.errorMessage ?? 'Unknown error' });
+  // ── Dispatch helper ───────────────────────────────────────────────────────
+
+  const dispatchCommand = useCallback(async (
+    commandType: FileCommandType,
+    extra: Partial<Omit<SendFileCommandRequest, 'deviceUuid' | 'commandType'>> = {}
+  ) => {
+    try {
+      const res = await sendCommand.mutateAsync({ deviceUuid, commandType, ...extra } as SendFileCommandRequest);
+      const cmd = res.data;
+      if (cmd && cmd.status !== 'FAILED') {
+        setPendingCommandId(cmd.id);
+        setPendingCommandType(commandType);
+      }
+    } catch {
+      // error toast is handled by the mutation's onError
     }
-    // Reset polling
+  }, [sendCommand, deviceUuid]);
+
+  // ── Process completed command ─────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!commandData) return;
+    if (commandData.status !== 'COMPLETED' && commandData.status !== 'FAILED') return;
+
+    const type    = pendingCommandType;
+    const payload = commandData.responsePayload;
+    const errMsg  = commandData.errorMessage;
+
+    // Stop polling immediately
     setPendingCommandId(null);
     setPendingCommandType(null);
-  }
 
-  function processCommandResult(type: FileCommandType | null, payload: string) {
+    if (commandData.status === 'FAILED') {
+      toast({ variant: 'destructive', title: 'Command Failed', description: errMsg ?? 'Unknown error' });
+      return;
+    }
+    if (!payload) return;
+
     try {
       const result: DeviceFileResponse = JSON.parse(payload);
       if (result.status !== 'success') {
         toast({ variant: 'destructive', title: 'Device Error', description: result.message });
         return;
       }
+
       switch (type) {
         case 'LIST_FILES': {
-          const data = result.data;
-          if (Array.isArray(data)) setFileTree(data);
-          else if (data) setFileTree([data]);
-          toast({ variant: 'success', title: 'Files Loaded', description: 'File tree refreshed.' });
-          break;
-        }
-        case 'DELETE_FILE':
-          toast({ variant: 'success', title: 'Deleted', description: result.message });
-          setSelectedPath(null);
-          break;
-        case 'DOWNLOAD_FILE': {
-          if (result.fileData) {
-            triggerBase64Download(result.fileData, result.name ?? 'download', result.mimeType ?? 'application/octet-stream');
-            toast({ variant: 'success', title: 'Downloaded', description: `${result.name} saved.` });
+          const nodes = result.data as FileNode[] | undefined;
+          if (Array.isArray(nodes)) {
+            // If response is a single directory node, show its children (navigation into a folder)
+            if (nodes.length === 1 && nodes[0].isDirectory) {
+              setFileItems(sortNodes(nodes[0].children ?? []));
+            } else {
+              setFileItems(sortNodes(nodes));
+            }
+            setHasLoaded(true);
           }
           break;
         }
-        case 'UPLOAD_FILE':
-        case 'MOVE_FILE':
-        case 'GET_METADATA':
-          toast({ variant: 'success', title: 'Success', description: result.message });
+        case 'DELETE_FILE': {
+          const deleted = selectedNodeRef.current;
+          if (deleted) setFileItems((prev) => prev.filter((n) => n.path !== deleted.path));
+          setSelectedNode(null);
+          toast({ variant: 'success', title: 'Deleted', description: `"${deleted?.name}" removed.` });
           break;
+        }
+        case 'DOWNLOAD_FILE': {
+          if (result.fileData) {
+            triggerBase64Download(
+              result.fileData,
+              result.name ?? 'download',
+              result.mimeType ?? 'application/octet-stream'
+            );
+            toast({ variant: 'success', title: 'Downloaded', description: result.name });
+          }
+          break;
+        }
+        case 'MOVE_FILE': {
+          const moved = selectedNodeRef.current;
+          if (moved) setFileItems((prev) => prev.filter((n) => n.path !== moved.path));
+          setSelectedNode(null);
+          setShowMoveInput(false);
+          setMoveDest('');
+          toast({ variant: 'success', title: 'Moved', description: `"${moved?.name}" moved.` });
+          break;
+        }
+        case 'UPLOAD_FILE':
+          setUploadFile(null);
+          setShowUploadPanel(false);
+          toast({ variant: 'success', title: 'Uploaded', description: result.message ?? 'File uploaded successfully.' });
+          break;
+        default:
+          toast({ variant: 'success', title: 'Done', description: result.message });
       }
     } catch {
       toast({ variant: 'destructive', title: 'Parse Error', description: 'Could not parse device response.' });
     }
-  }
+  }, [commandData?.id, commandData?.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Dispatch helpers ──────────────────────────────────────────────────────
+  // ── Handle completed HTTP file transfers ──────────────────────────────────
 
-  const dispatch = useCallback(
-    async (req: Parameters<typeof sendCommand.mutateAsync>[0]) => {
-      const res = await sendCommand.mutateAsync(req);
-      const cmd = res.data;
-      if (cmd && cmd.status !== 'FAILED') {
-        setPendingCommandId(cmd.id);
-        setPendingCommandType(cmd.commandType);
-      }
-    },
-    [sendCommand]
-  );
+  useEffect(() => {
+    if (!transferData) return;
+    if (transferData.status !== 'COMPLETED' && transferData.status !== 'FAILED') return;
 
-  const handleListFiles = () => {
-    dispatch({ deviceUuid, commandType: 'LIST_FILES', path: currentPath || undefined });
+    const type = activeTransferType;
+    const id = activeTransferId;
+
+    setActiveTransferId(null);
+    setActiveTransferType(null);
+
+    if (transferData.status === 'FAILED') {
+      toast({ variant: 'destructive', title: 'Transfer Failed', description: transferData.errorMessage ?? 'Unknown error' });
+      return;
+    }
+
+    if ((type === 'DOWNLOAD' || type === 'VIEW') && transferData.downloadUrl) {
+      const inline = type === 'VIEW';
+      const url = `${transferData.downloadUrl}${inline ? '?inline=true' : ''}`;
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      if (!inline) a.download = transferData.fileName; // force-download only for DOWNLOAD
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      toast({ variant: 'success', title: inline ? 'Opening in browser…' : 'Downloading…', description: transferData.fileName });
+    } else if (type === 'UPLOAD') {
+      toast({ variant: 'success', title: 'Uploaded', description: `${transferData.fileName} sent to device.` });
+    }
+  }, [transferData?.id, transferData?.status]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Navigation ────────────────────────────────────────────────────────────
+
+  const navigateTo = useCallback((path: string) => {
+    dispatchCommand('LIST_FILES', path ? { path } : {});
+  }, [dispatchCommand]);
+
+  const handleEnterFolder = (node: FileNode) => {
+    setPathHistory((prev) => [...prev, currentPath]);
+    setCurrentPath(node.path);
+    setSelectedNode(null);
+    navigateTo(node.path);
   };
 
-  const handleListDirectory = (path: string) => {
-    dispatch({ deviceUuid, commandType: 'LIST_FILES', path });
+  const handleBack = () => {
+    const prev = pathHistory[pathHistory.length - 1] ?? '';
+    setPathHistory((h) => h.slice(0, -1));
+    setCurrentPath(prev);
+    setSelectedNode(null);
+    navigateTo(prev);
   };
+
+  const handleHome = () => {
+    setPathHistory([]);
+    setCurrentPath('');
+    setSelectedNode(null);
+    navigateTo('');
+  };
+
+  const handleBreadcrumbNav = (path: string) => {
+    // Build history as the chain of ancestor paths for `path`
+    const segments = path.split('/').filter(Boolean);
+    const newHistory: string[] = [''];
+    for (let i = 0; i < segments.length - 1; i++) {
+      newHistory.push('/' + segments.slice(0, i + 1).join('/'));
+    }
+    setPathHistory(newHistory);
+    setCurrentPath(path);
+    setSelectedNode(null);
+    navigateTo(path);
+  };
+
+  const handleLoadRoot = () => navigateTo('');
+
+  const handleRefresh = () => navigateTo(currentPath);
+
+  // ── Breadcrumb segments ───────────────────────────────────────────────────
+
+  const breadcrumbs = currentPath
+    ? currentPath.split('/').filter(Boolean).map((seg, i, arr) => ({
+        label: seg,
+        path: '/' + arr.slice(0, i + 1).join('/'),
+      }))
+    : [];
+
+  // ── File actions ──────────────────────────────────────────────────────────
 
   const handleDelete = () => {
-    if (!selectedPath) return;
-    if (!confirm(`Delete "${selectedPath}"?`)) return;
-    dispatch({ deviceUuid, commandType: 'DELETE_FILE', path: selectedPath });
+    if (!selectedNode) return;
+    if (!confirm(`Delete "${selectedNode.name}"?`)) return;
+    dispatchCommand('DELETE_FILE', { path: selectedNode.path });
   };
 
-  const handleDownload = () => {
-    if (!selectedPath || selectedIsDir) return;
-    dispatch({ deviceUuid, commandType: 'DOWNLOAD_FILE', path: selectedPath });
+  const handleDownload = async () => {
+    if (!selectedNode || selectedNode.isDirectory) return;
+    try {
+      const res = await fileManagerService.requestDownload(deviceUuid, selectedNode.path);
+      const transfer = res.data;
+      if (transfer && transfer.status !== 'FAILED') {
+        setActiveTransferId(transfer.id);
+        setActiveTransferType('DOWNLOAD');
+        toast({ variant: 'success', title: 'Downloading…', description: 'Device is uploading the file to the server.' });
+      }
+    } catch {
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to request file download.' });
+    }
+  };
+
+  const handleView = async () => {
+    if (!selectedNode || selectedNode.isDirectory) return;
+    try {
+      const res = await fileManagerService.requestDownload(deviceUuid, selectedNode.path);
+      const transfer = res.data;
+      if (transfer && transfer.status !== 'FAILED') {
+        setActiveTransferId(transfer.id);
+        setActiveTransferType('VIEW');
+        toast({ variant: 'success', title: 'Fetching file…', description: 'Will open in browser when ready.' });
+      }
+    } catch {
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to request file.' });
+    }
   };
 
   const handleMove = () => {
-    if (!selectedPath || !moveDest.trim()) return;
-    dispatch({ deviceUuid, commandType: 'MOVE_FILE', sourcePath: selectedPath, destinationPath: moveDest.trim() });
-    setShowMoveInput(false);
-    setMoveDest('');
+    if (!selectedNode || !moveDest.trim()) return;
+    dispatchCommand('MOVE_FILE', { sourcePath: selectedNode.path, destinationPath: moveDest.trim() });
   };
 
   const handleUpload = async () => {
     if (!uploadFile) return;
-    const destDir = selectedIsDir ? selectedPath! : currentPath || '/storage/emulated/0/Download';
-    const base64 = await fileToBase64(uploadFile);
-    dispatch({ deviceUuid, commandType: 'UPLOAD_FILE', path: destDir, fileName: uploadFile.name, fileData: base64 });
-    setUploadFile(null);
-    setShowUploadPanel(false);
+    const destDir = selectedNode?.isDirectory ? selectedNode.path : currentPath || '/storage/emulated/0/Download';
+    try {
+      const res = await fileManagerService.uploadToDevice(deviceUuid, destDir, uploadFile);
+      const transfer = res.data;
+      if (transfer && transfer.status !== 'FAILED') {
+        setActiveTransferId(transfer.id);
+        setActiveTransferType('UPLOAD');
+        setUploadFile(null);
+        setShowUploadPanel(false);
+        toast({ variant: 'success', title: 'Uploading\u2026', description: 'Device is downloading the file.' });
+      }
+    } catch {
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to initiate upload.' });
+    }
   };
 
-  const handleSelect = (path: string, isDir: boolean) => {
-    setSelectedPath(path);
-    setSelectedIsDir(isDir);
-    if (isDir) handleListDirectory(path);
-  };
-
-  const isLoading = sendCommand.isPending || (pendingCommandId !== null &&
-    commandData?.status !== 'COMPLETED' && commandData?.status !== 'FAILED');
+  const isLoading = sendCommand.isPending || pendingCommandId !== null || activeTransferId !== null;
 
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-col gap-4 h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <HardDrive className="h-5 w-5 text-blue-400" />
-            File Manager
-            {deviceName && <span className="text-gray-400 text-sm font-normal">— {deviceName}</span>}
-          </h2>
-          <p className="text-sm text-gray-400 mt-1">Remote file browser for device <code className="text-xs bg-white/10 px-1 rounded">{deviceUuid}</code></p>
-        </div>
-
-        <div className="flex gap-2">
-          <button
-            className={`text-sm px-3 py-1.5 rounded ${activeSection === 'explorer' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
-            onClick={() => setActiveSection('explorer')}
-          >
-            Explorer
-          </button>
-          <button
-            className={`text-sm px-3 py-1.5 rounded flex items-center gap-1 ${activeSection === 'events' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
-            onClick={() => setActiveSection('events')}
-          >
-            <Activity className="h-3 w-3" />
-            Live Events
-          </button>
-        </div>
+    <div className="flex flex-col gap-3 h-full">
+      {/* Section tabs */}
+      <div className="flex items-center gap-1">
+        <button
+          className={`text-sm px-3 py-1.5 rounded-md transition-colors ${
+            activeSection === 'explorer' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'
+          }`}
+          onClick={() => setActiveSection('explorer')}
+        >
+          Explorer
+        </button>
+        <button
+          className={`text-sm px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-colors ${
+            activeSection === 'events' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'
+          }`}
+          onClick={() => setActiveSection('events')}
+        >
+          <Activity className="h-3.5 w-3.5" />
+          Live Events
+        </button>
       </div>
 
       {activeSection === 'events' ? (
-        <EventsPanel events={events?.data?.data?.content ?? []} />
+        <EventsPanel events={events?.data?.content ?? []} />
       ) : (
         <>
-          {/* Toolbar */}
-          <Card className="bg-card-bg border border-white/10 p-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <Input
-                className="h-8 text-sm w-64 bg-white/5 border-white/20 text-white placeholder-gray-500"
-                placeholder="/storage/emulated/0/..."
-                value={currentPath}
-                onChange={(e) => setCurrentPath(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleListFiles()}
-              />
+          {/* ── Breadcrumb / navigation bar ─────────────────────────────── */}
+          <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-lg px-3 py-2 min-h-[40px]">
+            {/* Back */}
+            <button
+              onClick={handleBack}
+              disabled={pathHistory.length === 0 || isLoading}
+              title="Go back"
+              className="p-1 rounded text-gray-400 hover:text-white hover:bg-white/10 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
 
+            {/* Home */}
+            <button
+              onClick={handleHome}
+              disabled={isLoading || (!hasLoaded && currentPath === '')}
+              title="Root storage"
+              className="p-1 rounded text-gray-400 hover:text-blue-400 hover:bg-white/10 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+            >
+              <Home className="h-4 w-4" />
+            </button>
+
+            {/* Separator */}
+            <div className="w-px h-4 bg-white/15" />
+
+            {/* Breadcrumb segments */}
+            {breadcrumbs.length === 0 ? (
+              <span className="text-xs text-gray-600 italic">Root</span>
+            ) : (
+              <div className="flex items-center gap-0.5 overflow-hidden">
+                {breadcrumbs.map((crumb, i) => (
+                  <div key={crumb.path} className="flex items-center gap-0.5 min-w-0">
+                    {i > 0 && <ChevronRight className="h-3 w-3 text-gray-600 shrink-0" />}
+                    {i === breadcrumbs.length - 1 ? (
+                      <span className="text-xs font-mono text-white font-medium truncate max-w-[160px]" title={crumb.path}>
+                        {crumb.label}
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => handleBreadcrumbNav(crumb.path)}
+                        disabled={isLoading}
+                        title={crumb.path}
+                        className="text-xs font-mono text-blue-400 hover:text-blue-300 truncate max-w-[100px] disabled:opacity-50 transition-colors"
+                      >
+                        {crumb.label}
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Status indicator */}
+            <div className="ml-auto shrink-0">
+              {activeTransferId !== null && (
+                <span className="flex items-center gap-1.5 text-xs text-purple-400">
+                  <RefreshCw className="h-3 w-3 animate-spin" />
+                  Transferring…
+                </span>
+              )}
+              {activeTransferId === null && isLoading && (
+                <span className="flex items-center gap-1.5 text-xs text-blue-400">
+                  <RefreshCw className="h-3 w-3 animate-spin" />
+                  Loading…
+                </span>
+              )}
+              {!isLoading && pendingCommandId === null && pendingCommandType === null && commandData?.status === 'COMPLETED' && (
+                <StatusBadge status="COMPLETED" />
+              )}
+            </div>
+          </div>
+
+          {/* ── Action toolbar (shown after first load) ─────────────────── */}
+          {hasLoaded && (
+            <div className="flex flex-wrap items-start gap-2">
+              {/* Always-available actions */}
               <Button
                 size="sm"
-                onClick={handleListFiles}
+                variant="outline"
+                className="border-white/20 text-gray-300 hover:text-white hover:bg-white/10"
+                onClick={handleRefresh}
                 disabled={isLoading}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
               >
-                {isLoading ? (
-                  <RefreshCw className="h-3.5 w-3.5 mr-1 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-3.5 w-3.5 mr-1" />
-                )}
-                {fileTree.length === 0 ? 'Load Files' : 'Refresh'}
+                <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${isLoading ? 'animate-spin' : ''}`} />
+                Refresh
               </Button>
 
-              <div className="h-5 w-px bg-white/20" />
+              <div className="h-8 w-px bg-white/15 self-center" />
 
+              {/* Selection-dependent actions */}
               <Button
                 size="sm"
                 variant="ghost"
                 className="text-gray-300 hover:text-white hover:bg-white/10"
-                disabled={!selectedPath || selectedIsDir || isLoading}
+                disabled={!selectedNode || selectedNode.isDirectory || isLoading}
                 onClick={handleDownload}
-                title="Download selected file"
+                title="Save file to disk"
               >
-                <Download className="h-3.5 w-3.5 mr-1" />
+                <Download className="h-3.5 w-3.5 mr-1.5" />
                 Download
               </Button>
 
               <Button
                 size="sm"
                 variant="ghost"
-                className="text-gray-300 hover:text-white hover:bg-white/10"
-                disabled={!selectedPath || isLoading}
-                onClick={handleDelete}
-                title="Delete selected file or folder"
+                className="text-gray-300 hover:text-blue-300 hover:bg-blue-500/10"
+                disabled={!selectedNode || selectedNode.isDirectory || isLoading}
+                onClick={handleView}
+                title="Open file in browser (PDF, image, video, text…)"
               >
-                <Trash2 className="h-3.5 w-3.5 mr-1 text-red-400" />
+                <Eye className="h-3.5 w-3.5 mr-1.5 text-blue-400" />
+                View
+              </Button>
+
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-gray-300 hover:text-red-300 hover:bg-red-500/10"
+                disabled={!selectedNode || isLoading}
+                onClick={handleDelete}
+                title="Delete selected"
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-1.5 text-red-400" />
                 Delete
               </Button>
 
@@ -338,98 +547,153 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
                 size="sm"
                 variant="ghost"
                 className="text-gray-300 hover:text-white hover:bg-white/10"
-                disabled={!selectedPath || isLoading}
-                onClick={() => setShowMoveInput(!showMoveInput)}
-                title="Move / rename"
+                disabled={!selectedNode || isLoading}
+                onClick={() => { setShowMoveInput(!showMoveInput); setShowUploadPanel(false); }}
               >
-                <MoveRight className="h-3.5 w-3.5 mr-1" />
+                <MoveRight className="h-3.5 w-3.5 mr-1.5" />
                 Move
               </Button>
 
               <Button
                 size="sm"
                 variant="ghost"
-                className="text-gray-300 hover:text-white hover:bg-white/10"
-                onClick={() => setShowUploadPanel(!showUploadPanel)}
+                className="text-gray-300 hover:text-green-300 hover:bg-green-500/10"
                 disabled={isLoading}
-                title="Upload a file to device"
+                onClick={() => { setShowUploadPanel(!showUploadPanel); setShowMoveInput(false); }}
               >
-                <Upload className="h-3.5 w-3.5 mr-1 text-green-400" />
+                <Upload className="h-3.5 w-3.5 mr-1.5 text-green-400" />
                 Upload
               </Button>
 
-              {pendingCommandId && (
-                <StatusBadge status={commandData?.status ?? 'SENT'} />
+              {/* Move input panel */}
+              {showMoveInput && (
+                <div className="w-full flex gap-2 items-center mt-1 p-2 bg-white/5 rounded-lg border border-white/10">
+                  <span className="text-xs text-gray-400 shrink-0">Move to:</span>
+                  <Input
+                    className="h-8 text-sm flex-1 bg-white/5 border-white/20 text-white placeholder-gray-500"
+                    placeholder="Destination path…"
+                    value={moveDest}
+                    onChange={(e) => setMoveDest(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleMove()}
+                    autoFocus
+                  />
+                  <Button
+                    size="sm"
+                    onClick={handleMove}
+                    disabled={!moveDest.trim() || isLoading}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    Move
+                  </Button>
+                  <button
+                    onClick={() => { setShowMoveInput(false); setMoveDest(''); }}
+                    className="text-gray-500 hover:text-gray-300 transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
               )}
-            </div>
 
-            {/* Move input */}
-            {showMoveInput && (
-              <div className="flex gap-2 mt-2">
-                <Input
-                  className="h-8 text-sm flex-1 bg-white/5 border-white/20 text-white placeholder-gray-500"
-                  placeholder="Destination path…"
-                  value={moveDest}
-                  onChange={(e) => setMoveDest(e.target.value)}
-                />
-                <Button size="sm" onClick={handleMove} disabled={!moveDest.trim() || isLoading}
-                  className="bg-blue-600 hover:bg-blue-700 text-white">
-                  Move
-                </Button>
-              </div>
-            )}
-
-            {/* Upload panel */}
-            {showUploadPanel && (
-              <div className="flex gap-2 mt-2 items-center">
-                <input
-                  type="file"
-                  className="text-sm text-gray-300 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-blue-600 file:text-white file:text-xs cursor-pointer"
-                  onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
-                />
-                <Button size="sm" onClick={handleUpload} disabled={!uploadFile || isLoading}
-                  className="bg-green-600 hover:bg-green-700 text-white">
-                  Upload
-                </Button>
-                <span className="text-xs text-gray-400">
-                  to: {selectedIsDir && selectedPath ? selectedPath : (currentPath || '/storage/emulated/0/Download')}
-                </span>
-              </div>
-            )}
-          </Card>
-
-          {/* Selected path info */}
-          {selectedPath && (
-            <div className="flex items-center gap-2 text-xs text-gray-400 bg-white/5 px-3 py-1.5 rounded border border-white/10">
-              {selectedIsDir
-                ? <Folder className="h-3 w-3 text-yellow-400" />
-                : <FileText className="h-3 w-3 text-blue-300" />}
-              <span className="font-mono truncate">{selectedPath}</span>
+              {/* Upload panel */}
+              {showUploadPanel && (
+                <div className="w-full flex gap-2 items-center mt-1 p-2 bg-white/5 rounded-lg border border-white/10">
+                  <Upload className="h-4 w-4 text-green-400 shrink-0" />
+                  <input
+                    type="file"
+                    className="text-sm text-gray-300 flex-1 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-blue-600 file:text-white file:text-xs cursor-pointer"
+                    onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
+                  />
+                  <span className="text-xs text-gray-500 shrink-0 truncate max-w-[140px]">
+                    →{' '}
+                    {selectedNode?.isDirectory
+                      ? selectedNode.path
+                      : currentPath || '/storage/emulated/0/Download'}
+                  </span>
+                  <Button
+                    size="sm"
+                    onClick={handleUpload}
+                    disabled={!uploadFile || isLoading}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    Upload
+                  </Button>
+                  <button
+                    onClick={() => { setShowUploadPanel(false); setUploadFile(null); }}
+                    className="text-gray-500 hover:text-gray-300 transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
-          {/* File tree */}
-          <Card className="bg-card-bg border border-white/10 flex-1 overflow-auto">
-            {fileTree.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-                <HardDrive className="h-10 w-10 mb-3 opacity-30" />
-                <p className="text-sm">Click <strong>Load Files</strong> to browse device storage</p>
-                <p className="text-xs mt-1">Optionally enter a path to list a specific directory</p>
+          {/* ── Selected file info strip ─────────────────────────────────── */}
+          {selectedNode && (
+            <div className="flex items-center gap-2 text-xs text-gray-400 bg-white/5 px-3 py-1.5 rounded-lg border border-white/10">
+              {selectedNode.isDirectory
+                ? <Folder className="h-3.5 w-3.5 text-yellow-400 shrink-0" />
+                : <FileText className="h-3.5 w-3.5 text-blue-300 shrink-0" />}
+              <span className="font-mono truncate flex-1">{selectedNode.path}</span>
+              {!selectedNode.isDirectory && (
+                <span className="shrink-0 text-gray-500">{formatSize(selectedNode.size)}</span>
+              )}
+              <button
+                onClick={() => setSelectedNode(null)}
+                className="shrink-0 text-gray-600 hover:text-gray-400 transition-colors"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+
+          {/* ── File list ────────────────────────────────────────────────── */}
+          {!hasLoaded ? (
+            <div className="flex flex-col items-center justify-center flex-1 border border-dashed border-white/10 rounded-xl text-gray-600 gap-3">
+              <HardDrive className="h-10 w-10 opacity-20" />
+              <p className="text-sm">Browse the device's storage</p>
+              <Button
+                onClick={handleLoadRoot}
+                disabled={isLoading}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {isLoading
+                  ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />Loading…</>
+                  : <><HardDrive className="h-4 w-4 mr-2" />Load Files</>
+                }
+              </Button>
+            </div>
+          ) : (
+            <Card className="bg-card-bg border border-white/10 flex-1 overflow-auto">
+              {/* Column headers */}
+              <div className="flex items-center gap-3 px-4 py-2 border-b border-white/5 text-xs text-gray-600 uppercase tracking-wide">
+                <span className="w-4 shrink-0" />
+                <span className="flex-1">Name</span>
+                <span className="hidden sm:block w-12 text-right shrink-0">Type</span>
+                <span className="w-16 text-right shrink-0">Size</span>
+                <span className="hidden sm:block w-24 text-right shrink-0">Modified</span>
+                <span className="w-3.5 shrink-0" />
               </div>
-            ) : (
-              <div className="p-2">
-                {fileTree.map((root) => (
-                  <FileTreeNode
-                    key={root.path}
-                    node={root}
-                    depth={0}
-                    selectedPath={selectedPath}
-                    onSelect={handleSelect}
-                  />
-                ))}
-              </div>
-            )}
-          </Card>
+
+              {fileItems.length === 0 ? (
+                <div className="flex items-center justify-center h-32 text-gray-600 text-sm">
+                  This folder is empty
+                </div>
+              ) : (
+                <div className="divide-y divide-white/5">
+                  {fileItems.map((item) => (
+                    <FileRow
+                      key={item.path}
+                      node={item}
+                      isSelected={selectedNode?.path === item.path}
+                      onSelect={() => setSelectedNode(item)}
+                      onEnter={() => handleEnterFolder(item)}
+                    />
+                  ))}
+                </div>
+              )}
+            </Card>
+          )}
         </>
       )}
     </div>
@@ -439,10 +703,10 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
 // ── Events panel ──────────────────────────────────────────────────────────────
 
 function EventsPanel({ events }: { events: import('@/types/file-manager.types').FileEventResponse[] }) {
-  const typeColor: Record<string, string> = {
-    CREATED:  'text-green-400 bg-green-400/10',
-    DELETED:  'text-red-400 bg-red-400/10',
-    MODIFIED: 'text-blue-400 bg-blue-400/10',
+  const typeStyle: Record<string, string> = {
+    CREATED:  'text-green-400 bg-green-400/10 border-green-400/20',
+    DELETED:  'text-red-400 bg-red-400/10 border-red-400/20',
+    MODIFIED: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
   };
 
   return (
@@ -451,14 +715,18 @@ function EventsPanel({ events }: { events: import('@/types/file-manager.types').
         <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2">
           <Activity className="h-4 w-4 text-blue-400" />
           Real-time File System Events
+          <span className="ml-auto text-xs text-gray-600 font-normal">auto-refreshes every 15s</span>
         </h3>
         {events.length === 0 ? (
-          <p className="text-center text-gray-500 text-sm py-8">No events yet. Events appear when files change on the device.</p>
+          <div className="flex flex-col items-center py-10 text-gray-600">
+            <Activity className="h-8 w-8 mb-2 opacity-30" />
+            <p className="text-sm">No events yet. Events appear when files change on the device.</p>
+          </div>
         ) : (
           <div className="space-y-1">
             {events.map((ev) => (
-              <div key={ev.id} className="flex items-center gap-3 text-xs py-1.5 border-b border-white/5">
-                <span className={`px-1.5 py-0.5 rounded text-xs font-medium shrink-0 ${typeColor[ev.eventType] ?? 'text-gray-400'}`}>
+              <div key={ev.id} className="flex items-center gap-3 text-xs py-2 border-b border-white/5 last:border-0">
+                <span className={`px-1.5 py-0.5 rounded border text-xs font-medium shrink-0 ${typeStyle[ev.eventType] ?? 'text-gray-400 bg-white/5 border-white/10'}`}>
                   {ev.eventType}
                 </span>
                 <span className="font-mono text-gray-300 truncate flex-1" title={ev.filePath}>
@@ -478,12 +746,19 @@ function EventsPanel({ events }: { events: import('@/types/file-manager.types').
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
 
+function sortNodes(nodes: FileNode[]): FileNode[] {
+  return [...nodes].sort((a, b) => {
+    if (a.isDirectory !== b.isDirectory) return a.isDirectory ? -1 : 1;
+    return a.name.localeCompare(b.name);
+  });
+}
+
 function formatSize(bytes: number): string {
   if (bytes === 0) return '—';
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  return `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GB`;
 }
 
 function fileToBase64(file: File): Promise<string> {
@@ -491,9 +766,7 @@ function fileToBase64(file: File): Promise<string> {
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result as string;
-      // Strip the data URL prefix
-      const base64 = result.includes(',') ? result.split(',')[1] : result;
-      resolve(base64);
+      resolve(result.includes(',') ? result.split(',')[1] : result);
     };
     reader.onerror = reject;
     reader.readAsDataURL(file);
