@@ -120,6 +120,7 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
   const [pendingCommandType, setPendingCommandType]   = useState<FileCommandType | null>(null);
   const [moveDest, setMoveDest]               = useState('');
   const [showMoveInput, setShowMoveInput]     = useState(false);
+  const [moveSource, setMoveSource]           = useState<FileNode | null>(null);
   const [uploadFile, setUploadFile]           = useState<File | null>(null);
   const [showUploadPanel, setShowUploadPanel] = useState(false);
   const [activeSection, setActiveSection]     = useState<'explorer' | 'events'>('explorer');
@@ -234,8 +235,6 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
           const moved = selectedNodeRef.current;
           if (moved) setFileItems((prev) => prev.filter((n) => n.path !== moved.path));
           setSelectedNode(null);
-          setShowMoveInput(false);
-          setMoveDest('');
           toast({ variant: 'success', title: 'Moved', description: `"${moved?.name}" moved.` });
           break;
         }
@@ -299,8 +298,14 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
     setCurrentPath(node.path);
     setSelectedNode(null);
     navigateTo(node.path);
-    // In move mode, clicking a folder sets it as the destination automatically
+    // In move mode: clicking a folder sets it as destination — don't clear moveSource
     if (showMoveInput) setMoveDest(node.path);
+  };
+
+  const cancelMove = () => {
+    setShowMoveInput(false);
+    setMoveSource(null);
+    setMoveDest('');
   };
 
   const handleBack = () => {
@@ -383,8 +388,11 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
   };
 
   const handleMove = () => {
-    if (!selectedNode || !moveDest.trim()) return;
-    dispatchCommand('MOVE_FILE', { sourcePath: selectedNode.path, destinationPath: moveDest.trim() });
+    if (!moveSource || !moveDest.trim()) return;
+    // destination is the folder path + original filename
+    const dest = moveDest.trim().replace(/\/$/, '') + '/' + moveSource.name;
+    dispatchCommand('MOVE_FILE', { sourcePath: moveSource.path, destinationPath: dest });
+    cancelMove();
   };
 
   const handleUpload = async () => {
@@ -572,7 +580,12 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
                   const opening = !showMoveInput;
                   setShowMoveInput(opening);
                   setShowUploadPanel(false);
-                  if (opening) setMoveDest(currentPath);
+                  if (opening) {
+                    setMoveSource(selectedNode);
+                    setMoveDest('');   // clear so user navigates to pick destination
+                  } else {
+                    cancelMove();
+                  }
                 }}
               >
                 <MoveRight className="h-3.5 w-3.5 mr-1.5" />
@@ -590,35 +603,42 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
                 Upload
               </Button>
 
-              {/* Move input panel */}
-              {showMoveInput && (
-                <div className="w-full flex flex-col gap-1.5 mt-1 p-2 bg-white/5 rounded-lg border border-blue-500/30">
-                  <p className="text-xs text-blue-400/70">Click a folder below to set destination, or type a path manually.</p>
-                  <div className="flex gap-2 items-center">
-                  <span className="text-xs text-gray-400 shrink-0">Move to:</span>
-                  <Input
-                    className="h-8 text-sm flex-1 bg-white/5 border-white/20 text-white placeholder-gray-500"
-                    placeholder="Destination path…"
-                    value={moveDest}
-                    onChange={(e) => setMoveDest(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleMove()}
-                    autoFocus
-                  />
-                  <Button
-                    size="sm"
-                    onClick={handleMove}
-                    disabled={!moveDest.trim() || isLoading}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    Move
-                  </Button>
-                  <button
-                    onClick={() => { setShowMoveInput(false); setMoveDest(''); }}
-                    className="text-gray-500 hover:text-gray-300 transition-colors"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+              {/* Move panel */}
+              {showMoveInput && moveSource && (
+                <div className="w-full flex flex-col gap-2 mt-1 p-3 bg-white/5 rounded-lg border border-blue-500/30">
+                  {/* Source file */}
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-gray-500 shrink-0">Moving:</span>
+                    <span className="font-mono text-yellow-300 truncate">{moveSource.path}</span>
                   </div>
+                  {/* Destination row */}
+                  <div className="flex gap-2 items-center">
+                    <span className="text-xs text-gray-400 shrink-0">To:</span>
+                    <Input
+                      className="h-8 text-sm flex-1 bg-white/5 border-white/20 text-white placeholder-gray-500"
+                      placeholder="Navigate into a folder or type path…"
+                      value={moveDest}
+                      onChange={(e) => setMoveDest(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleMove()}
+                    />
+                    <Button
+                      size="sm"
+                      onClick={handleMove}
+                      disabled={!moveDest.trim() || isLoading}
+                      className="bg-blue-600 hover:bg-blue-700 text-white shrink-0"
+                    >
+                      Move here
+                    </Button>
+                    <button
+                      onClick={cancelMove}
+                      className="text-gray-500 hover:text-gray-300 transition-colors shrink-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <p className="text-xs text-blue-400/60">
+                    Navigate into a folder — it will appear in the "To:" field automatically.
+                  </p>
                 </div>
               )}
 
