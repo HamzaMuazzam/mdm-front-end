@@ -133,6 +133,14 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
   const currentPathRef = useRef(currentPath);
   useEffect(() => { currentPathRef.current = currentPath; }, [currentPath]);
 
+  // Auto-scroll breadcrumb to the right so the current (deepest) segment is always visible
+  const breadcrumbRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (breadcrumbRef.current) {
+      breadcrumbRef.current.scrollLeft = breadcrumbRef.current.scrollWidth;
+    }
+  }, [currentPath]);
+
   const sendCommand = useSendFileCommand(deviceUuid);
   const { data: polledCommand } = usePollCommand(pendingCommandId, pendingCommandId !== null);
   const { data: polledTransfer } = usePollTransfer(activeTransferId, activeTransferId !== null);
@@ -291,6 +299,8 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
     setCurrentPath(node.path);
     setSelectedNode(null);
     navigateTo(node.path);
+    // In move mode, clicking a folder sets it as the destination automatically
+    if (showMoveInput) setMoveDest(node.path);
   };
 
   const handleBack = () => {
@@ -434,7 +444,7 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
               onClick={handleBack}
               disabled={pathHistory.length === 0 || isLoading}
               title="Go back"
-              className="p-1 rounded text-gray-400 hover:text-white hover:bg-white/10 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+              className="p-1 rounded text-gray-400 hover:text-white hover:bg-white/10 disabled:opacity-25 disabled:cursor-not-allowed transition-colors shrink-0"
             >
               <ArrowLeft className="h-4 w-4" />
             </button>
@@ -444,24 +454,24 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
               onClick={handleHome}
               disabled={isLoading || (!hasLoaded && currentPath === '')}
               title="Root storage"
-              className="p-1 rounded text-gray-400 hover:text-blue-400 hover:bg-white/10 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+              className="p-1 rounded text-gray-400 hover:text-blue-400 hover:bg-white/10 disabled:opacity-25 disabled:cursor-not-allowed transition-colors shrink-0"
             >
               <Home className="h-4 w-4" />
             </button>
 
             {/* Separator */}
-            <div className="w-px h-4 bg-white/15" />
+            <div className="w-px h-4 bg-white/15 shrink-0" />
 
-            {/* Breadcrumb segments */}
+            {/* Breadcrumb segments — scrollable so long paths are never clipped */}
             {breadcrumbs.length === 0 ? (
               <span className="text-xs text-gray-600 italic">Root</span>
             ) : (
-              <div className="flex items-center gap-0.5 overflow-hidden">
+              <div ref={breadcrumbRef} className="flex items-center gap-0.5 overflow-x-auto scrollbar-none min-w-0 flex-1">
                 {breadcrumbs.map((crumb, i) => (
-                  <div key={crumb.path} className="flex items-center gap-0.5 min-w-0">
+                  <div key={crumb.path} className="flex items-center gap-0.5 shrink-0">
                     {i > 0 && <ChevronRight className="h-3 w-3 text-gray-600 shrink-0" />}
                     {i === breadcrumbs.length - 1 ? (
-                      <span className="text-xs font-mono text-white font-medium truncate max-w-[160px]" title={crumb.path}>
+                      <span className="text-xs font-mono text-white font-medium whitespace-nowrap" title={crumb.path}>
                         {crumb.label}
                       </span>
                     ) : (
@@ -469,7 +479,7 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
                         onClick={() => handleBreadcrumbNav(crumb.path)}
                         disabled={isLoading}
                         title={crumb.path}
-                        className="text-xs font-mono text-blue-400 hover:text-blue-300 truncate max-w-[100px] disabled:opacity-50 transition-colors"
+                        className="text-xs font-mono text-blue-400 hover:text-blue-300 whitespace-nowrap disabled:opacity-50 transition-colors"
                       >
                         {crumb.label}
                       </button>
@@ -558,7 +568,12 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
                 variant="ghost"
                 className="text-gray-300 hover:text-white hover:bg-white/10"
                 disabled={!selectedNode || isLoading}
-                onClick={() => { setShowMoveInput(!showMoveInput); setShowUploadPanel(false); }}
+                onClick={() => {
+                  const opening = !showMoveInput;
+                  setShowMoveInput(opening);
+                  setShowUploadPanel(false);
+                  if (opening) setMoveDest(currentPath);
+                }}
               >
                 <MoveRight className="h-3.5 w-3.5 mr-1.5" />
                 Move
@@ -577,7 +592,9 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
 
               {/* Move input panel */}
               {showMoveInput && (
-                <div className="w-full flex gap-2 items-center mt-1 p-2 bg-white/5 rounded-lg border border-white/10">
+                <div className="w-full flex flex-col gap-1.5 mt-1 p-2 bg-white/5 rounded-lg border border-blue-500/30">
+                  <p className="text-xs text-blue-400/70">Click a folder below to set destination, or type a path manually.</p>
+                  <div className="flex gap-2 items-center">
                   <span className="text-xs text-gray-400 shrink-0">Move to:</span>
                   <Input
                     className="h-8 text-sm flex-1 bg-white/5 border-white/20 text-white placeholder-gray-500"
@@ -601,6 +618,7 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
                   >
                     <X className="h-4 w-4" />
                   </button>
+                  </div>
                 </div>
               )}
 
