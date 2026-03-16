@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   Upload,
   Download,
@@ -22,6 +22,7 @@ import { deviceService } from '@/api/services/device.service';
 import type { ManagedApp, AppCommand, CommandStatus, CommandType } from '@/types/app-management.types';
 import type { Device } from '@/types/device.types';
 import { usePermissionStore } from '@/store/permissionStore';
+import { parseApkFile } from '@/utils/apkParser';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -513,6 +514,8 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
   const [versionCode, setVersionCode] = useState('');
   const [description, setDescription] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [parsedFields, setParsedFields] = useState<Set<string>>(new Set());
+  const [parsingApk, setParsingApk] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -555,6 +558,24 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
     }
   }
 
+  const handleFileSelect = useCallback(async (file: File | undefined | null) => {
+    if (!file) return;
+    setSelectedFile(file);
+    setParsingApk(true);
+    setParsedFields(new Set());
+    try {
+      const info = await parseApkFile(file);
+      const filled = new Set<string>();
+      if (info.packageName) { setPackageName(info.packageName); filled.add('packageName'); }
+      if (info.versionName) { setVersionName(info.versionName); filled.add('versionName'); }
+      if (info.versionCode != null) { setVersionCode(String(info.versionCode)); filled.add('versionCode'); }
+      if (info.appName && !description) { setDescription(info.appName); filled.add('description'); }
+      setParsedFields(filled);
+    } finally {
+      setParsingApk(false);
+    }
+  }, [description]);
+
   async function handleUpload() {
     if (!packageName.trim() || !versionName.trim() || !versionCode.trim() || !selectedFile) {
       setUploadMsg({ ok: false, text: 'Package name, version name, version code, and APK file are required.' });
@@ -577,6 +598,7 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
         setVersionCode('');
         setDescription('');
         setSelectedFile(null);
+        setParsedFields(new Set());
         if (fileInputRef.current) fileInputRef.current.value = '';
         if (canRead) loadApps(0);
       } else {
@@ -623,78 +645,115 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* File Drop Area — shown first */}
+              <div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".apk,.xapk"
+                  className="hidden"
+                  onChange={(e) => handleFileSelect(e.target.files?.[0])}
+                />
+                {!selectedFile ? (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
+                  >
+                    <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm font-medium text-gray-600">Click to select APK / XAPK file</p>
+                    <p className="text-xs text-gray-400 mt-1">Supports .apk and .xapk — metadata will be auto-filled</p>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Package className="h-4 w-4 text-primary shrink-0" />
+                      <span className="truncate text-gray-700 font-medium">{selectedFile.name}</span>
+                      {parsingApk && (
+                        <span className="shrink-0 text-xs text-blue-500 animate-pulse">Reading…</span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedFile(null);
+                        setParsedFields(new Set());
+                        setPackageName('');
+                        setVersionName('');
+                        setVersionCode('');
+                        if (fileInputRef.current) fileInputRef.current.value = '';
+                      }}
+                      className="ml-2 shrink-0 text-gray-400 hover:text-red-500"
+                    >
+                      <XCircle className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Form fields — auto-filled after file selection */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1 col-span-2">
-                  <Label htmlFor="am-packageName">Package Name *</Label>
+                  <Label htmlFor="am-packageName" className="flex items-center gap-1.5">
+                    Package Name *
+                    {parsedFields.has('packageName') && (
+                      <span className="text-xs font-normal text-green-600 bg-green-50 px-1.5 py-0.5 rounded">auto-filled</span>
+                    )}
+                  </Label>
                   <Input
                     id="am-packageName"
                     placeholder="e.g. com.example.app"
                     value={packageName}
                     onChange={(e) => setPackageName(e.target.value)}
+                    className={parsedFields.has('packageName') ? 'border-green-300 bg-green-50/40' : ''}
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="am-versionName">Version Name *</Label>
+                  <Label htmlFor="am-versionName" className="flex items-center gap-1.5">
+                    Version Name *
+                    {parsedFields.has('versionName') && (
+                      <span className="text-xs font-normal text-green-600 bg-green-50 px-1.5 py-0.5 rounded">auto-filled</span>
+                    )}
+                  </Label>
                   <Input
                     id="am-versionName"
                     placeholder="e.g. 1.0.0"
                     value={versionName}
                     onChange={(e) => setVersionName(e.target.value)}
+                    className={parsedFields.has('versionName') ? 'border-green-300 bg-green-50/40' : ''}
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="am-versionCode">Version Code *</Label>
+                  <Label htmlFor="am-versionCode" className="flex items-center gap-1.5">
+                    Version Code *
+                    {parsedFields.has('versionCode') && (
+                      <span className="text-xs font-normal text-green-600 bg-green-50 px-1.5 py-0.5 rounded">auto-filled</span>
+                    )}
+                  </Label>
                   <Input
                     id="am-versionCode"
                     type="number"
                     placeholder="e.g. 1"
                     value={versionCode}
                     onChange={(e) => setVersionCode(e.target.value)}
+                    className={parsedFields.has('versionCode') ? 'border-green-300 bg-green-50/40' : ''}
                   />
                 </div>
                 <div className="space-y-1 col-span-2">
-                  <Label htmlFor="am-description">Description</Label>
+                  <Label htmlFor="am-description" className="flex items-center gap-1.5">
+                    Description
+                    {parsedFields.has('description') && (
+                      <span className="text-xs font-normal text-green-600 bg-green-50 px-1.5 py-0.5 rounded">auto-filled</span>
+                    )}
+                  </Label>
                   <textarea
                     id="am-description"
                     rows={2}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Optional app description…"
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                    className={`w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none${parsedFields.has('description') ? ' border-green-300 bg-green-50/40' : ''}`}
                   />
                 </div>
               </div>
-
-              {/* File Drop Area */}
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
-              >
-                <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-500">Click to select APK file</p>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".apk"
-                  className="hidden"
-                  onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                />
-              </div>
-
-              {selectedFile && (
-                <div className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2 text-sm">
-                  <span className="truncate text-gray-700">{selectedFile.name}</span>
-                  <button
-                    onClick={() => {
-                      setSelectedFile(null);
-                      if (fileInputRef.current) fileInputRef.current.value = '';
-                    }}
-                    className="ml-2 text-gray-400 hover:text-red-500"
-                  >
-                    <XCircle className="h-4 w-4" />
-                  </button>
-                </div>
-              )}
 
               {uploadMsg && (
                 <p className={`text-sm font-medium ${uploadMsg.ok ? 'text-green-600' : 'text-red-600'}`}>

@@ -11,10 +11,11 @@ import { AnalyticsDashboard } from '@/components/features/dashboard/AnalyticsDas
 import { SecurityGroupManagement } from '@/components/features/security-groups/SecurityGroupManagement';
 import { AppUpdateManagement } from '@/components/features/app-update/AppUpdateManagement';
 import { AppManagement } from '@/components/features/app-management/AppManagement';
+import { FileManagerPage } from '@/components/features/file-manager/FileManagerPage';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { usePermissionsQuery } from '@/hooks/usePermissions';
 
-type TabType = 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management';
+type TabType = 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager';
 
 interface LocationState {
   activeTab?: TabType;
@@ -29,7 +30,8 @@ function isTabType(value: string | null): value is TabType {
     value === 'configuration' ||
     value === 'security-groups' ||
     value === 'app-update' ||
-    value === 'app-management'
+    value === 'app-management' ||
+    value === 'file-manager'
   );
 }
 
@@ -101,12 +103,15 @@ export function DashboardPage() {
       queryClient.invalidateQueries({ queryKey: ['security-groups'] });
     } else if (tab === 'app-management') {
       queryClient.invalidateQueries({ queryKey: ['app-management'] });
+    } else if (tab === 'file-manager') {
+      queryClient.invalidateQueries({ queryKey: ['fileManagerCommands'] });
+      queryClient.invalidateQueries({ queryKey: ['fileEvents'] });
     }
   };
 
   return (
     <DashboardLayout sidebar={<Sidebar activeTab={activeTab} onTabChange={handleTabChange} />}>
-      <div className={activeTab === 'devices' || activeTab === 'users' || activeTab === 'security-groups' || activeTab === 'app-management' ? 'h-full p-8' : 'p-8'}>
+      <div className={activeTab === 'devices' || activeTab === 'users' || activeTab === 'security-groups' || activeTab === 'app-management' || activeTab === 'file-manager' ? 'h-full p-8' : 'p-8'}>
         {activeTab === 'analytics' && (
           <ErrorBoundary moduleName="Analytics">
             <AnalyticsDashboard />
@@ -145,6 +150,11 @@ export function DashboardPage() {
         {activeTab === 'app-management' && (
           <ErrorBoundary moduleName="App Management">
             <AppManagement />
+          </ErrorBoundary>
+        )}
+        {activeTab === 'file-manager' && (
+          <ErrorBoundary moduleName="File Manager">
+            <FileManagerPage />
           </ErrorBoundary>
         )}
       </div>

@@ -15,11 +15,12 @@ import {
   ShieldCheck,
   RefreshCw,
   PackageSearch,
+  HardDrive,
 } from 'lucide-react';
 
 interface SidebarProps {
-  activeTab: 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management';
-  onTabChange: (tab: 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management') => void;
+  activeTab: 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager';
+  onTabChange: (tab: 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager') => void;
 }
 
 export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
@@ -160,6 +161,15 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
             isActive={activeTab === 'app-management'}
             isCollapsed={isCollapsed}
             onClick={() => onTabChange('app-management')}
+          />
+        )}
+        {(hasPermission('file-manager:read') || hasPermission('file-manager:command')) && (
+          <NavButton
+            icon={<HardDrive className="h-5 w-5" />}
+            label="File Manager"
+            isActive={activeTab === 'file-manager'}
+            isCollapsed={isCollapsed}
+            onClick={() => onTabChange('file-manager')}
           />
         )}
       </nav>
