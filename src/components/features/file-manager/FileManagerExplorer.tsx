@@ -185,16 +185,20 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
 
       switch (type) {
         case 'LIST_FILES': {
-          const nodes = result.data as FileNode[] | undefined;
-          if (Array.isArray(nodes)) {
-            // If response is a single directory node, show its children (navigation into a folder)
-            if (nodes.length === 1 && nodes[0].isDirectory) {
-              setFileItems(sortNodes(nodes[0].children ?? []));
+          const raw = result.data;
+          if (Array.isArray(raw)) {
+            // Root scan returns an array of top-level storage nodes
+            if (raw.length === 1 && raw[0].isDirectory) {
+              setFileItems(sortNodes(raw[0].children ?? []));
             } else {
-              setFileItems(sortNodes(nodes));
+              setFileItems(sortNodes(raw));
             }
-            setHasLoaded(true);
+          } else if (raw && typeof raw === 'object' && 'isDirectory' in raw) {
+            // Folder navigation returns a single FileNode — show its children
+            const node = raw as FileNode;
+            setFileItems(sortNodes(node.children ?? []));
           }
+          setHasLoaded(true);
           break;
         }
         case 'DELETE_FILE': {
