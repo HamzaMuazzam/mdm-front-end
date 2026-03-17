@@ -293,91 +293,73 @@ export function DeviceApplicationsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
       {/* Header */}
-      <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-20">
+      <header className="bg-background/80 backdrop-blur-md border-b border-border sticky top-0 z-20">
         <div className="px-4 sm:px-6">
-          <div className="flex items-center h-16 gap-6">
-
-            {/* Left: Breadcrumb + Device Info */}
-            <div className="flex items-center gap-8 shrink-0">
-              {/* Breadcrumb */}
-              <nav className="flex items-center space-x-2 text-sm">
-                <button onClick={handleBack} className="flex items-center text-slate-500 hover:text-slate-700">
-                  <Home className="h-4 w-4" />
-                </button>
-                <ChevronRight className="h-4 w-4 text-slate-300" />
-                <button onClick={handleBack} className="text-slate-500 hover:text-slate-700">
-                  Devices
-                </button>
-                <ChevronRight className="h-4 w-4 text-slate-300" />
-                <span className="text-slate-900 dark:text-white font-medium">
-            Applications
-          </span>
-              </nav>
-
-              {device && (
-                  <div className="hidden md:flex items-center gap-4 pl-4 border-l border-slate-200 dark:border-slate-700">
-                    <span className="text-sm font-medium">{device.model}</span>
-                    <span className="text-sm font-mono">{device.deviceUuid}</span>
-                    <span className="text-sm">{device.userName}</span>
-                  </div>
-              )}
+          {/* Row 1: breadcrumb + device info (md) + refresh */}
+          <div className="flex items-center justify-between gap-3 h-12 sm:h-14">
+            <nav className="flex items-center space-x-2 text-sm min-w-0">
+              <button onClick={handleBack} className="flex items-center text-muted-foreground hover:text-foreground shrink-0">
+                <Home className="h-4 w-4" />
+              </button>
+              <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+              <button onClick={handleBack} className="text-muted-foreground hover:text-foreground shrink-0">
+                Devices
+              </button>
+              <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span className="font-medium truncate">Applications</span>
+            </nav>
+            {device && (
+              <div className="hidden md:flex items-center gap-4 pl-4 border-l border-border shrink-0">
+                <span className="text-sm font-medium">{device.model}</span>
+                <span className="text-sm font-mono">{device.deviceUuid}</span>
+                <span className="text-sm">{device.userName}</span>
+              </div>
+            )}
+            <Button variant="outline" size="sm" onClick={handleRefresh} className="gap-2 shrink-0">
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Refresh</span>
+            </Button>
+          </div>
+          {/* Row 2: Search + filters */}
+          <div className="flex items-center gap-2 pb-3 flex-wrap">
+            <div className="relative flex-1 min-w-[180px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search apps..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
             </div>
-
-            {/* Center: Search and Filters */}
-            <div className="flex-1 flex items-center gap-3">
-              <div className="relative w-full max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <Input
-                    type="text"
-                    placeholder="Search by app name or package ID..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                />
-              </div>
-
-              {/* Category Filter */}
-              <div className="relative">
-                <select
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="appearance-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                >
-                  <option value="all">All Categories</option>
-                  {categoryOptions.map(category => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-              </div>
-
-              {/* System App Filter */}
-              <div className="relative">
-                <select
-                  value={systemAppFilter}
-                  onChange={(e) => setSystemAppFilter(e.target.value)}
-                  className="appearance-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                >
-                  <option value="all">All Apps</option>
-                  <option value="system">System Apps</option>
-                  <option value="user">User Apps</option>
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-              </div>
-
-              <div className="ml-2 text-sm text-slate-500 whitespace-nowrap">
-                {filteredApps.length} of {deviceApps.length} apps
-              </div>
+            <div className="relative">
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="appearance-none bg-background border border-border rounded-lg px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+              >
+                <option value="all">All Categories</option>
+                {categoryOptions.map(category => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             </div>
-
-            {/* Right: Actions */}
-            <div className="shrink-0">
-              <Button variant="outline" size="sm" onClick={handleRefresh} className="gap-2">
-                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
+            <div className="relative">
+              <select
+                value={systemAppFilter}
+                onChange={(e) => setSystemAppFilter(e.target.value)}
+                className="appearance-none bg-background border border-border rounded-lg px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+              >
+                <option value="all">All Apps</option>
+                <option value="system">System</option>
+                <option value="user">User</option>
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             </div>
-
+            <div className="text-xs text-muted-foreground whitespace-nowrap">
+              {filteredApps.length}/{deviceApps.length}
+            </div>
           </div>
         </div>
       </header>
@@ -438,150 +420,147 @@ export function DeviceApplicationsPage() {
             {isLoading ? (
               <LoadingSkeleton />
             ) : filteredApps.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-700">
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                        Application
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                        Category
-                      </th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                        Type
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                        Version
-                      </th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                        Visibility
-                      </th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                        Order
-                      </th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                        Auto Update
-                      </th>
-                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {filteredApps.map((app) => (
-                      <tr
-                        key={app.id}
-                        className="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                      >
-                        {/* Application */}
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 rounded-xl flex items-center justify-center overflow-hidden">
-                              {app.appIconBase64 ? (
-                                <img src={getBase64ImageSrc(app.appIconBase64)!} alt={app.appName} className="w-full h-full object-cover" />
-                              ) : (
-                                <Package className="h-5 w-5 text-slate-500 dark:text-slate-400" />
-                              )}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="font-medium text-slate-900 dark:text-white truncate">
-                                {app.appName}
-                              </p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400 font-mono truncate max-w-[200px]">
-                                {app.appPackageId}
-                              </p>
-                              {(app.isTimeLimited || app.isTimeLimitDailyAllowed || app.allowedTimeLimitTillDate) && (
-                                <div className="mt-1 flex flex-wrap gap-1.5">
-                                  {app.isTimeLimited && (
-                                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">
-                                      <Clock3 className="h-3 w-3" />
-                                      {`${app.timeLimit ?? 0} min`}
-                                    </span>
-                                  )}
-                                  {app.isTimeLimitDailyAllowed && (
-                                    <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
-                                      Daily
-                                    </span>
-                                  )}
-                                  {app.allowedTimeLimitTillDate && (
-                                    <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold text-violet-800 dark:bg-violet-900/50 dark:text-violet-300">
-                                      <CalendarDays className="h-3 w-3" />
-                                      Till {toDateInputValue(app.allowedTimeLimitTillDate)}
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                            </div>
+              <>
+                {/* Mobile card list */}
+                <div className="flex flex-col divide-y divide-border md:hidden">
+                  {filteredApps.map((app) => (
+                    <div key={app.id} className="p-4 flex items-start gap-3">
+                      {/* App icon */}
+                      <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 rounded-xl flex items-center justify-center overflow-hidden">
+                        {app.appIconBase64 ? (
+                          <img src={getBase64ImageSrc(app.appIconBase64)!} alt={app.appName} className="w-full h-full object-cover" />
+                        ) : (
+                          <Package className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm truncate text-slate-900 dark:text-white">{app.appName}</p>
+                            <p className="text-xs text-muted-foreground font-mono truncate">{app.appPackageId}</p>
                           </div>
-                        </td>
-
-                        {/* Category */}
-                        <td className="px-6 py-4">
-                          <CategoryBadge category={app.applicationCategory} />
-                        </td>
-
-                        {/* Type (System/User) */}
-                        <td className="px-6 py-4 text-center">
-                          <AppTypeBadge isSystemApp={app.isSystemApp} />
-                        </td>
-
-                        {/* Version */}
-                        <td className="px-6 py-4">
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-xs font-medium text-slate-600 dark:text-slate-300">
-                            v{app.appVersion}
-                          </span>
-                        </td>
-
-                        {/* Status */}
-                        <td className="px-6 py-4 text-center">
-                          <StatusBadge allowed={app.isAllowed} />
-                        </td>
-
-                        {/* Visibility */}
-                        <td className="px-6 py-4 text-center">
-                          <VisibilityBadge visible={app.showIcon} />
-                        </td>
-
-                        {/* Order */}
-                        <td className="px-6 py-4 text-center">
-                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-sm font-semibold text-slate-600 dark:text-slate-300">
-                            {app.orderNumberInLauncher}
-                          </span>
-                        </td>
-
-                        {/* Auto Update */}
-                        <td className="px-6 py-4 text-center">
-                          {app.installUpdate ? (
-                            <span className="inline-flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
-                              <Download className="h-4 w-4" />
-                              <span className="text-xs font-medium">On</span>
-                            </span>
-                          ) : (
-                            <span className="text-xs text-slate-400 dark:text-slate-500">Off</span>
-                          )}
-                        </td>
-
-                        {/* Actions */}
-                        <td className="px-6 py-4 text-right">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleEdit(app)}
-                            className="opacity-60 group-hover:opacity-100 transition-opacity"
-                          >
-                            <Pencil className="h-4 w-4 mr-1.5" />
-                            Edit
+                          <Button size="sm" variant="ghost" onClick={() => handleEdit(app)} className="shrink-0 -mt-1">
+                            <Pencil className="h-4 w-4" />
                           </Button>
-                        </td>
+                        </div>
+                        {/* Badges row */}
+                        <div className="flex flex-wrap gap-1.5 mt-1.5">
+                          <StatusBadge allowed={app.isAllowed} />
+                          <VisibilityBadge visible={app.showIcon} />
+                          <AppTypeBadge isSystemApp={app.isSystemApp} />
+                          <CategoryBadge category={app.applicationCategory} />
+                        </div>
+                        {/* Details row */}
+                        <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5 text-xs text-muted-foreground">
+                          <span>v{app.appVersion}</span>
+                          <span>Order: {app.orderNumberInLauncher}</span>
+                          {app.installUpdate && (
+                            <span className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400">
+                              <Download className="h-3 w-3" /> Auto Update
+                            </span>
+                          )}
+                        </div>
+                        {/* Time limit badges */}
+                        {(app.isTimeLimited || app.isTimeLimitDailyAllowed || app.allowedTimeLimitTillDate) && (
+                          <div className="mt-1.5 flex flex-wrap gap-1.5">
+                            {app.isTimeLimited && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">
+                                <Clock3 className="h-3 w-3" />{`${app.timeLimit ?? 0} min`}
+                              </span>
+                            )}
+                            {app.isTimeLimitDailyAllowed && (
+                              <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">Daily</span>
+                            )}
+                            {app.allowedTimeLimitTillDate && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold text-violet-800 dark:bg-violet-900/50 dark:text-violet-300">
+                                <CalendarDays className="h-3 w-3" />Till {toDateInputValue(app.allowedTimeLimitTillDate)}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Desktop table (hidden below md) */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-slate-200 dark:border-slate-700">
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Application</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Category</th>
+                        <th className="px-6 py-4 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Type</th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Version</th>
+                        <th className="px-6 py-4 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-4 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Visibility</th>
+                        <th className="px-6 py-4 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Order</th>
+                        <th className="px-6 py-4 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Auto Update</th>
+                        <th className="px-6 py-4 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                      {filteredApps.map((app) => (
+                        <tr key={app.id} className="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 rounded-xl flex items-center justify-center overflow-hidden">
+                                {app.appIconBase64 ? (
+                                  <img src={getBase64ImageSrc(app.appIconBase64)!} alt={app.appName} className="w-full h-full object-cover" />
+                                ) : (
+                                  <Package className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-medium text-slate-900 dark:text-white truncate">{app.appName}</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 font-mono truncate max-w-[200px]">{app.appPackageId}</p>
+                                {(app.isTimeLimited || app.isTimeLimitDailyAllowed || app.allowedTimeLimitTillDate) && (
+                                  <div className="mt-1 flex flex-wrap gap-1.5">
+                                    {app.isTimeLimited && (
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">
+                                        <Clock3 className="h-3 w-3" />{`${app.timeLimit ?? 0} min`}
+                                      </span>
+                                    )}
+                                    {app.isTimeLimitDailyAllowed && (
+                                      <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">Daily</span>
+                                    )}
+                                    {app.allowedTimeLimitTillDate && (
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold text-violet-800 dark:bg-violet-900/50 dark:text-violet-300">
+                                        <CalendarDays className="h-3 w-3" />Till {toDateInputValue(app.allowedTimeLimitTillDate)}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4"><CategoryBadge category={app.applicationCategory} /></td>
+                          <td className="px-6 py-4 text-center"><AppTypeBadge isSystemApp={app.isSystemApp} /></td>
+                          <td className="px-6 py-4">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-xs font-medium text-slate-600 dark:text-slate-300">v{app.appVersion}</span>
+                          </td>
+                          <td className="px-6 py-4 text-center"><StatusBadge allowed={app.isAllowed} /></td>
+                          <td className="px-6 py-4 text-center"><VisibilityBadge visible={app.showIcon} /></td>
+                          <td className="px-6 py-4 text-center">
+                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-sm font-semibold text-slate-600 dark:text-slate-300">{app.orderNumberInLauncher}</span>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            {app.installUpdate ? (
+                              <span className="inline-flex items-center gap-1.5 text-blue-600 dark:text-blue-400"><Download className="h-4 w-4" /><span className="text-xs font-medium">On</span></span>
+                            ) : (
+                              <span className="text-xs text-slate-400 dark:text-slate-500">Off</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <Button size="sm" variant="ghost" onClick={() => handleEdit(app)} className="opacity-60 group-hover:opacity-100 transition-opacity">
+                              <Pencil className="h-4 w-4 mr-1.5" />Edit
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             ) : deviceApps.length > 0 ? (
               <EmptySearchState query={searchQuery} onClear={() => setSearchQuery('')} />
             ) : (

@@ -389,23 +389,118 @@ export function DeviceManagement() {
     <div className="flex h-full flex-col">
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6">
         <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Device Management</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setIsQrModalOpen(true)}>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button variant="outline" onClick={() => setIsQrModalOpen(true)} className="flex-1 sm:flex-none">
             <QrCode className="h-4 w-4 mr-2" />
             QR View
           </Button>
           {hasPermission('devices:create') && (
-            <Button onClick={() => setIsModalOpen(true)}>Add Device</Button>
+            <Button onClick={() => setIsModalOpen(true)} className="flex-1 sm:flex-none">Add Device</Button>
           )}
         </div>
       </div>
 
-      {/* Device Table */}
-      <Card className="flex-1 min-h-0">
+      {/* ── Mobile: card list (hidden on sm+) ──────────────────────────────── */}
+      <div className="flex flex-col gap-3 sm:hidden">
+        {devices.length === 0 && (
+          <p className="text-center text-muted-foreground py-8 text-sm">No devices found.</p>
+        )}
+        {devices.map((device: Device) => {
+          const isActive = !device.deletedAt;
+          return (
+            <Card key={device.id} className={`${!isActive ? 'opacity-60' : ''}`}>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <DeviceStatusDot status={deviceStatuses[device.deviceUuid]} />
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm truncate">{device.deviceName || device.deviceUuid}</p>
+                      <p className="text-xs text-muted-foreground truncate">{device.userEmail || '—'}</p>
+                      {device.model && <p className="text-xs text-muted-foreground">{device.model}{device.osVersion ? ` · ${device.osVersion}` : ''}</p>}
+                      {device.description && <p className="text-xs text-muted-foreground truncate">{device.description}</p>}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={`inline-block px-2 py-0.5 text-xs rounded-full font-medium ${
+                      isActive ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-destructive/10 text-destructive'
+                    }`}>
+                      {isActive ? 'Active' : 'Inactive'}
+                    </span>
+                    <div className="relative inline-block text-left" data-device-actions-menu>
+                      <Button size="sm" variant="outline" onClick={() => handleOpenActionsMenu(device.id)} title="More actions">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                      {openActionMenuDeviceId === device.id && (
+                        <div className="absolute right-0 z-20 mt-2 w-52 overflow-hidden rounded-md border border-border bg-popover shadow-lg">
+                          {hasPermission('devices:monitoring') && (
+                            <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => { closeActionsMenu(); handleOpenMonitorDashboard(device); }}>
+                              <BarChart3 className="h-4 w-4" /> Open Monitor Dashboard
+                            </button>
+                          )}
+                          <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => { closeActionsMenu(); handleShowCode(device.deviceVerificationCode); }}>
+                            <Key className="h-4 w-4" /> Show Verification Code
+                          </button>
+                          {hasPermission('devices:configurations:read') && (
+                            <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => { closeActionsMenu(); handleViewConfig(device); }}>
+                              <Settings className="h-4 w-4" /> View Configuration
+                            </button>
+                          )}
+                          {hasPermission('devices:applications:read') && (
+                            <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => { closeActionsMenu(); handleViewApps(device); }}>
+                              <AppWindow className="h-4 w-4" /> View Applications
+                            </button>
+                          )}
+                          <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => { closeActionsMenu(); handleViewRequests(device); }}>
+                            <FileText className="h-4 w-4" /> View Requests
+                          </button>
+                          {hasPermission('devices:update') && (
+                            <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => { closeActionsMenu(); handleEdit(device); }}>
+                              <Pencil className="h-4 w-4" /> Edit Device
+                            </button>
+                          )}
+                          {hasPermission('devices:update') && (
+                            <>
+                              <div className="my-1 h-px bg-border" />
+                              <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => handleOpenCommandDialog(device, 'reboot')}>
+                                <Power className="h-4 w-4" /> Reboot
+                              </button>
+                              <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30" onClick={() => handleOpenCommandDialog(device, 'reset')}>
+                                <RotateCcw className="h-4 w-4" /> Reset
+                              </button>
+                            </>
+                          )}
+                          {hasPermission('devices:delete') && (
+                            <>
+                              <div className="my-1 h-px bg-border" />
+                              <button
+                                type="button"
+                                className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm ${isActive ? 'text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30' : 'text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/30'}`}
+                                onClick={() => { closeActionsMenu(); handleToggleClick(device); }}
+                                disabled={toggleStatusMutation.isPending}
+                              >
+                                {isActive ? <AlertCircle className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+                                {isActive ? 'Deactivate Device' : 'Activate Device'}
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground/60 mt-2 truncate">UUID: {device.deviceUuid}</p>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* ── Desktop: full table (hidden below sm) ──────────────────────────── */}
+      <Card className="hidden sm:flex flex-col flex-1 min-h-0">
         <CardContent className="h-full p-0">
           <div className="h-full overflow-auto">
-            <table className="w-full min-w-[700px]">
-              <thead className="bg-muted/50">
+            <table className="w-full">
+              <thead className="bg-muted/50 sticky top-0">
                 <tr>
                   {/*<th className="px-4 py-3 text-left text-sm font-medium">ID</th>*/}
                   <th className="px-4 py-3 text-center text-sm font-medium">Live</th>
@@ -420,7 +515,7 @@ export function DeviceManagement() {
                   <th className="px-4 py-3 text-left text-sm font-medium">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y">
+              <tbody className="divide-y divide-border">
                 {devices.map((device:Device) => {
                   const isActive = !device.deletedAt;
                   return (
@@ -462,118 +557,51 @@ export function DeviceManagement() {
                           </Button>
 
                           {openActionMenuDeviceId === device.id && (
-                            <div className="absolute right-0 z-20 mt-2 w-52 overflow-hidden rounded-md border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
+                            <div className="absolute right-0 z-20 mt-2 w-52 overflow-hidden rounded-md border border-border bg-popover shadow-lg">
                               {hasPermission('devices:monitoring') && (
-                                <button
-                                  type="button"
-                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
-                                  onClick={() => {
-                                    closeActionsMenu();
-                                    handleOpenMonitorDashboard(device);
-                                  }}
-                                >
-                                  <BarChart3 className="h-4 w-4" />
-                                  Open Monitor Dashboard
+                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => { closeActionsMenu(); handleOpenMonitorDashboard(device); }}>
+                                  <BarChart3 className="h-4 w-4" /> Open Monitor Dashboard
                                 </button>
                               )}
-                              <button
-                                type="button"
-                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
-                                onClick={() => {
-                                  closeActionsMenu();
-                                  handleShowCode(device.deviceVerificationCode);
-                                }}
-                              >
-                                <Key className="h-4 w-4" />
-                                Show Verification Code
+                              <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => { closeActionsMenu(); handleShowCode(device.deviceVerificationCode); }}>
+                                <Key className="h-4 w-4" /> Show Verification Code
                               </button>
                               {hasPermission('devices:configurations:read') && (
-                                <button
-                                  type="button"
-                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
-                                  onClick={() => {
-                                    closeActionsMenu();
-                                    handleViewConfig(device);
-                                  }}
-                                >
-                                  <Settings className="h-4 w-4" />
-                                  View Configuration
+                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => { closeActionsMenu(); handleViewConfig(device); }}>
+                                  <Settings className="h-4 w-4" /> View Configuration
                                 </button>
                               )}
                               {hasPermission('devices:applications:read') && (
-                                <button
-                                  type="button"
-                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
-                                  onClick={() => {
-                                    closeActionsMenu();
-                                    handleViewApps(device);
-                                  }}
-                                >
-                                  <AppWindow className="h-4 w-4" />
-                                  View Applications
+                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => { closeActionsMenu(); handleViewApps(device); }}>
+                                  <AppWindow className="h-4 w-4" /> View Applications
                                 </button>
                               )}
-                              <button
-                                type="button"
-                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
-                                onClick={() => {
-                                  closeActionsMenu();
-                                  handleViewRequests(device);
-                                }}
-                              >
-                                <FileText className="h-4 w-4" />
-                                View Requests
+                              <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => { closeActionsMenu(); handleViewRequests(device); }}>
+                                <FileText className="h-4 w-4" /> View Requests
                               </button>
                               {hasPermission('devices:update') && (
-                                <button
-                                  type="button"
-                                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
-                                  onClick={() => {
-                                    closeActionsMenu();
-                                    handleEdit(device);
-                                  }}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                  Edit Device
+                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => { closeActionsMenu(); handleEdit(device); }}>
+                                  <Pencil className="h-4 w-4" /> Edit Device
                                 </button>
                               )}
-
-                              {(hasPermission('devices:update')) && (
+                              {hasPermission('devices:update') && (
                                 <>
-                                  <div className="my-1 h-px bg-slate-200 dark:bg-slate-700" />
-                                  <button
-                                    type="button"
-                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
-                                    onClick={() => handleOpenCommandDialog(device, 'reboot')}
-                                  >
-                                    <Power className="h-4 w-4" />
-                                    Reboot
+                                  <div className="my-1 h-px bg-border" />
+                                  <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => handleOpenCommandDialog(device, 'reboot')}>
+                                    <Power className="h-4 w-4" /> Reboot
                                   </button>
-                                  <button
-                                    type="button"
-                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/30"
-                                    onClick={() => handleOpenCommandDialog(device, 'reset')}
-                                  >
-                                    <RotateCcw className="h-4 w-4" />
-                                    Reset
+                                  <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30" onClick={() => handleOpenCommandDialog(device, 'reset')}>
+                                    <RotateCcw className="h-4 w-4" /> Reset
                                   </button>
                                 </>
                               )}
-
                               {hasPermission('devices:delete') && (
                                 <>
-                                  <div className="my-1 h-px bg-slate-200 dark:bg-slate-700" />
+                                  <div className="my-1 h-px bg-border" />
                                   <button
                                     type="button"
-                                    className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm ${
-                                      isActive
-                                        ? 'text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/30'
-                                        : 'text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-900/30'
-                                    }`}
-                                    onClick={() => {
-                                      closeActionsMenu();
-                                      handleToggleClick(device);
-                                    }}
+                                    className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm ${isActive ? 'text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30' : 'text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/30'}`}
+                                    onClick={() => { closeActionsMenu(); handleToggleClick(device); }}
                                     disabled={toggleStatusMutation.isPending}
                                   >
                                     {isActive ? <AlertCircle className="h-4 w-4" /> : <Check className="h-4 w-4" />}
@@ -596,8 +624,8 @@ export function DeviceManagement() {
 
       {/* Add Device Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+          <Card className="w-full sm:max-w-md rounded-b-none sm:rounded-lg max-h-[92dvh] overflow-y-auto">
             <CardHeader>
               <CardTitle>Add New Device</CardTitle>
             </CardHeader>
@@ -644,18 +672,9 @@ export function DeviceManagement() {
                   <Input id="description" {...register('description')} />
                 </div>
 
-                <div className="flex gap-2 justify-end">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setIsModalOpen(false);
-                      reset();
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={createMutation.isPending}>
+                <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end pt-1">
+                  <Button type="button" variant="outline" onClick={() => { setIsModalOpen(false); reset(); }} className="w-full sm:w-auto">Cancel</Button>
+                  <Button type="submit" disabled={createMutation.isPending} className="w-full sm:w-auto">
                     {createMutation.isPending ? 'Creating...' : 'Create Device'}
                   </Button>
                 </div>
@@ -667,8 +686,8 @@ export function DeviceManagement() {
 
       {/* Edit Device Modal */}
       {isEditModalOpen && editingDevice && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+          <Card className="w-full sm:max-w-md rounded-b-none sm:rounded-lg max-h-[92dvh] overflow-y-auto">
             <CardHeader>
               <CardTitle>Edit Device</CardTitle>
             </CardHeader>
@@ -765,19 +784,9 @@ export function DeviceManagement() {
                   </div>
                 </div>
 
-                <div className="flex gap-2 justify-end">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setIsEditModalOpen(false);
-                      setEditingDevice(null);
-                      resetEdit();
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={updateMutation.isPending}>
+                <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end pt-1">
+                  <Button type="button" variant="outline" onClick={() => { setIsEditModalOpen(false); setEditingDevice(null); resetEdit(); }} className="w-full sm:w-auto">Cancel</Button>
+                  <Button type="submit" disabled={updateMutation.isPending} className="w-full sm:w-auto">
                     {updateMutation.isPending ? 'Updating...' : 'Update Device'}
                   </Button>
                 </div>
@@ -789,8 +798,8 @@ export function DeviceManagement() {
 
       {/* Toggle Status Confirmation Dialog */}
       {isToggleDialogOpen && deviceToToggle && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-sm">
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+          <Card className="w-full sm:max-w-sm rounded-b-none sm:rounded-lg">
             <CardHeader>
               <CardTitle>
                 {!deviceToToggle.deletedAt ? 'Deactivate Device' : 'Activate Device'}
@@ -802,27 +811,10 @@ export function DeviceManagement() {
                   ? `Are you sure you want to deactivate the device "${deviceToToggle.deviceUuid}"? This will mark the device as inactive.`
                   : `Are you sure you want to activate the device "${deviceToToggle.deviceUuid}"? This will restore the device to active status.`}
               </p>
-              <div className="flex gap-2 justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setIsToggleDialogOpen(false);
-                    setDeviceToToggle(null);
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant={!deviceToToggle.deletedAt ? 'destructive' : 'default'}
-                  onClick={handleToggleConfirm}
-                  disabled={toggleStatusMutation.isPending}
-                >
-                  {toggleStatusMutation.isPending
-                    ? 'Processing...'
-                    : !deviceToToggle.deletedAt
-                      ? 'Deactivate'
-                      : 'Activate'}
+              <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
+                <Button type="button" variant="outline" onClick={() => { setIsToggleDialogOpen(false); setDeviceToToggle(null); }} className="w-full sm:w-auto">Cancel</Button>
+                <Button variant={!deviceToToggle.deletedAt ? 'destructive' : 'default'} onClick={handleToggleConfirm} disabled={toggleStatusMutation.isPending} className="w-full sm:w-auto">
+                  {toggleStatusMutation.isPending ? 'Processing...' : !deviceToToggle.deletedAt ? 'Deactivate' : 'Activate'}
                 </Button>
               </div>
             </CardContent>
@@ -832,8 +824,8 @@ export function DeviceManagement() {
 
       {/* Reboot / Reset Confirmation Dialog */}
       {isCommandDialogOpen && commandTarget && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-sm">
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+          <Card className="w-full sm:max-w-sm rounded-b-none sm:rounded-lg">
             <CardHeader>
               <CardTitle>
                 {commandTarget.command === 'reboot' ? 'Reboot Device' : 'Reset Device'}
@@ -843,20 +835,9 @@ export function DeviceManagement() {
               <p className="text-sm text-muted-foreground mb-4">
                 {`Are you sure you want to send "${commandTarget.command}" command to device "${commandTarget.device.deviceUuid}"?`}
               </p>
-              <div className="flex gap-2 justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleCloseCommandDialog}
-                  disabled={isCommandSending}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant={commandTarget.command === 'reset' ? 'destructive' : 'default'}
-                  onClick={handleConfirmCommand}
-                  disabled={isCommandSending}
-                >
+              <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
+                <Button type="button" variant="outline" onClick={handleCloseCommandDialog} disabled={isCommandSending} className="w-full sm:w-auto">Cancel</Button>
+                <Button variant={commandTarget.command === 'reset' ? 'destructive' : 'default'} onClick={handleConfirmCommand} disabled={isCommandSending} className="w-full sm:w-auto">
                   {isCommandSending ? 'Sending...' : commandTarget.command === 'reboot' ? 'Confirm Reboot' : 'Confirm Reset'}
                 </Button>
               </div>
@@ -867,8 +848,8 @@ export function DeviceManagement() {
 
       {/* QR Code Modal */}
       {isQrModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-sm">
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+          <Card className="w-full sm:max-w-sm rounded-b-none sm:rounded-lg">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Your QR Code</CardTitle>
               <Button
@@ -899,8 +880,8 @@ export function DeviceManagement() {
 
       {/* Device Configuration Modal */}
       {isConfigModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+          <Card className="w-full sm:max-w-4xl rounded-b-none sm:rounded-lg max-h-[92dvh] overflow-hidden flex flex-col">
             <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b pb-4">
               <div>
                 <CardTitle className="flex items-center gap-2">
