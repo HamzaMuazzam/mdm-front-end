@@ -395,7 +395,7 @@ export function DeviceMonitorDashboardPage() {
         </div>
       </header>
 
-      <main className="px-4 py-8 sm:px-6">
+      <main className="px-4 py-8 sm:px-6 pb-10">
         <div className="mb-8 grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,700px)] xl:items-center">
           <div className="min-w-0">
             <div className="flex items-center gap-4">

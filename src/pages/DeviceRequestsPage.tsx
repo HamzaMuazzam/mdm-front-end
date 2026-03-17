@@ -200,7 +200,7 @@ export function DeviceRequestsPage() {
         </div>
       </header>
 
-      <main className="px-4 sm:px-6 py-6">
+      <main className="px-4 sm:px-6 py-6 pb-10">
 
         {/* ── Page title + stats ───────────────────────────────────────── */}
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

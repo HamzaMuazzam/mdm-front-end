@@ -419,7 +419,7 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-col gap-3 h-full">
+    <div className="flex flex-col gap-3 h-full pb-6">
       {/* Section tabs */}
       <div className="flex items-center gap-1">
         <button

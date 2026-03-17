@@ -34,7 +34,17 @@ function formatFileSize(bytes: number): string {
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleString();
+  try {
+    return new Date(dateStr).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return dateStr;
+  }
 }
 
 // ─── Badge Components ──────────────────────────────────────────────────────────
@@ -42,11 +52,15 @@ function formatDate(dateStr: string): string {
 function StatusBadge({ isActive }: { isActive: boolean }) {
   return (
     <span
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold ${
-        isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+        isActive
+          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400'
+          : 'bg-muted text-muted-foreground'
       }`}
     >
-      {isActive ? <CheckCircle className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+      <span
+        className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-muted-foreground/50'}`}
+      />
       {isActive ? 'Active' : 'Inactive'}
     </span>
   );
@@ -54,13 +68,20 @@ function StatusBadge({ isActive }: { isActive: boolean }) {
 
 function CommandStatusBadge({ status }: { status: CommandStatus }) {
   const styles: Record<CommandStatus, string> = {
-    PENDING: 'bg-yellow-100 text-yellow-700',
-    SENT: 'bg-blue-100 text-blue-700',
-    SUCCESS: 'bg-green-100 text-green-700',
-    FAILED: 'bg-red-100 text-red-700',
+    PENDING: 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400',
+    SENT:    'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400',
+    SUCCESS: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400',
+    FAILED:  'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400',
+  };
+  const dots: Record<CommandStatus, string> = {
+    PENDING: 'bg-amber-500',
+    SENT:    'bg-blue-500',
+    SUCCESS: 'bg-emerald-500',
+    FAILED:  'bg-red-500',
   };
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${styles[status] ?? 'bg-gray-100 text-gray-500'}`}>
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${styles[status] ?? 'bg-muted text-muted-foreground'}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${dots[status] ?? 'bg-muted-foreground/50'}`} />
       {status}
     </span>
   );
@@ -69,13 +90,33 @@ function CommandStatusBadge({ status }: { status: CommandStatus }) {
 function CommandTypeBadge({ type }: { type: CommandType }) {
   return (
     <span
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold ${
-        type === 'INSTALL_APP' ? 'bg-primary/10 text-primary' : 'bg-orange-100 text-orange-700'
+      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
+        type === 'INSTALL_APP'
+          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400'
+          : 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-400'
       }`}
     >
       {type === 'INSTALL_APP' ? <PlayCircle className="h-3 w-3" /> : <Trash2 className="h-3 w-3" />}
       {type === 'INSTALL_APP' ? 'Install' : 'Uninstall'}
     </span>
+  );
+}
+
+// ─── StatPill ────────────────────────────────────────────────────────────────
+
+function StatPill({ label, value, color }: { label: string; value: number | string; color: 'blue' | 'green' | 'red' | 'yellow' | 'slate' }) {
+  const cfg = {
+    blue:   'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
+    green:  'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800',
+    red:    'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800',
+    yellow: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800',
+    slate:  'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800/50 dark:text-slate-300 dark:border-slate-700',
+  };
+  return (
+    <div className={`flex flex-col items-center justify-center rounded-xl border px-3 py-2 ${cfg[color]}`}>
+      <span className="text-xl font-bold leading-none">{value}</span>
+      <span className="text-[10px] font-medium mt-0.5 uppercase tracking-wide opacity-80">{label}</span>
+    </div>
   );
 }
 
@@ -120,32 +161,32 @@ function DeviceDropdown({ devices, selectedUuid, onSelect, placeholder = 'Select
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full h-10 flex items-center justify-between rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary hover:bg-gray-50 transition-colors"
+        className="w-full h-10 flex items-center justify-between rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary hover:bg-muted/50 transition-colors"
       >
-        <span className={selected ? 'text-gray-800' : 'text-gray-400'}>
+        <span className={selected ? 'text-foreground' : 'text-muted-foreground'}>
           {selected ? `${selected.deviceName} (${selected.deviceUuid})` : placeholder}
         </span>
-        <ChevronDown className="h-4 w-4 text-gray-400 shrink-0" />
+        <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg">
-          <div className="p-2 border-b border-gray-100">
+        <div className="absolute z-50 mt-1 w-full bg-popover border border-border rounded-xl shadow-2xl overflow-hidden">
+          <div className="p-2 border-b border-border">
             <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <input
                 type="text"
                 autoFocus
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search devices…"
-                className="w-full pl-8 pr-3 py-1.5 text-sm rounded border border-gray-200 focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
           </div>
           <div className="max-h-52 overflow-y-auto">
             {filtered.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-4">No devices found</p>
+              <p className="text-sm text-muted-foreground text-center py-4">No devices found</p>
             ) : (
               filtered.map((d) => (
                 <button
@@ -156,14 +197,14 @@ function DeviceDropdown({ devices, selectedUuid, onSelect, placeholder = 'Select
                     setOpen(false);
                     setSearch('');
                   }}
-                  className={`w-full text-left px-3 py-2.5 text-sm hover:bg-gray-50 transition-colors ${
-                    d.deviceUuid === selectedUuid ? 'bg-primary/5 font-medium text-primary' : 'text-gray-700'
+                  className={`w-full text-left px-3 py-2.5 text-sm hover:bg-muted/50 transition-colors ${
+                    d.deviceUuid === selectedUuid ? 'bg-primary/5 font-medium text-primary' : 'text-foreground'
                   }`}
                 >
                   <span className="font-medium">{d.deviceName}</span>
-                  <span className="text-xs text-gray-400 ml-2">{d.deviceUuid}</span>
+                  <span className="text-xs text-muted-foreground ml-2">{d.deviceUuid}</span>
                   {d.userEmail && (
-                    <span className="block text-xs text-gray-400">{d.userEmail}</span>
+                    <span className="block text-xs text-muted-foreground">{d.userEmail}</span>
                   )}
                 </button>
               ))
@@ -245,42 +286,42 @@ function MultiDeviceDropdown({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full h-10 flex items-center justify-between rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary hover:bg-gray-50 transition-colors"
+        className="w-full h-10 flex items-center justify-between rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary hover:bg-muted/50 transition-colors"
       >
-        <span className={selectedCount > 0 ? 'text-gray-800' : 'text-gray-400'}>{buttonLabel}</span>
-        <ChevronDown className="h-4 w-4 text-gray-400 shrink-0" />
+        <span className={selectedCount > 0 ? 'text-foreground' : 'text-muted-foreground'}>{buttonLabel}</span>
+        <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg">
+        <div className="absolute z-50 mt-1 w-full bg-popover border border-border rounded-xl shadow-2xl overflow-hidden">
           {/* Search */}
-          <div className="p-2 border-b border-gray-100">
+          <div className="p-2 border-b border-border">
             <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <input
                 type="text"
                 autoFocus
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search devices…"
-                className="w-full pl-8 pr-3 py-1.5 text-sm rounded border border-gray-200 focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
           </div>
           {/* Select All / Deselect All */}
-          <div className="flex gap-1 px-2 py-1.5 border-b border-gray-100">
+          <div className="flex gap-1 px-2 py-1.5 border-b border-border">
             <button
               type="button"
               onClick={selectAll}
-              className="flex-1 text-xs font-semibold text-primary hover:bg-primary/5 py-1 rounded transition-colors"
+              className="flex-1 text-xs font-semibold text-primary hover:bg-primary/5 py-1 rounded-lg transition-colors"
             >
               Select All
             </button>
-            <div className="w-px bg-gray-200" />
+            <div className="w-px bg-border" />
             <button
               type="button"
               onClick={deselectAll}
-              className="flex-1 text-xs font-semibold text-gray-500 hover:bg-gray-100 py-1 rounded transition-colors"
+              className="flex-1 text-xs font-semibold text-muted-foreground hover:bg-muted/50 py-1 rounded-lg transition-colors"
             >
               Deselect All
             </button>
@@ -288,7 +329,7 @@ function MultiDeviceDropdown({
           {/* Device list with checkboxes */}
           <div className="max-h-52 overflow-y-auto">
             {filtered.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-4">No devices found</p>
+              <p className="text-sm text-muted-foreground text-center py-4">No devices found</p>
             ) : (
               filtered.map((d) => {
                 const checked = selectedUuids.includes(d.deviceUuid);
@@ -297,13 +338,13 @@ function MultiDeviceDropdown({
                     key={d.deviceUuid}
                     type="button"
                     onClick={() => toggleDevice(d.deviceUuid)}
-                    className={`w-full text-left px-3 py-2.5 text-sm hover:bg-gray-50 transition-colors flex items-center gap-2.5 ${
+                    className={`w-full text-left px-3 py-2.5 text-sm hover:bg-muted/50 transition-colors flex items-center gap-2.5 ${
                       checked ? 'bg-primary/5' : ''
                     }`}
                   >
                     <div
                       className={`h-4 w-4 shrink-0 rounded border-2 flex items-center justify-center ${
-                        checked ? 'border-primary bg-primary' : 'border-gray-300 bg-white'
+                        checked ? 'border-primary bg-primary' : 'border-border bg-background'
                       }`}
                     >
                       {checked && (
@@ -319,11 +360,11 @@ function MultiDeviceDropdown({
                       )}
                     </div>
                     <div className="min-w-0">
-                      <span className={`font-medium ${checked ? 'text-primary' : 'text-gray-700'}`}>
+                      <span className={`font-medium ${checked ? 'text-primary' : 'text-foreground'}`}>
                         {d.deviceName}
                       </span>
-                      <span className="text-xs text-gray-400 ml-2">{d.deviceUuid}</span>
-                      {d.userEmail && <span className="block text-xs text-gray-400">{d.userEmail}</span>}
+                      <span className="text-xs text-muted-foreground ml-2">{d.deviceUuid}</span>
+                      {d.userEmail && <span className="block text-xs text-muted-foreground">{d.userEmail}</span>}
                     </div>
                   </button>
                 );
@@ -332,7 +373,7 @@ function MultiDeviceDropdown({
           </div>
           {/* Footer count */}
           {selectedCount > 0 && (
-            <div className="px-3 py-2 border-t border-gray-100 bg-gray-50 text-xs text-gray-500">
+            <div className="px-3 py-2 border-t border-border bg-muted text-xs text-muted-foreground">
               {selectedCount} device{selectedCount !== 1 ? 's' : ''} selected
             </div>
           )}
@@ -383,34 +424,34 @@ function AppDropdown({ apps, selectedId, onSelect, placeholder = 'Select app…'
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full h-10 flex items-center justify-between rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary hover:bg-gray-50 transition-colors"
+        className="w-full h-10 flex items-center justify-between rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary hover:bg-muted/50 transition-colors"
       >
-        <span className={selected ? 'text-gray-800' : 'text-gray-400'}>
+        <span className={selected ? 'text-foreground' : 'text-muted-foreground'}>
           {selected
             ? `${selected.packageName}  v${selected.versionName}  (ID: ${selected.id})`
             : placeholder}
         </span>
-        <ChevronDown className="h-4 w-4 text-gray-400 shrink-0" />
+        <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg">
-          <div className="p-2 border-b border-gray-100">
+        <div className="absolute z-50 mt-1 w-full bg-popover border border-border rounded-xl shadow-2xl overflow-hidden">
+          <div className="p-2 border-b border-border">
             <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <input
                 type="text"
                 autoFocus
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by package or version…"
-                className="w-full pl-8 pr-3 py-1.5 text-sm rounded border border-gray-200 focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
           </div>
           <div className="max-h-60 overflow-y-auto">
             {filtered.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-4">No apps found</p>
+              <p className="text-sm text-muted-foreground text-center py-4">No apps found</p>
             ) : (
               filtered.map((a) => (
                 <button
@@ -421,27 +462,29 @@ function AppDropdown({ apps, selectedId, onSelect, placeholder = 'Select app…'
                     setOpen(false);
                     setSearch('');
                   }}
-                  className={`w-full text-left px-3 py-2.5 text-sm hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0 ${
-                    a.id === selectedId ? 'bg-primary/5 font-medium text-primary' : 'text-gray-700'
+                  className={`w-full text-left px-3 py-2.5 text-sm hover:bg-muted/50 transition-colors border-b border-border last:border-0 ${
+                    a.id === selectedId ? 'bg-primary/5 font-medium text-primary' : 'text-foreground'
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-medium truncate">{a.packageName}</span>
                     <span
-                      className={`ml-2 shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold ${
-                        a.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                      className={`ml-2 shrink-0 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                        a.isActive
+                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400'
+                          : 'bg-muted text-muted-foreground'
                       }`}
                     >
-                      {a.isActive ? <CheckCircle className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                      <span className={`w-1.5 h-1.5 rounded-full ${a.isActive ? 'bg-emerald-500' : 'bg-muted-foreground/50'}`} />
                       {a.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-xs text-gray-400">v{a.versionName}</span>
-                    <span className="text-xs text-gray-300">·</span>
-                    <span className="text-xs text-gray-400">code: {a.versionCode}</span>
-                    <span className="text-xs text-gray-300">·</span>
-                    <span className="text-xs text-gray-400">ID: {a.id}</span>
+                    <span className="text-xs text-muted-foreground">v{a.versionName}</span>
+                    <span className="text-xs text-muted-foreground/40">·</span>
+                    <span className="text-xs text-muted-foreground">code: {a.versionCode}</span>
+                    <span className="text-xs text-muted-foreground/40">·</span>
+                    <span className="text-xs text-muted-foreground">ID: {a.id}</span>
                   </div>
                 </button>
               ))
@@ -466,8 +509,8 @@ interface PaginationProps {
 function Pagination({ page, totalPages, totalElements, pageSize, onPageChange }: PaginationProps) {
   if (totalPages <= 1) return null;
   return (
-    <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
-      <p className="text-sm text-gray-500">
+    <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-muted/20">
+      <p className="text-sm text-muted-foreground">
         Showing {page * pageSize + 1}–{Math.min((page + 1) * pageSize, totalElements)} of {totalElements}
       </p>
       <div className="flex gap-2">
@@ -491,8 +534,8 @@ function Pagination({ page, totalPages, totalElements, pageSize, onPageChange }:
 
 function NoPermission({ message }: { message: string }) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-      <XCircle className="h-12 w-12 mb-3 text-gray-300" />
+    <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+      <XCircle className="h-12 w-12 mb-3 text-muted-foreground/40" />
       <p className="text-sm font-medium">{message}</p>
     </div>
   );
@@ -637,15 +680,17 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Upload Card */}
         {canUpload && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Upload className="h-5 w-5 text-primary" />
-                Upload APK
-              </CardTitle>
+          <Card className="border border-border shadow-sm">
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl shadow-lg shadow-indigo-500/20">
+                  <Upload className="h-5 w-5 text-white" />
+                </div>
+                <CardTitle className="text-lg text-foreground">Upload APK</CardTitle>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* File Drop Area — shown first */}
+              {/* File Drop Area */}
               <div>
                 <input
                   ref={fileInputRef}
@@ -657,17 +702,19 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
                 {!selectedFile ? (
                   <div
                     onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-6 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors w-full"
+                    className="group border-2 border-dashed border-border rounded-xl p-4 sm:p-6 text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-500/5 transition-colors w-full"
                   >
-                    <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm font-medium text-gray-600">Click to select APK / XAPK file</p>
-                    <p className="text-xs text-gray-400 mt-1">Supports .apk and .xapk — metadata will be auto-filled</p>
+                    <Upload className="h-8 w-8 text-muted-foreground group-hover:text-indigo-500 mx-auto mb-2 transition-colors" />
+                    <p className="text-sm font-medium text-foreground">Click to select APK / XAPK file</p>
+                    <p className="text-xs text-muted-foreground mt-1">Supports .apk and .xapk — metadata will be auto-filled</p>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm">
+                  <div className="flex items-center justify-between bg-muted/50 border border-border rounded-xl px-3 py-2.5 text-sm">
                     <div className="flex items-center gap-2 min-w-0">
-                      <Package className="h-4 w-4 text-primary shrink-0" />
-                      <span className="truncate text-gray-700 font-medium">{selectedFile.name}</span>
+                      <div className="p-1.5 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-lg shrink-0">
+                        <Package className="h-3.5 w-3.5 text-white" />
+                      </div>
+                      <span className="truncate text-foreground font-medium">{selectedFile.name}</span>
                       {parsingApk && (
                         <span className="shrink-0 text-xs text-blue-500 animate-pulse">Reading…</span>
                       )}
@@ -681,7 +728,7 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
                         setVersionCode('');
                         if (fileInputRef.current) fileInputRef.current.value = '';
                       }}
-                      className="ml-2 shrink-0 text-gray-400 hover:text-red-500"
+                      className="ml-2 shrink-0 text-muted-foreground hover:text-red-500 transition-colors"
                     >
                       <XCircle className="h-4 w-4" />
                     </button>
@@ -689,13 +736,13 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
                 )}
               </div>
 
-              {/* Form fields — auto-filled after file selection */}
+              {/* Form fields */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1 col-span-1 sm:col-span-2">
-                  <Label htmlFor="am-packageName" className="flex items-center gap-1.5">
+                <div className="space-y-1.5 col-span-1 sm:col-span-2">
+                  <Label htmlFor="am-packageName" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
                     Package Name *
                     {parsedFields.has('packageName') && (
-                      <span className="text-xs font-normal text-green-600 bg-green-50 px-1.5 py-0.5 rounded">auto-filled</span>
+                      <span className="text-xs normal-case font-normal text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-full">auto-filled</span>
                     )}
                   </Label>
                   <Input
@@ -703,14 +750,14 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
                     placeholder="e.g. com.example.app"
                     value={packageName}
                     onChange={(e) => setPackageName(e.target.value)}
-                    className={parsedFields.has('packageName') ? 'border-green-300 bg-green-50/40' : ''}
+                    className={parsedFields.has('packageName') ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50/40 dark:bg-emerald-900/10' : ''}
                   />
                 </div>
-                <div className="space-y-1">
-                  <Label htmlFor="am-versionName" className="flex items-center gap-1.5">
+                <div className="space-y-1.5">
+                  <Label htmlFor="am-versionName" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
                     Version Name *
                     {parsedFields.has('versionName') && (
-                      <span className="text-xs font-normal text-green-600 bg-green-50 px-1.5 py-0.5 rounded">auto-filled</span>
+                      <span className="text-xs normal-case font-normal text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-full">auto-filled</span>
                     )}
                   </Label>
                   <Input
@@ -718,14 +765,14 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
                     placeholder="e.g. 1.0.0"
                     value={versionName}
                     onChange={(e) => setVersionName(e.target.value)}
-                    className={parsedFields.has('versionName') ? 'border-green-300 bg-green-50/40' : ''}
+                    className={parsedFields.has('versionName') ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50/40 dark:bg-emerald-900/10' : ''}
                   />
                 </div>
-                <div className="space-y-1">
-                  <Label htmlFor="am-versionCode" className="flex items-center gap-1.5">
+                <div className="space-y-1.5">
+                  <Label htmlFor="am-versionCode" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
                     Version Code *
                     {parsedFields.has('versionCode') && (
-                      <span className="text-xs font-normal text-green-600 bg-green-50 px-1.5 py-0.5 rounded">auto-filled</span>
+                      <span className="text-xs normal-case font-normal text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-full">auto-filled</span>
                     )}
                   </Label>
                   <Input
@@ -734,14 +781,14 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
                     placeholder="e.g. 1"
                     value={versionCode}
                     onChange={(e) => setVersionCode(e.target.value)}
-                    className={parsedFields.has('versionCode') ? 'border-green-300 bg-green-50/40' : ''}
+                    className={parsedFields.has('versionCode') ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50/40 dark:bg-emerald-900/10' : ''}
                   />
                 </div>
-                <div className="space-y-1 col-span-1 sm:col-span-2">
-                  <Label htmlFor="am-description" className="flex items-center gap-1.5">
+                <div className="space-y-1.5 col-span-1 sm:col-span-2">
+                  <Label htmlFor="am-description" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
                     Description
                     {parsedFields.has('description') && (
-                      <span className="text-xs font-normal text-green-600 bg-green-50 px-1.5 py-0.5 rounded">auto-filled</span>
+                      <span className="text-xs normal-case font-normal text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-full">auto-filled</span>
                     )}
                   </Label>
                   <textarea
@@ -750,18 +797,27 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Optional app description…"
-                    className={`w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none${parsedFields.has('description') ? ' border-green-300 bg-green-50/40' : ''}`}
+                    className={`w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none${parsedFields.has('description') ? ' border-emerald-300 dark:border-emerald-700 bg-emerald-50/40 dark:bg-emerald-900/10' : ''}`}
                   />
                 </div>
               </div>
 
               {uploadMsg && (
-                <p className={`text-sm font-medium ${uploadMsg.ok ? 'text-green-600' : 'text-red-600'}`}>
+                <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium ${
+                  uploadMsg.ok
+                    ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
+                    : 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
+                }`}>
+                  {uploadMsg.ok ? <CheckCircle className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
                   {uploadMsg.text}
-                </p>
+                </div>
               )}
 
-              <Button onClick={handleUpload} disabled={uploading} className="w-full">
+              <Button
+                onClick={handleUpload}
+                disabled={uploading}
+                className="w-full bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white shadow-md"
+              >
                 <Upload className="h-4 w-4 mr-2" />
                 {uploading ? 'Uploading…' : 'Upload App'}
               </Button>
@@ -771,28 +827,22 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
 
         {/* Quick Stats Card */}
         {canRead && (
-          <Card className={!canUpload ? 'lg:col-span-2' : ''}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Package className="h-5 w-5 text-primary" />
-                Library Overview
-              </CardTitle>
+          <Card className={`border border-border shadow-sm ${!canUpload ? 'lg:col-span-2' : ''}`}>
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl shadow-lg shadow-indigo-500/20">
+                  <Package className="h-5 w-5 text-white" />
+                </div>
+                <CardTitle className="text-lg text-foreground">Library Overview</CardTitle>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 rounded-lg bg-gray-50 text-center">
-                  <p className="text-2xl sm:text-3xl font-bold text-gray-800">{totalElements}</p>
-                  <p className="text-xs text-gray-500 mt-1 uppercase font-semibold">Total Apps</p>
-                </div>
-                <div className="p-4 rounded-lg bg-green-50 text-center">
-                  <p className="text-2xl sm:text-3xl font-bold text-green-700">
-                    {apps.filter((a) => a.isActive).length}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1 uppercase font-semibold">Active (this page)</p>
-                </div>
+                <StatPill label="Total Apps" value={totalElements} color="blue" />
+                <StatPill label="Active (this page)" value={apps.filter((a) => a.isActive).length} color="green" />
               </div>
               {!canUpload && (
-                <p className="text-xs text-gray-400 mt-4 text-center">
+                <p className="text-xs text-muted-foreground mt-4 text-center">
                   Upload permission not allocated to your security group.
                 </p>
               )}
@@ -803,10 +853,15 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
 
       {/* Apps Table */}
       {canRead ? (
-        <Card>
-          <CardHeader>
+        <Card className="border border-border shadow-sm overflow-hidden">
+          <CardHeader className="pb-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <CardTitle className="text-lg">Managed Apps</CardTitle>
+              <div className="flex items-center gap-3">
+                <div className="p-1.5 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-lg shadow-md shadow-indigo-500/20">
+                  <Package className="h-4 w-4 text-white" />
+                </div>
+                <CardTitle className="text-lg text-foreground">Managed Apps</CardTitle>
+              </div>
               <div className="flex items-center gap-2">
                 <Input
                   placeholder="Filter by package name…"
@@ -820,20 +875,20 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
                 </Button>
                 {packageFilter && (
                   <Button size="sm" variant="ghost" onClick={clearFilter}>
-                    <XCircle className="h-4 w-4 text-gray-400" />
+                    <XCircle className="h-4 w-4 text-muted-foreground" />
                   </Button>
                 )}
                 <button
                   onClick={() => loadApps(page)}
                   disabled={loading}
-                  className="p-1.5 rounded hover:bg-gray-100 transition-colors"
+                  className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors"
                 >
-                  <RefreshCw className={`h-4 w-4 text-gray-500 ${loading ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`h-4 w-4 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
                 </button>
               </div>
             </div>
             {packageFilter && (
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Filtered by package: <span className="font-mono font-semibold">{packageFilter}</span>
               </p>
             )}
@@ -841,52 +896,122 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
           <CardContent className="p-0">
             {loading ? (
               <div className="flex justify-center py-10">
-                <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
+                <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
             ) : (
               <>
-                <div className="overflow-x-auto">
+                {/* Mobile cards */}
+                <div className="flex flex-col gap-3 p-4 md:hidden">
+                  {apps.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
+                      <Package className="h-10 w-10 mb-2 opacity-30" />
+                      <p className="text-sm">No apps found.</p>
+                    </div>
+                  ) : (
+                    apps.map((app) => (
+                      <div
+                        key={app.id}
+                        className={`rounded-xl border border-border border-l-4 ${app.isActive ? 'border-l-emerald-500' : 'border-l-red-400'} bg-card shadow-sm overflow-hidden`}
+                      >
+                        <div className="flex items-start gap-3 p-4 pb-3">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shrink-0 shadow-sm">
+                            <span className="text-white font-bold text-sm">
+                              {(app.packageName || '?').charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm text-foreground leading-tight truncate">{app.packageName}</p>
+                            {app.description && (
+                              <p className="text-[11px] text-muted-foreground truncate mt-0.5">{app.description}</p>
+                            )}
+                          </div>
+                          <StatusBadge isActive={app.isActive} />
+                        </div>
+                        <div className="border-t border-border/60 bg-muted/30 px-4 py-3 grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+                          <div>
+                            <span className="text-muted-foreground">Version</span>
+                            <p className="font-medium text-foreground">{app.versionName}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Version Code</span>
+                            <p className="font-medium text-foreground">{app.versionCode}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">File Size</span>
+                            <p className="font-medium text-foreground">{formatFileSize(app.fileSize)}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Uploaded By</span>
+                            <p className="font-medium text-foreground truncate">{app.uploadedByEmail || '—'}</p>
+                          </div>
+                          <div className="col-span-2">
+                            <span className="text-muted-foreground">Created</span>
+                            <p className="text-foreground">{formatDate(app.createdAt)}</p>
+                          </div>
+                        </div>
+                        <div className="px-4 py-2.5 border-t border-border/60 flex justify-end">
+                          <button
+                            onClick={() => handleDownload(app)}
+                            disabled={downloadingId === app.id}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+                            title="Download APK"
+                          >
+                            {downloadingId === app.id ? (
+                              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Download className="h-3.5 w-3.5" />
+                            )}
+                            Download
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Desktop table */}
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                      <tr>
-                        <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Package</th>
-                        <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Version</th>
-                        <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Size</th>
-                        <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
-                        <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Uploaded By</th>
-                        <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Created</th>
-                        <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Download</th>
+                    <thead>
+                      <tr className="border-b border-border bg-muted/40">
+                        <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Package</th>
+                        <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Version</th>
+                        <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Size</th>
+                        <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                        <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Uploaded By</th>
+                        <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Created</th>
+                        <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Download</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-border">
                       {apps.length === 0 ? (
                         <tr>
-                          <td colSpan={7} className="text-center py-10 text-gray-400">
+                          <td colSpan={7} className="text-center py-10 text-muted-foreground">
                             No apps found.
                           </td>
                         </tr>
                       ) : (
                         apps.map((app) => (
-                          <tr key={app.id} className="hover:bg-gray-50 transition-colors">
+                          <tr key={app.id} className="hover:bg-muted/40 transition-colors">
                             <td className="px-6 py-4">
-                              <p className="font-medium text-gray-800">{app.packageName}</p>
+                              <p className="font-medium text-foreground">{app.packageName}</p>
                               {app.description && (
-                                <p className="text-xs text-gray-400 truncate max-w-[200px]">{app.description}</p>
+                                <p className="text-xs text-muted-foreground truncate max-w-[200px]">{app.description}</p>
                               )}
                             </td>
                             <td className="px-6 py-4">
-                              <p className="font-semibold text-gray-700">{app.versionName}</p>
-                              <p className="text-xs text-gray-400">code: {app.versionCode}</p>
+                              <p className="font-semibold text-foreground">{app.versionName}</p>
+                              <p className="text-xs text-muted-foreground">code: {app.versionCode}</p>
                             </td>
-                            <td className="px-6 py-4 text-gray-500">{formatFileSize(app.fileSize)}</td>
+                            <td className="px-6 py-4 text-muted-foreground">{formatFileSize(app.fileSize)}</td>
                             <td className="px-6 py-4"><StatusBadge isActive={app.isActive} /></td>
-                            <td className="px-6 py-4 text-gray-500 truncate max-w-[160px]">{app.uploadedByEmail}</td>
-                            <td className="px-6 py-4 text-gray-500 whitespace-nowrap">{formatDate(app.createdAt)}</td>
+                            <td className="px-6 py-4 text-muted-foreground truncate max-w-[160px]">{app.uploadedByEmail}</td>
+                            <td className="px-6 py-4 text-muted-foreground whitespace-nowrap">{formatDate(app.createdAt)}</td>
                             <td className="px-6 py-4">
                               <button
                                 onClick={() => handleDownload(app)}
                                 disabled={downloadingId === app.id}
-                                className="p-1.5 rounded-md text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+                                className="p-1.5 rounded-lg text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
                                 title="Download APK"
                               >
                                 {downloadingId === app.id ? (
@@ -914,7 +1039,7 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
           </CardContent>
         </Card>
       ) : (
-        <Card>
+        <Card className="border border-border shadow-sm">
           <CardContent>
             <NoPermission message="You don't have permission to view the app library." />
           </CardContent>
@@ -1015,27 +1140,27 @@ function DeployTab({ devices, devicesLoading, apps, appsLoading }: DeployTabProp
     return (
       <div className="space-y-2">
         {results.map((result) => (
-          <div key={result.id} className="rounded-md bg-gray-50 border border-gray-200 p-3 text-xs space-y-1 font-mono">
+          <div key={result.id} className="rounded-xl bg-muted/50 border border-border p-3 text-xs space-y-1.5 font-mono">
             <div className="flex justify-between">
-              <span className="text-gray-500">Command ID</span>
-              <span className="font-semibold">{result.id}</span>
+              <span className="text-muted-foreground">Command ID</span>
+              <span className="font-semibold text-foreground">#{result.id}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-500">Type</span>
+              <span className="text-muted-foreground">Type</span>
               <CommandTypeBadge type={result.commandType} />
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-500">Status</span>
+              <span className="text-muted-foreground">Status</span>
               <CommandStatusBadge status={result.status} />
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">Device</span>
-              <span>{result.deviceName || result.deviceUuid}</span>
+              <span className="text-muted-foreground">Device</span>
+              <span className="text-foreground">{result.deviceName || result.deviceUuid}</span>
             </div>
             {result.packageName && (
               <div className="flex justify-between">
-                <span className="text-gray-500">Package</span>
-                <span>{result.packageName}</span>
+                <span className="text-muted-foreground">Package</span>
+                <span className="text-foreground">{result.packageName}</span>
               </div>
             )}
           </div>
@@ -1047,7 +1172,7 @@ function DeployTab({ devices, devicesLoading, apps, appsLoading }: DeployTabProp
   if (devicesLoading || appsLoading) {
     return (
       <div className="flex justify-center py-16">
-        <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
+        <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -1057,16 +1182,18 @@ function DeployTab({ devices, devicesLoading, apps, appsLoading }: DeployTabProp
       {/* Install / Uninstall forms */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Install */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <PlayCircle className="h-5 w-5 text-primary" />
-              Remote Install
-            </CardTitle>
+        <Card className="border border-border shadow-sm">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl shadow-lg shadow-blue-500/20">
+                <PlayCircle className="h-5 w-5 text-white" />
+              </div>
+              <CardTitle className="text-lg text-foreground">Remote Install</CardTitle>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-1">
-              <Label>Select Devices *</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Select Devices *</Label>
               <MultiDeviceDropdown
                 devices={devices}
                 selectedUuids={installDeviceUuids}
@@ -1074,8 +1201,8 @@ function DeployTab({ devices, devicesLoading, apps, appsLoading }: DeployTabProp
                 placeholder="Select one or more devices…"
               />
             </div>
-            <div className="space-y-1">
-              <Label>Select App *</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Select App *</Label>
               <AppDropdown
                 apps={apps}
                 selectedId={installApp?.id ?? null}
@@ -1085,13 +1212,22 @@ function DeployTab({ devices, devicesLoading, apps, appsLoading }: DeployTabProp
             </div>
 
             {installMsg && (
-              <p className={`text-sm font-medium ${installMsg.ok ? 'text-green-600' : 'text-red-600'}`}>
+              <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium ${
+                installMsg.ok
+                  ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
+                  : 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
+              }`}>
+                {installMsg.ok ? <CheckCircle className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
                 {installMsg.text}
-              </p>
+              </div>
             )}
             {installResults.length > 0 && <CommandResultList results={installResults} />}
 
-            <Button onClick={handleInstall} disabled={installing} className="w-full">
+            <Button
+              onClick={handleInstall}
+              disabled={installing}
+              className="w-full bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white shadow-md"
+            >
               <PlayCircle className="h-4 w-4 mr-2" />
               {installing ? 'Sending…' : 'Send Install Command'}
             </Button>
@@ -1099,16 +1235,18 @@ function DeployTab({ devices, devicesLoading, apps, appsLoading }: DeployTabProp
         </Card>
 
         {/* Uninstall */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Trash2 className="h-5 w-5 text-orange-500" />
-              Remote Uninstall
-            </CardTitle>
+        <Card className="border border-border shadow-sm">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl shadow-lg shadow-orange-500/20">
+                <Trash2 className="h-5 w-5 text-white" />
+              </div>
+              <CardTitle className="text-lg text-foreground">Remote Uninstall</CardTitle>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-1">
-              <Label>Select Devices *</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Select Devices *</Label>
               <MultiDeviceDropdown
                 devices={devices}
                 selectedUuids={uninstallDeviceUuids}
@@ -1116,8 +1254,8 @@ function DeployTab({ devices, devicesLoading, apps, appsLoading }: DeployTabProp
                 placeholder="Select one or more devices…"
               />
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="uninstall-package">Package Name *</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="uninstall-package" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Package Name *</Label>
               <Input
                 id="uninstall-package"
                 placeholder="e.g. com.example.app"
@@ -1127,16 +1265,21 @@ function DeployTab({ devices, devicesLoading, apps, appsLoading }: DeployTabProp
             </div>
 
             {uninstallMsg && (
-              <p className={`text-sm font-medium ${uninstallMsg.ok ? 'text-green-600' : 'text-red-600'}`}>
+              <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium ${
+                uninstallMsg.ok
+                  ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
+                  : 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
+              }`}>
+                {uninstallMsg.ok ? <CheckCircle className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
                 {uninstallMsg.text}
-              </p>
+              </div>
             )}
             {uninstallResults.length > 0 && <CommandResultList results={uninstallResults} />}
 
             <Button
               onClick={handleUninstall}
               disabled={uninstalling}
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+              className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white shadow-md"
             >
               <Trash2 className="h-4 w-4 mr-2" />
               {uninstalling ? 'Sending…' : 'Send Uninstall Command'}
@@ -1146,70 +1289,118 @@ function DeployTab({ devices, devicesLoading, apps, appsLoading }: DeployTabProp
       </div>
 
       {/* Managed Apps List */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Package className="h-5 w-5 text-primary" />
-            Managed Apps Library
-          </CardTitle>
+      <Card className="border border-border shadow-sm overflow-hidden">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-1.5 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-lg shadow-md shadow-indigo-500/20">
+              <Package className="h-4 w-4 text-white" />
+            </div>
+            <CardTitle className="text-lg text-foreground">Managed Apps Library</CardTitle>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           {apps.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 text-gray-400">
-              <Package className="h-10 w-10 mb-2 text-gray-300" />
+            <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
+              <Package className="h-10 w-10 mb-2 opacity-30" />
               <p className="text-sm">No apps in library yet.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">ID</th>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Package</th>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Version</th>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Size</th>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Uploaded By</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {apps.map((app) => (
-                    <tr
-                      key={app.id}
-                      onClick={() => setInstallApp(app)}
-                      className={`hover:bg-primary/5 transition-colors cursor-pointer ${
-                        installApp?.id === app.id ? 'bg-primary/10 ring-1 ring-inset ring-primary/20' : ''
-                      }`}
-                      title="Click to select for install"
-                    >
-                      <td className="px-6 py-3 font-mono text-gray-500 text-xs">#{app.id}</td>
-                      <td className="px-6 py-3">
-                        <p className="font-medium text-gray-800">{app.packageName}</p>
+            <>
+              {/* Mobile cards */}
+              <div className="flex flex-col gap-3 p-4 md:hidden">
+                {apps.map((app) => (
+                  <div
+                    key={app.id}
+                    onClick={() => setInstallApp(app)}
+                    className={`rounded-xl border border-border border-l-4 ${app.isActive ? 'border-l-emerald-500' : 'border-l-red-400'} bg-card shadow-sm overflow-hidden cursor-pointer transition-colors ${
+                      installApp?.id === app.id ? 'ring-2 ring-primary/30' : ''
+                    }`}
+                    title="Click to select for install"
+                  >
+                    <div className="flex items-start gap-3 p-4 pb-3">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shrink-0 shadow-sm">
+                        <span className="text-white font-bold text-sm">
+                          {(app.packageName || '?').charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm text-foreground leading-tight truncate">{app.packageName}</p>
                         {app.description && (
-                          <p className="text-xs text-gray-400 truncate max-w-[220px]">{app.description}</p>
+                          <p className="text-[11px] text-muted-foreground truncate mt-0.5">{app.description}</p>
                         )}
-                      </td>
-                      <td className="px-6 py-3">
-                        <p className="font-semibold text-gray-700">{app.versionName}</p>
-                        <p className="text-xs text-gray-400">code: {app.versionCode}</p>
-                      </td>
-                      <td className="px-6 py-3 text-gray-500">{formatFileSize(app.fileSize)}</td>
-                      <td className="px-6 py-3"><StatusBadge isActive={app.isActive} /></td>
-                      <td className="px-6 py-3 text-gray-500 truncate max-w-[160px]">{app.uploadedByEmail}</td>
+                      </div>
+                      <StatusBadge isActive={app.isActive} />
+                    </div>
+                    <div className="border-t border-border/60 bg-muted/30 px-4 py-2.5 grid grid-cols-3 gap-x-4 gap-y-1 text-xs">
+                      <div>
+                        <span className="text-muted-foreground">Version</span>
+                        <p className="font-medium text-foreground">{app.versionName}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Size</span>
+                        <p className="font-medium text-foreground">{formatFileSize(app.fileSize)}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">ID</span>
+                        <p className="font-mono font-medium text-foreground">#{app.id}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/40">
+                      <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">ID</th>
+                      <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Package</th>
+                      <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Version</th>
+                      <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Size</th>
+                      <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                      <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Uploaded By</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {apps.map((app) => (
+                      <tr
+                        key={app.id}
+                        onClick={() => setInstallApp(app)}
+                        className={`hover:bg-muted/40 transition-colors cursor-pointer ${
+                          installApp?.id === app.id ? 'bg-primary/5 ring-1 ring-inset ring-primary/20' : ''
+                        }`}
+                        title="Click to select for install"
+                      >
+                        <td className="px-6 py-3 font-mono text-muted-foreground text-xs">#{app.id}</td>
+                        <td className="px-6 py-3">
+                          <p className="font-medium text-foreground">{app.packageName}</p>
+                          {app.description && (
+                            <p className="text-xs text-muted-foreground truncate max-w-[220px]">{app.description}</p>
+                          )}
+                        </td>
+                        <td className="px-6 py-3">
+                          <p className="font-semibold text-foreground">{app.versionName}</p>
+                          <p className="text-xs text-muted-foreground">code: {app.versionCode}</p>
+                        </td>
+                        <td className="px-6 py-3 text-muted-foreground">{formatFileSize(app.fileSize)}</td>
+                        <td className="px-6 py-3"><StatusBadge isActive={app.isActive} /></td>
+                        <td className="px-6 py-3 text-muted-foreground truncate max-w-[160px]">{app.uploadedByEmail}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {apps.length > 0 && (
+                <div className="px-6 py-3 border-t border-border bg-muted/20 rounded-b-lg">
+                  <p className="text-xs text-muted-foreground">
+                    Click a row to select it for the install form above. Showing {apps.length} app{apps.length !== 1 ? 's' : ''}.
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
-        {apps.length > 0 && (
-          <div className="px-6 py-3 border-t border-gray-100 bg-gray-50 rounded-b-lg">
-            <p className="text-xs text-gray-400">
-              Click a row to select it for the install form above. Showing {apps.length} app{apps.length !== 1 ? 's' : ''}.
-            </p>
-          </div>
-        )}
       </Card>
     </div>
   );
@@ -1272,24 +1463,26 @@ function CommandsTab({ devices }: CommandsTabProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="border border-border shadow-sm overflow-hidden">
+      <CardHeader className="pb-4">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <History className="h-5 w-5 text-primary" />
-            Command History
-          </CardTitle>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-br from-slate-500 to-slate-700 rounded-xl shadow-lg shadow-slate-500/20">
+              <History className="h-5 w-5 text-white" />
+            </div>
+            <CardTitle className="text-lg text-foreground">Command History</CardTitle>
+          </div>
           <div className="flex flex-col gap-2 sm:items-end">
-            {/* Filter type selector */}
-            <div className="flex gap-1">
+            {/* Filter type selector — segmented control */}
+            <div className="flex bg-muted rounded-xl p-1 gap-0.5">
               {(['all', 'device', 'package'] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => handleFilterTypeChange(t)}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                     filterType === t
-                      ? 'bg-primary text-white'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   {t === 'all' ? 'All' : t === 'device' ? 'By Device' : 'By Package'}
@@ -1330,9 +1523,9 @@ function CommandsTab({ devices }: CommandsTabProps) {
             <button
               onClick={() => loadCommands(page)}
               disabled={loading}
-              className="self-end p-1.5 rounded hover:bg-gray-100 transition-colors"
+              className="self-end p-1.5 rounded-lg hover:bg-muted/50 transition-colors"
             >
-              <RefreshCw className={`h-4 w-4 text-gray-500 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
             </button>
           </div>
         </div>
@@ -1340,47 +1533,121 @@ function CommandsTab({ devices }: CommandsTabProps) {
       <CardContent className="p-0">
         {loading ? (
           <div className="flex justify-center py-10">
-            <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
+            <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            {/* Mobile cards */}
+            <div className="flex flex-col gap-3 p-4 md:hidden">
+              {commands.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
+                  <History className="h-10 w-10 mb-2 opacity-30" />
+                  <p className="text-sm">No commands found.</p>
+                </div>
+              ) : (
+                commands.map((cmd) => {
+                  const accentClass =
+                    cmd.status === 'SUCCESS' ? 'border-l-emerald-500' :
+                    cmd.status === 'FAILED'  ? 'border-l-red-500' :
+                    cmd.status === 'PENDING' ? 'border-l-amber-400' :
+                    'border-l-blue-500';
+                  const avatarGradient =
+                    cmd.commandType === 'INSTALL_APP'
+                      ? 'from-blue-500 to-cyan-600'
+                      : 'from-orange-500 to-red-600';
+
+                  return (
+                    <div
+                      key={cmd.id}
+                      className={`rounded-xl border border-border border-l-4 ${accentClass} bg-card shadow-sm overflow-hidden`}
+                    >
+                      <div className="flex items-start gap-3 p-4 pb-3">
+                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${avatarGradient} flex items-center justify-center shrink-0 shadow-sm`}>
+                          <span className="text-white font-bold text-sm">
+                            {(cmd.packageName || '?').charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm text-foreground leading-tight truncate">{cmd.packageName || '—'}</p>
+                          <p className="text-[11px] font-mono text-muted-foreground truncate mt-0.5">{cmd.deviceName || cmd.deviceUuid}</p>
+                        </div>
+                        <div className="flex flex-col items-end gap-1 shrink-0">
+                          <CommandStatusBadge status={cmd.status} />
+                          <CommandTypeBadge type={cmd.commandType} />
+                        </div>
+                      </div>
+                      <div className="border-t border-border/60 bg-muted/30 px-4 py-3 grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+                        <div>
+                          <span className="text-muted-foreground">Command ID</span>
+                          <p className="font-mono font-medium text-foreground">#{cmd.id}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Version</span>
+                          <p className="font-medium text-foreground">{cmd.versionName || '—'}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-muted-foreground">Device UUID</span>
+                          <p className="font-mono text-foreground truncate">{cmd.deviceUuid}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-muted-foreground">Initiated By</span>
+                          <p className="text-foreground truncate">{cmd.initiatedByEmail || '—'}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-muted-foreground">Sent At</span>
+                          <p className="text-foreground">{formatDate(cmd.sentAt)}</p>
+                        </div>
+                        {cmd.errorMessage && (
+                          <div className="col-span-2">
+                            <span className="text-muted-foreground">Error</span>
+                            <p className="text-red-500 dark:text-red-400 truncate">{cmd.errorMessage}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">ID</th>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Type</th>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Device</th>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Package</th>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Version</th>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Initiated By</th>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Sent At</th>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Error</th>
+                <thead>
+                  <tr className="border-b border-border bg-muted/40">
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">ID</th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Device</th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Package</th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Version</th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Initiated By</th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sent At</th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Error</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-border">
                   {commands.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="text-center py-10 text-gray-400">
+                      <td colSpan={9} className="text-center py-10 text-muted-foreground">
                         No commands found.
                       </td>
                     </tr>
                   ) : (
                     commands.map((cmd) => (
-                      <tr key={cmd.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4 font-mono text-gray-500">#{cmd.id}</td>
+                      <tr key={cmd.id} className="hover:bg-muted/40 transition-colors">
+                        <td className="px-6 py-4 font-mono text-muted-foreground">#{cmd.id}</td>
                         <td className="px-6 py-4"><CommandTypeBadge type={cmd.commandType} /></td>
                         <td className="px-6 py-4">
-                          <p className="font-medium text-gray-800">{cmd.deviceName || '—'}</p>
-                          <p className="text-xs text-gray-400 font-mono">{cmd.deviceUuid}</p>
+                          <p className="font-medium text-foreground">{cmd.deviceName || '—'}</p>
+                          <p className="text-xs text-muted-foreground font-mono">{cmd.deviceUuid}</p>
                         </td>
-                        <td className="px-6 py-4 text-gray-600 font-mono text-xs">{cmd.packageName || '—'}</td>
-                        <td className="px-6 py-4 text-gray-500">{cmd.versionName || '—'}</td>
+                        <td className="px-6 py-4 text-muted-foreground font-mono text-xs">{cmd.packageName || '—'}</td>
+                        <td className="px-6 py-4 text-muted-foreground">{cmd.versionName || '—'}</td>
                         <td className="px-6 py-4"><CommandStatusBadge status={cmd.status} /></td>
-                        <td className="px-6 py-4 text-gray-500 truncate max-w-[140px]">{cmd.initiatedByEmail || '—'}</td>
-                        <td className="px-6 py-4 text-gray-500 whitespace-nowrap">{formatDate(cmd.sentAt)}</td>
-                        <td className="px-6 py-4 text-red-500 text-xs max-w-[160px] truncate" title={cmd.errorMessage}>
+                        <td className="px-6 py-4 text-muted-foreground truncate max-w-[140px]">{cmd.initiatedByEmail || '—'}</td>
+                        <td className="px-6 py-4 text-muted-foreground whitespace-nowrap">{formatDate(cmd.sentAt)}</td>
+                        <td className="px-6 py-4 text-red-500 dark:text-red-400 text-xs max-w-[160px] truncate" title={cmd.errorMessage}>
                           {cmd.errorMessage || '—'}
                         </td>
                       </tr>
@@ -1481,11 +1748,22 @@ export function AppManagement() {
   ];
   const tabs = allTabs.filter((t) => t.show);
 
+  const tabGradients: Record<InnerTab, string> = {
+    apps:     'from-indigo-500 to-violet-600',
+    deploy:   'from-emerald-500 to-teal-600',
+    commands: 'from-slate-500 to-slate-700',
+  };
+
   if (!canRead && !canUpload && !canDeploy) {
     return (
       <div className="space-y-6">
-        <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800">App Management</h2>
-        <Card>
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl shadow-lg shadow-indigo-500/20">
+            <Package className="h-6 w-6 text-white" />
+          </div>
+          <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">App Management</h2>
+        </div>
+        <Card className="border border-border shadow-sm">
           <CardContent>
             <NoPermission message="You don't have any permissions for App Management." />
           </CardContent>
@@ -1498,16 +1776,26 @@ export function AppManagement() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800">App Management</h2>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl shadow-lg shadow-indigo-500/20">
+            <Package className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">App Management</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Upload, deploy, and monitor managed apps across devices</p>
+          </div>
+        </div>
+
+        {/* Segmented tab control */}
+        <div className="flex bg-muted rounded-xl p-1 gap-0.5 self-start sm:self-auto">
           {tabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+              className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
                 activeTab === tab.key
-                  ? 'bg-primary text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? `bg-gradient-to-r ${tabGradients[tab.key]} text-white shadow-sm`
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               {tab.icon}
@@ -1522,12 +1810,12 @@ export function AppManagement() {
       {activeTab === 'deploy' && (
         canDeploy
           ? <DeployTab devices={devices} devicesLoading={devicesLoading} apps={deployApps} appsLoading={deployAppsLoading} />
-          : <Card><CardContent><NoPermission message="You don't have permission to deploy apps." /></CardContent></Card>
+          : <Card className="border border-border shadow-sm"><CardContent><NoPermission message="You don't have permission to deploy apps." /></CardContent></Card>
       )}
       {activeTab === 'commands' && (
         canRead
           ? <CommandsTab devices={devices} />
-          : <Card><CardContent><NoPermission message="You don't have permission to view command history." /></CardContent></Card>
+          : <Card className="border border-border shadow-sm"><CardContent><NoPermission message="You don't have permission to view command history." /></CardContent></Card>
       )}
     </div>
   );

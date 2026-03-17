@@ -40,7 +40,7 @@ export function DashboardLayout({ sidebar, children }: DashboardLayoutProps) {
       })}
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto bg-page-bg lg:pt-0 pt-14">
+      <main className="flex-1 overflow-y-auto bg-page-bg lg:pt-0 pt-14 pb-6">
         {children}
       </main>
     </div>

@@ -115,7 +115,7 @@ export function DashboardPage() {
         <Sidebar activeTab={activeTab} onTabChange={handleTabChange} {...mobileProps} />
       )}
     >
-      <div className={activeTab === 'devices' || activeTab === 'users' || activeTab === 'security-groups' || activeTab === 'app-management' || activeTab === 'file-manager' ? 'h-full p-4 sm:p-6 lg:p-8' : 'p-4 sm:p-6 lg:p-8'}>
+      <div className={activeTab === 'devices' || activeTab === 'users' || activeTab === 'security-groups' || activeTab === 'app-management' || activeTab === 'file-manager' ? 'h-full p-4 sm:p-6 lg:p-8' : 'p-4 sm:p-6 lg:p-8 pb-10'}>
         {activeTab === 'analytics' && (
           <ErrorBoundary moduleName="Analytics">
             <AnalyticsDashboard />
