@@ -226,12 +226,6 @@ export function DeviceNotificationsPage() {
                       <p className="text-xs font-mono text-muted-foreground truncate">{item.packageName}</p>
                       {item.title && <p className="text-sm font-semibold text-foreground">{item.title}</p>}
                       {item.message && <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">{item.message}</p>}
-                      {item.rawPayload && (
-                        <details className="rounded-lg border border-border/60 bg-muted/30 p-2">
-                          <summary className="cursor-pointer text-[11px] font-semibold text-muted-foreground">Payload</summary>
-                          <pre className="mt-2 max-h-56 overflow-auto text-[11px] text-foreground whitespace-pre-wrap break-words">{item.rawPayload}</pre>
-                        </details>
-                      )}
                       <p className="text-xs text-muted-foreground">{formatDateTime(item.receivedAt)}</p>
                     </div>
                   ))}
@@ -243,7 +237,6 @@ export function DeviceNotificationsPage() {
                         <th className="px-4 py-3 text-left text-sm font-medium">App</th>
                         <th className="px-4 py-3 text-left text-sm font-medium">Title</th>
                         <th className="px-4 py-3 text-left text-sm font-medium">Message</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium">Payload</th>
                         <th className="px-4 py-3 text-left text-sm font-medium">Priority</th>
                         <th className="px-4 py-3 text-left text-sm font-medium">Time</th>
                       </tr>
@@ -257,16 +250,6 @@ export function DeviceNotificationsPage() {
                           </td>
                           <td className="px-4 py-3 text-sm text-foreground">{item.title || '-'}</td>
                           <td className="px-4 py-3 text-sm text-muted-foreground whitespace-pre-wrap break-words max-w-[480px]">{item.message || '-'}</td>
-                          <td className="px-4 py-3 text-sm">
-                            {item.rawPayload ? (
-                              <details className="group">
-                                <summary className="cursor-pointer text-xs font-semibold text-muted-foreground hover:text-foreground">View Payload</summary>
-                                <pre className="mt-2 max-h-60 overflow-auto rounded-md bg-muted/40 p-2 text-xs text-foreground whitespace-pre-wrap break-words">{item.rawPayload}</pre>
-                              </details>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </td>
                           <td className="px-4 py-3 text-sm">
                             <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-semibold uppercase text-foreground">
                               {item.priority}

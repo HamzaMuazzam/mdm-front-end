@@ -8,7 +8,6 @@ export interface DeviceNotification {
   appName: string | null;
   title: string | null;
   message: string | null;
-  rawPayload: string | null;
   priority: NotificationPriority;
   category: string | null;
   isSensitive: boolean;
