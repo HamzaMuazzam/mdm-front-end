@@ -4,7 +4,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { deviceSchema, updateDeviceSchema } from '@/utils/validators';
 import { useDevicesQuery, useCreateDevice, useToggleDeviceStatus, useUpdateDevice, useDeviceConfiguration, useUpdateDeviceConfiguration, useApplicationPermissionGranters, useFeatureStates, useLocationTrackingTypes, usePushNotificationProtocols } from '@/hooks/useDevices';
+import { useUpdateNotificationSettings } from '@/hooks/useNotifications';
 import { useDeviceStatusMqtt, useDeviceStatusStore } from '@/hooks/useDeviceStatus';
+import { notificationService } from '@/api/services/notification.service';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -47,6 +49,7 @@ export function DeviceManagement() {
   const updateMutation = useUpdateDevice();
   const toggleStatusMutation = useToggleDeviceStatus();
   const updateConfigMutation = useUpdateDeviceConfiguration();
+  const updateNotificationSettingsMutation = useUpdateNotificationSettings();
 
   // Configuration enum data
   const { data: permissionGranters = [] } = useApplicationPermissionGranters();
@@ -307,6 +310,27 @@ export function DeviceManagement() {
     navigate(`/device/${device.id}/requests`);
   };
 
+  const handleViewNotifications = (device: Device) => {
+    navigate(`/device/${device.id}/notifications`);
+  };
+
+  const handleToggleAlerts = async (device: Device) => {
+    try {
+      const settings = await notificationService.getSettings(device.id);
+      await updateNotificationSettingsMutation.mutateAsync({
+        deviceId: device.id,
+        alertsEnabled: !settings.alertsEnabled,
+      });
+    } catch (error: any) {
+      const message = error?.response?.data?.message || error?.message || 'Failed to update notification alerts.';
+      toast({
+        variant: 'destructive',
+        title: 'Alert Update Failed',
+        description: message,
+      });
+    }
+  };
+
   const handleOpenActionsMenu = (deviceId: number) => {
     setOpenActionMenuDeviceId((previous) => (previous === deviceId ? null : deviceId));
   };
@@ -498,7 +522,7 @@ export function DeviceManagement() {
               </div>
 
               {/* ── Quick action buttons ── */}
-              <div className="border-t border-border/50 px-2 py-1.5 flex items-center gap-0.5">
+              <div className="border-t border-border/50 px-2 py-1.5 flex flex-wrap items-center gap-0.5">
                 {hasPermission('devices:monitoring') && (
                   <button
                     type="button"
@@ -537,6 +561,26 @@ export function DeviceManagement() {
                   <FileText className="h-4 w-4" />
                   <span className="text-[10px] font-medium">Requests</span>
                 </button>
+                {hasPermission('notifications:view-history') && (
+                  <button
+                    type="button"
+                    onClick={() => handleViewNotifications(device)}
+                    className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                  >
+                    <Bell className="h-4 w-4" />
+                    <span className="text-[10px] font-medium">Notifications</span>
+                  </button>
+                )}
+                {hasPermission('notifications:manage-alerts') && (
+                  <button
+                    type="button"
+                    onClick={() => handleToggleAlerts(device)}
+                    className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                  >
+                    <Bell className="h-4 w-4" />
+                    <span className="text-[10px] font-medium">Alerts</span>
+                  </button>
+                )}
 
                 {/* Overflow menu */}
                 <div className="relative ml-auto" data-device-actions-menu>
@@ -557,6 +601,16 @@ export function DeviceManagement() {
                       {hasPermission('devices:configurations:read') && (
                         <button type="button" className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-foreground hover:bg-muted transition-colors" onClick={() => { closeActionsMenu(); handleViewConfig(device); }}>
                           <Settings className="h-4 w-4 text-muted-foreground" /> Configuration
+                        </button>
+                      )}
+                      {hasPermission('notifications:view-history') && (
+                        <button type="button" className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-foreground hover:bg-muted transition-colors" onClick={() => { closeActionsMenu(); handleViewNotifications(device); }}>
+                          <Bell className="h-4 w-4 text-muted-foreground" /> View Notifications
+                        </button>
+                      )}
+                      {hasPermission('notifications:manage-alerts') && (
+                        <button type="button" className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-foreground hover:bg-muted transition-colors" onClick={() => { closeActionsMenu(); handleToggleAlerts(device); }}>
+                          <Bell className="h-4 w-4 text-muted-foreground" /> Enable / Disable Alerts
                         </button>
                       )}
                       <button type="button" className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-foreground hover:bg-muted transition-colors" onClick={() => { closeActionsMenu(); handleShowCode(device.deviceVerificationCode); }}>
@@ -684,6 +738,16 @@ export function DeviceManagement() {
                               <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => { closeActionsMenu(); handleViewRequests(device); }}>
                                 <FileText className="h-4 w-4" /> View Requests
                               </button>
+                              {hasPermission('notifications:view-history') && (
+                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => { closeActionsMenu(); handleViewNotifications(device); }}>
+                                  <Bell className="h-4 w-4" /> View Notifications
+                                </button>
+                              )}
+                              {hasPermission('notifications:manage-alerts') && (
+                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => { closeActionsMenu(); handleToggleAlerts(device); }}>
+                                  <Bell className="h-4 w-4" /> Enable / Disable Alerts
+                                </button>
+                              )}
                               {hasPermission('devices:update') && (
                                 <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => { closeActionsMenu(); handleEdit(device); }}>
                                   <Pencil className="h-4 w-4" /> Edit Device
