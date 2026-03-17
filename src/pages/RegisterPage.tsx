@@ -47,13 +47,13 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-3xl">Create Account</CardTitle>
+    <div className="min-h-screen flex items-center justify-center px-4 sm:px-0 p-4">
+      <Card className="w-full max-w-md mx-auto">
+        <CardHeader className="text-center px-6 sm:px-8 pt-6 sm:pt-8">
+          <CardTitle className="text-2xl sm:text-3xl">Create Account</CardTitle>
           <CardDescription>Register for TW MDM Portal</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-6 sm:px-8 pb-6 sm:pb-8">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {error && (
               <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md text-center">
@@ -63,13 +63,13 @@ export function RegisterPage() {
 
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="Enter your email" {...register('email')} />
+              <Input id="email" type="email" placeholder="Enter your email" className="w-full" {...register('email')} />
               {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="userName">Username <span className="text-muted-foreground text-xs">(optional)</span></Label>
-              <Input id="userName" placeholder="Display name" {...register('userName')} />
+              <Input id="userName" placeholder="Display name" className="w-full" {...register('userName')} />
               {errors.userName && <p className="text-sm text-destructive">{errors.userName.message}</p>}
             </div>
 
@@ -79,6 +79,7 @@ export function RegisterPage() {
                 id="password"
                 type="password"
                 placeholder="Min 8 characters"
+                className="w-full"
                 {...register('password')}
               />
               {errors.password && (
@@ -88,7 +89,7 @@ export function RegisterPage() {
 
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number <span className="text-muted-foreground text-xs">(optional)</span></Label>
-              <Input id="phone" type="tel" placeholder="+1234567890" {...register('phone')} />
+              <Input id="phone" type="tel" placeholder="+1234567890" className="w-full" {...register('phone')} />
               {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
             </div>
 

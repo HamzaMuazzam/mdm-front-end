@@ -55,16 +55,16 @@ export function VerifyOtpPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Verify Your Email</CardTitle>
+    <div className="min-h-screen flex items-center justify-center px-4 sm:px-0 p-4">
+      <Card className="w-full max-w-md mx-auto">
+        <CardHeader className="text-center px-6 sm:px-8 pt-6 sm:pt-8">
+          <CardTitle className="text-xl sm:text-2xl">Verify Your Email</CardTitle>
           <CardDescription>
             We've sent a 6-digit code to <br />
             <span className="font-medium text-foreground">{email}</span>
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-6 sm:px-8 pb-6 sm:pb-8">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {error && (
               <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md text-center">
@@ -84,6 +84,7 @@ export function VerifyOtpPage() {
                 type="text"
                 placeholder="6-digit code"
                 maxLength={6}
+                className="w-full"
                 {...register('otp')}
               />
               {errors.otp && <p className="text-sm text-destructive">{errors.otp.message}</p>}

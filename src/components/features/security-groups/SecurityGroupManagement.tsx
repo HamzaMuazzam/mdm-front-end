@@ -113,8 +113,8 @@ export function SecurityGroupManagement() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Security Groups</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Security Groups</h1>
         {hasPermission('security-group:create') && (
           <Button onClick={() => setIsCreateOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
@@ -123,9 +123,9 @@ export function SecurityGroupManagement() {
         )}
       </div>
 
-      <div className="flex gap-4 flex-1 min-h-0">
+      <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0">
         {/* Left panel – group list */}
-        <Card className="w-1/2 flex flex-col min-h-0">
+        <Card className="lg:w-1/2 flex flex-col min-h-0" style={{ minHeight: '200px' }}>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Shield className="h-4 w-4" />
@@ -176,7 +176,7 @@ export function SecurityGroupManagement() {
         </Card>
 
         {/* Right panel – permission matrix */}
-        <Card className="w-1/2 flex flex-col min-h-0">
+        <Card className="lg:w-1/2 flex flex-col min-h-0" style={{ minHeight: '200px' }}>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <ShieldCheck className="h-4 w-4" />
@@ -258,8 +258,8 @@ export function SecurityGroupManagement() {
 
       {/* Create Modal */}
       {isCreateOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md m-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <CardTitle>Create Security Group</CardTitle>
               <button type="button" onClick={handleCloseCreate} className="opacity-70 hover:opacity-100">
@@ -303,8 +303,8 @@ export function SecurityGroupManagement() {
 
       {/* Edit Modal */}
       {editingGroup && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md m-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <CardTitle>Edit Security Group</CardTitle>
               <button type="button" onClick={handleCloseEdit} className="opacity-70 hover:opacity-100">

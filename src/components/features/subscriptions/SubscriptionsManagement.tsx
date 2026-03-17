@@ -76,9 +76,9 @@ export function SubscriptionsManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8">
         <div>
-          <h2 className="text-2xl font-bold mb-1">Subscription Plans</h2>
+          <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mb-1">Subscription Plans</h2>
           <p className="text-muted-foreground">Manage your subscription plan</p>
         </div>
         {hasPermission('subscriptions:create') && (
@@ -89,7 +89,7 @@ export function SubscriptionsManagement() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {plans.map((plan) => (
           <Card
             key={plan.id}
@@ -99,7 +99,7 @@ export function SubscriptionsManagement() {
           >
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-2xl">{plan.subscriptionName}</CardTitle>
+                <CardTitle className="text-lg sm:text-xl lg:text-2xl">{plan.subscriptionName}</CardTitle>
                 {plan.isUserPlan && (
                   <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-primary text-primary-foreground">
                     <Check className="h-3 w-3" />
@@ -108,7 +108,7 @@ export function SubscriptionsManagement() {
                 )}
               </div>
               <CardDescription>
-                <span className="text-3xl font-bold text-primary">
+                <span className="text-2xl sm:text-3xl font-bold text-primary">
                   {plan.currency === 'Dollar' ? '$' : plan.currency}
                   {plan.price}
                 </span>
@@ -152,8 +152,8 @@ export function SubscriptionsManagement() {
 
       {/* Create Plan Modal */}
       {isCreateOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-lg m-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <CardTitle>Create Subscription Plan</CardTitle>
               <button type="button" onClick={handleCloseCreate} className="opacity-70 hover:opacity-100">
@@ -192,7 +192,7 @@ export function SubscriptionsManagement() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="sp-price">Price</Label>
                     <Input
@@ -216,7 +216,7 @@ export function SubscriptionsManagement() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="sp-seats">Seats</Label>
                     <Input

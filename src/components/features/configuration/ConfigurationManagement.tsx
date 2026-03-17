@@ -190,9 +190,9 @@ export function ConfigurationManagement() {
       {/* Right Content Area */}
       <div className="flex-1 min-w-0">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6">
           <div>
-            <h1 className="text-3xl font-bold">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">
               {activeTab === 'configuration' ? 'Default Configuration' : 'Settings'}
             </h1>
             <p className="text-muted-foreground mt-1">
@@ -201,7 +201,7 @@ export function ConfigurationManagement() {
                 : 'Manage application settings and preferences'}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={handleRefresh} disabled={isRefreshing}>
               <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
               Refresh
@@ -241,8 +241,8 @@ export function ConfigurationManagement() {
               <p className="text-sm text-muted-foreground">{config.description}</p>
             )}
           </CardHeader>
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <CardContent className="p-4 sm:p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               {/* General Settings */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-lg font-semibold border-b pb-2">

@@ -60,10 +60,10 @@ export function ForgotPasswordPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl text-success">Password Reset Successful!</CardTitle>
+      <div className="min-h-screen flex items-center justify-center px-4 sm:px-0 p-4">
+        <Card className="w-full max-w-md mx-auto">
+          <CardHeader className="text-center px-6 sm:px-8 pt-6 sm:pt-8">
+            <CardTitle className="text-xl sm:text-2xl text-success">Password Reset Successful!</CardTitle>
             <CardDescription>Redirecting to login...</CardDescription>
           </CardHeader>
         </Card>
@@ -72,15 +72,15 @@ export function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Reset Password</CardTitle>
+    <div className="min-h-screen flex items-center justify-center px-4 sm:px-0 p-4">
+      <Card className="w-full max-w-md mx-auto">
+        <CardHeader className="text-center px-6 sm:px-8 pt-6 sm:pt-8">
+          <CardTitle className="text-xl sm:text-2xl">Reset Password</CardTitle>
           <CardDescription>
             {step === 1 ? 'Enter your email to receive OTP' : 'Enter OTP and new password'}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-6 sm:px-8 pb-6 sm:pb-8">
           {step === 1 ? (
             <form onSubmit={form1.handleSubmit(onSendOtp)} className="space-y-4">
               {error && (
@@ -91,7 +91,7 @@ export function ForgotPasswordPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="Enter your email" {...form1.register('email')} />
+                <Input id="email" type="email" placeholder="Enter your email" className="w-full" {...form1.register('email')} />
                 {form1.formState.errors.email && (
                   <p className="text-sm text-destructive">{form1.formState.errors.email.message}</p>
                 )}
@@ -117,7 +117,7 @@ export function ForgotPasswordPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="otp">OTP</Label>
-                <Input id="otp" type="text" placeholder="6-digit code" maxLength={6} {...form2.register('otp')} />
+                <Input id="otp" type="text" placeholder="6-digit code" maxLength={6} className="w-full" {...form2.register('otp')} />
                 {form2.formState.errors.otp && (
                   <p className="text-sm text-destructive">{form2.formState.errors.otp.message}</p>
                 )}
@@ -129,6 +129,7 @@ export function ForgotPasswordPage() {
                   id="password"
                   type="password"
                   placeholder="Min 8 characters"
+                  className="w-full"
                   {...form2.register('password')}
                 />
                 {form2.formState.errors.password && (

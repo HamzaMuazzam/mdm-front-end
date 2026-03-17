@@ -657,7 +657,7 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
                 {!selectedFile ? (
                   <div
                     onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
+                    className="border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-6 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors w-full"
                   >
                     <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                     <p className="text-sm font-medium text-gray-600">Click to select APK / XAPK file</p>
@@ -690,8 +690,8 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
               </div>
 
               {/* Form fields — auto-filled after file selection */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1 col-span-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1 col-span-1 sm:col-span-2">
                   <Label htmlFor="am-packageName" className="flex items-center gap-1.5">
                     Package Name *
                     {parsedFields.has('packageName') && (
@@ -737,7 +737,7 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
                     className={parsedFields.has('versionCode') ? 'border-green-300 bg-green-50/40' : ''}
                   />
                 </div>
-                <div className="space-y-1 col-span-2">
+                <div className="space-y-1 col-span-1 sm:col-span-2">
                   <Label htmlFor="am-description" className="flex items-center gap-1.5">
                     Description
                     {parsedFields.has('description') && (
@@ -781,11 +781,11 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 rounded-lg bg-gray-50 text-center">
-                  <p className="text-3xl font-bold text-gray-800">{totalElements}</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-800">{totalElements}</p>
                   <p className="text-xs text-gray-500 mt-1 uppercase font-semibold">Total Apps</p>
                 </div>
                 <div className="p-4 rounded-lg bg-green-50 text-center">
-                  <p className="text-3xl font-bold text-green-700">
+                  <p className="text-2xl sm:text-3xl font-bold text-green-700">
                     {apps.filter((a) => a.isActive).length}
                   </p>
                   <p className="text-xs text-gray-500 mt-1 uppercase font-semibold">Active (this page)</p>
@@ -813,7 +813,7 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
                   value={packageFilterInput}
                   onChange={(e) => setPackageFilterInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && applyPackageFilter()}
-                  className="w-56 text-sm"
+                  className="w-full sm:w-56 text-sm"
                 />
                 <Button size="sm" variant="outline" onClick={applyPackageFilter}>
                   <Search className="h-4 w-4" />
@@ -1299,7 +1299,7 @@ function CommandsTab({ devices }: CommandsTabProps) {
 
             {/* Device filter */}
             {filterType === 'device' && (
-              <div className="w-72">
+              <div className="w-full sm:w-72">
                 <DeviceDropdown
                   devices={devices}
                   selectedUuid={filterDeviceUuid}
@@ -1319,7 +1319,7 @@ function CommandsTab({ devices }: CommandsTabProps) {
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') setFilterPackage(filterPackageInput.trim());
                   }}
-                  className="w-56 text-sm"
+                  className="w-full sm:w-56 text-sm"
                 />
                 <Button size="sm" variant="outline" onClick={() => setFilterPackage(filterPackageInput.trim())}>
                   <Search className="h-4 w-4" />
@@ -1484,7 +1484,7 @@ export function AppManagement() {
   if (!canRead && !canUpload && !canDeploy) {
     return (
       <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-gray-800">App Management</h2>
+        <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800">App Management</h2>
         <Card>
           <CardContent>
             <NoPermission message="You don't have any permissions for App Management." />
@@ -1498,20 +1498,20 @@ export function AppManagement() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h2 className="text-2xl font-bold text-gray-800">App Management</h2>
-        <div className="flex gap-2">
+        <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800">App Management</h2>
+        <div className="flex flex-wrap gap-2">
           {tabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+              className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
                 activeTab === tab.key
                   ? 'bg-primary text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               {tab.icon}
-              {tab.label}
+              <span className="hidden sm:inline">{tab.label}</span>
             </button>
           ))}
         </div>

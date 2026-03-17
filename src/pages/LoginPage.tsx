@@ -36,13 +36,13 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-3xl">TW MDM Portal</CardTitle>
+    <div className="min-h-screen flex items-center justify-center px-4 sm:px-0 p-4">
+      <Card className="w-full max-w-md mx-auto">
+        <CardHeader className="text-center px-6 sm:px-8 pt-6 sm:pt-8">
+          <CardTitle className="text-2xl sm:text-3xl">TW MDM Portal</CardTitle>
           <CardDescription>Sign in to your account</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-6 sm:px-8 pb-6 sm:pb-8">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {error && (
               <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md text-center">
@@ -56,6 +56,7 @@ export function LoginPage() {
                 id="login"
                 type="email"
                 placeholder="Enter your email"
+                className="w-full"
                 {...register('login')}
               />
               {errors.login && (
@@ -69,6 +70,7 @@ export function LoginPage() {
                 id="password"
                 type="password"
                 placeholder="Enter your password"
+                className="w-full"
                 {...register('password')}
               />
               {errors.password && (

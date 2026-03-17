@@ -212,8 +212,8 @@ export function UserManagement() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">User Management</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">User Management</h1>
         {hasPermission('user:create') && (
           <Button onClick={() => setIsModalOpen(true)}>Add User</Button>
         )}
@@ -223,7 +223,7 @@ export function UserManagement() {
       <Card className="flex-1 min-h-0">
         <CardContent className="h-full p-0">
           <div className="h-full overflow-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[600px]">
               <thead className="bg-muted/50">
                 <tr>
                   <th className="px-4 py-3 text-left text-sm font-medium">ID</th>
@@ -330,8 +330,8 @@ export function UserManagement() {
 
       {/* Add User Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md m-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
             <CardHeader>
               <CardTitle>Add New User</CardTitle>
             </CardHeader>
@@ -454,8 +454,8 @@ export function UserManagement() {
 
       {/* Edit User Modal - L1 Users Only */}
       {isEditModalOpen && selectedUser && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md m-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
             <CardHeader>
               <CardTitle>Edit User</CardTitle>
             </CardHeader>
@@ -524,8 +524,8 @@ export function UserManagement() {
 
       {/* Reset Password Modal */}
       {isResetPasswordModalOpen && selectedUser && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md m-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
             <CardHeader>
               <CardTitle>Reset Password</CardTitle>
             </CardHeader>

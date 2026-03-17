@@ -387,8 +387,8 @@ export function DeviceManagement() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Device Management</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Device Management</h1>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setIsQrModalOpen(true)}>
             <QrCode className="h-4 w-4 mr-2" />
@@ -404,7 +404,7 @@ export function DeviceManagement() {
       <Card className="flex-1 min-h-0">
         <CardContent className="h-full p-0">
           <div className="h-full overflow-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[700px]">
               <thead className="bg-muted/50">
                 <tr>
                   {/*<th className="px-4 py-3 text-left text-sm font-medium">ID</th>*/}
@@ -596,8 +596,8 @@ export function DeviceManagement() {
 
       {/* Add Device Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md m-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
             <CardHeader>
               <CardTitle>Add New Device</CardTitle>
             </CardHeader>
@@ -667,8 +667,8 @@ export function DeviceManagement() {
 
       {/* Edit Device Modal */}
       {isEditModalOpen && editingDevice && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md m-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
             <CardHeader>
               <CardTitle>Edit Device</CardTitle>
             </CardHeader>
@@ -789,8 +789,8 @@ export function DeviceManagement() {
 
       {/* Toggle Status Confirmation Dialog */}
       {isToggleDialogOpen && deviceToToggle && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-sm m-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-sm">
             <CardHeader>
               <CardTitle>
                 {!deviceToToggle.deletedAt ? 'Deactivate Device' : 'Activate Device'}
@@ -832,8 +832,8 @@ export function DeviceManagement() {
 
       {/* Reboot / Reset Confirmation Dialog */}
       {isCommandDialogOpen && commandTarget && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-sm m-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-sm">
             <CardHeader>
               <CardTitle>
                 {commandTarget.command === 'reboot' ? 'Reboot Device' : 'Reset Device'}
@@ -867,8 +867,8 @@ export function DeviceManagement() {
 
       {/* QR Code Modal */}
       {isQrModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-sm m-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-sm">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Your QR Code</CardTitle>
               <Button
@@ -899,9 +899,9 @@ export function DeviceManagement() {
 
       {/* Device Configuration Modal */}
       {isConfigModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-4xl m-4 max-h-[90vh] overflow-hidden flex flex-col">
-            <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b pb-4">
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <Settings className="h-5 w-5" />
@@ -912,7 +912,7 @@ export function DeviceManagement() {
                   <p className="text-sm text-muted-foreground mt-1">{deviceConfig.configName}</p>
                 )}
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {deviceConfig && !isConfigEditMode && hasPermission('devices:configurations:update') && (
                   <Button
                     variant="outline"
@@ -1004,13 +1004,13 @@ export function DeviceManagement() {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="overflow-y-auto p-6">
+            <CardContent className="overflow-y-auto p-4 sm:p-6">
               {isLoadingConfig ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
               ) : deviceConfig ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   {/* General Settings */}
                   <div className="space-y-4">
                     <div className="flex items-center gap-2 text-lg font-semibold border-b pb-2">

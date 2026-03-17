@@ -181,7 +181,7 @@ export function AppUpdateManagement() {
     <div className="space-y-6">
       {/* Header + Platform Toggle */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h2 className="text-2xl font-bold text-gray-800">Application Update</h2>
+        <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800">Application Update</h2>
         <div className="flex gap-2">
           {PLATFORMS.map((p) => (
             <button
@@ -210,7 +210,7 @@ export function AppUpdateManagement() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label htmlFor="versionCode">Version Code *</Label>
                 <Input
@@ -251,7 +251,7 @@ export function AppUpdateManagement() {
             {/* File Drop Area */}
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
+              className="border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-6 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors w-full"
             >
               <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
               <p className="text-sm text-gray-500">

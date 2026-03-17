@@ -52,7 +52,7 @@ function MetricCard({ title, value, description, icon }: MetricCardProps) {
     <Card className="border-0 bg-white/85 shadow-lg backdrop-blur-sm">
       <CardHeader className="pb-2">
         <CardDescription className="text-slate-600">{title}</CardDescription>
-        <CardTitle className="text-3xl font-bold text-slate-900">{value}</CardTitle>
+        <CardTitle className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900">{value}</CardTitle>
       </CardHeader>
       <CardContent className="flex items-center justify-between pt-2">
         <p className="text-sm text-slate-500">{description}</p>
@@ -300,7 +300,7 @@ function AnalyticsSkeleton() {
         <CardContent className="h-40 animate-pulse" />
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
         {Array.from({ length: 6 }).map((_, index) => (
           <Card key={index} className="border-0 bg-slate-200/70">
             <CardContent className="h-28 animate-pulse" />
@@ -360,10 +360,10 @@ export function AnalyticsDashboard() {
         <div className="relative bg-gradient-to-br from-slate-900 via-blue-900 to-cyan-700 px-6 py-7 text-white">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.28),transparent_42%)]" />
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.08),transparent_50%)]" />
-          <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
+          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="space-y-2">
               <p className="text-sm uppercase tracking-[0.18em] text-cyan-100">Device Analytics</p>
-              <h2 className="text-3xl font-bold">Operations Pulse</h2>
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold">Operations Pulse</h2>
               <p className="text-sm text-cyan-100">Generated at {formatDateTime(generatedAt)}</p>
             </div>
 
@@ -380,7 +380,7 @@ export function AnalyticsDashboard() {
         </div>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
         <MetricCard
           title="Total Devices Added"
           value={numberFormatter.format(devices.totalDevicesAdded)}
@@ -421,7 +421,7 @@ export function AnalyticsDashboard() {
         )}
       </div>
 
-      <div className={`grid gap-6 ${hasSubscription ? 'xl:grid-cols-3' : 'xl:grid-cols-1'}`}>
+      <div className={`grid gap-4 sm:gap-6 ${hasSubscription ? 'grid-cols-1 lg:grid-cols-3' : 'grid-cols-1'}`}>
         {hasSubscription && (
           <RingChart
             label="Subscription Utilization"
@@ -468,7 +468,7 @@ export function AnalyticsDashboard() {
 
       {planAnalytics != null && <PlanAnalyticsCard plan={planAnalytics} />}
 
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 xl:grid-cols-2">
         <TrendChart
           title="Enrollment Trend (Last 7 Days)"
           description="Daily count of newly enrolled devices"
@@ -485,7 +485,7 @@ export function AnalyticsDashboard() {
         />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 xl:grid-cols-2">
         <StackedBarCard
           title="Device State Distribution"
           description="How your current fleet is split by state"
@@ -509,7 +509,7 @@ export function AnalyticsDashboard() {
         />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 xl:grid-cols-2">
         <StackedBarCard
           title="User State Distribution"
           description="How your user base is split by status"
