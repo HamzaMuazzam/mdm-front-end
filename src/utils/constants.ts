@@ -23,6 +23,7 @@ export const ROUTES = {
   DEVICE_REQUESTS: '/device/:deviceId/requests',
   DEVICE_MONITOR: '/device/:deviceId/monitor',
   DEVICE_NOTIFICATIONS: '/device/:deviceId/notifications',
+  DEVICE_ALERT: '/device/:deviceId/alert',
 } as const;
 
 export const ERROR_MESSAGES = {

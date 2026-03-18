@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, Eye, BarChart3, MoreVertical, Power, RotateCcw } from 'lucide-react';
+import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, Eye, BarChart3, MoreVertical, Power, RotateCcw, Siren } from 'lucide-react';
 import QRCode from 'qrcode';
 import type { CreateDeviceRequest, UpdateDeviceRequest, Device, UpdateDeviceConfigurationRequest } from '@/types/device.types';
 import { ROUTES } from '@/utils/constants';
@@ -314,6 +314,10 @@ export function DeviceManagement() {
 
   const handleViewNotifications = (device: Device) => {
     navigate(`/device/${device.id}/notifications`);
+  };
+
+  const handleSendAlert = (device: Device) => {
+    navigate(`/device/${device.id}/alert`);
   };
 
   const fetchAlertStatus = useCallback(async (deviceId: number) => {
@@ -625,6 +629,16 @@ export function DeviceManagement() {
                     <span className="text-[10px] font-medium">Alerts</span>
                   </button>
                 )}
+                {hasPermission('device-alerts:send') && (
+                  <button
+                    type="button"
+                    onClick={() => handleSendAlert(device)}
+                    className="flex flex-col items-center gap-0.5 px-2.5 py-2 rounded-lg bg-red-600 hover:bg-red-700 active:bg-red-800 transition-colors text-white"
+                  >
+                    <Siren className="h-4 w-4" />
+                    <span className="text-[10px] font-semibold">Send Alarm</span>
+                  </button>
+                )}
 
                 {/* Overflow menu */}
                 <div className="relative ml-auto" data-device-actions-menu>
@@ -650,6 +664,11 @@ export function DeviceManagement() {
                       {hasPermission('notifications:view-history') && (
                         <button type="button" className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-foreground hover:bg-muted transition-colors" onClick={() => { closeActionsMenu(); handleViewNotifications(device); }}>
                           <Bell className="h-4 w-4 text-muted-foreground" /> View Notifications
+                        </button>
+                      )}
+                      {hasPermission('device-alerts:send') && (
+                        <button type="button" className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 transition-colors" onClick={() => { closeActionsMenu(); handleSendAlert(device); }}>
+                          <Siren className="h-4 w-4" /> Send Alarm
                         </button>
                       )}
                       {hasPermission('notifications:manage-alerts') && (
@@ -808,6 +827,11 @@ export function DeviceManagement() {
                                   disabled={alertsLoading || updateNotificationSettingsMutation.isPending}
                                 >
                                   <Bell className="h-4 w-4" /> {alertsLabel}
+                                </button>
+                              )}
+                              {hasPermission('device-alerts:send') && (
+                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50" onClick={() => { closeActionsMenu(); handleSendAlert(device); }}>
+                                  <Siren className="h-4 w-4" /> Send Alarm
                                 </button>
                               )}
                               {hasPermission('devices:update') && (
