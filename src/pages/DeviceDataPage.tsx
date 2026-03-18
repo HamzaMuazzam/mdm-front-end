@@ -50,10 +50,11 @@ function fmtDuration(seconds: number): string {
 /* ─── tab definition ─────────────────────────────────────────────────────── */
 type Tab = 'contacts' | 'sms' | 'calls';
 
-const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-  { id: 'contacts', label: 'Contacts', icon: <Users className="h-4 w-4" /> },
-  { id: 'sms',      label: 'SMS',      icon: <MessageSquare className="h-4 w-4" /> },
-  { id: 'calls',    label: 'Calls',    icon: <Phone className="h-4 w-4" /> },
+// Store component references (not JSX) to avoid module-level JSX that breaks react-refresh
+const TABS: { id: Tab; label: string; Icon: React.ElementType }[] = [
+  { id: 'contacts', label: 'Contacts', Icon: Users },
+  { id: 'sms',      label: 'SMS',      Icon: MessageSquare },
+  { id: 'calls',    label: 'Calls',    Icon: Phone },
 ];
 
 /* ─── sync button ─────────────────────────────────────────────────────────── */
@@ -379,7 +380,7 @@ export function DeviceDataPage() {
                               ? 'bg-slate-700 text-slate-100'
                               : 'text-slate-500 hover:text-slate-300'}`}
               >
-                {tab.icon}
+                <tab.Icon className="h-4 w-4" />
                 <span className="hidden sm:inline">{tab.label}</span>
               </button>
             ))}
