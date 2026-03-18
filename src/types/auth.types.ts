@@ -10,6 +10,7 @@ export interface User {
 export interface LoginRequest {
   login: string;
   password: string;
+  fcmToken?: string;
 }
 
 export interface LoginResponse {

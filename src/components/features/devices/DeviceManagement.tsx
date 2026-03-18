@@ -36,6 +36,8 @@ export function DeviceManagement() {
   const [isConfigEditMode, setIsConfigEditMode] = useState(false);
   const [isBackgroundImageEnabled, setIsBackgroundImageEnabled] = useState(false);
   const [openActionMenuDeviceId, setOpenActionMenuDeviceId] = useState<number | null>(null);
+  const [alertStatusByDevice, setAlertStatusByDevice] = useState<Record<number, boolean>>({});
+  const [alertStatusLoading, setAlertStatusLoading] = useState<Record<number, boolean>>({});
   const [deviceToToggle, setDeviceToToggle] = useState<Device | null>(null);
   const [commandTarget, setCommandTarget] = useState<{ device: Device; command: DeviceCommandType } | null>(null);
   const [isCommandSending, setIsCommandSending] = useState(false);
@@ -314,13 +316,39 @@ export function DeviceManagement() {
     navigate(`/device/${device.id}/notifications`);
   };
 
+  const fetchAlertStatus = useCallback(async (deviceId: number) => {
+    if (alertStatusByDevice[deviceId] !== undefined || alertStatusLoading[deviceId]) return;
+    setAlertStatusLoading((prev) => ({ ...prev, [deviceId]: true }));
+    try {
+      const settings = await notificationService.getSettings(deviceId);
+      setAlertStatusByDevice((prev) => ({ ...prev, [deviceId]: settings.alertsEnabled }));
+    } catch (error: any) {
+      const message = error?.response?.data?.message || error?.message || 'Failed to load alert status.';
+      toast({
+        variant: 'destructive',
+        title: 'Alert Status Failed',
+        description: message,
+      });
+    } finally {
+      setAlertStatusLoading((prev) => ({ ...prev, [deviceId]: false }));
+    }
+  }, [alertStatusByDevice, alertStatusLoading]);
+
   const handleToggleAlerts = async (device: Device) => {
     try {
-      const settings = await notificationService.getSettings(device.id);
+      let currentStatus = alertStatusByDevice[device.id];
+      if (currentStatus === undefined) {
+        setAlertStatusLoading((prev) => ({ ...prev, [device.id]: true }));
+        const settings = await notificationService.getSettings(device.id);
+        currentStatus = settings.alertsEnabled;
+        setAlertStatusByDevice((prev) => ({ ...prev, [device.id]: currentStatus! }));
+      }
+      const nextStatus = !currentStatus;
       await updateNotificationSettingsMutation.mutateAsync({
         deviceId: device.id,
-        alertsEnabled: !settings.alertsEnabled,
+        alertsEnabled: nextStatus,
       });
+      setAlertStatusByDevice((prev) => ({ ...prev, [device.id]: nextStatus }));
     } catch (error: any) {
       const message = error?.response?.data?.message || error?.message || 'Failed to update notification alerts.';
       toast({
@@ -328,11 +356,19 @@ export function DeviceManagement() {
         title: 'Alert Update Failed',
         description: message,
       });
+    } finally {
+      setAlertStatusLoading((prev) => ({ ...prev, [device.id]: false }));
     }
   };
 
   const handleOpenActionsMenu = (deviceId: number) => {
-    setOpenActionMenuDeviceId((previous) => (previous === deviceId ? null : deviceId));
+    setOpenActionMenuDeviceId((previous) => {
+      const next = previous === deviceId ? null : deviceId;
+      if (next !== null) {
+        void fetchAlertStatus(deviceId);
+      }
+      return next;
+    });
   };
 
   const closeActionsMenu = () => {
@@ -461,6 +497,14 @@ export function DeviceManagement() {
           const isActive = !device.deletedAt;
           const onlineStatus = deviceStatuses[device.deviceUuid];
           const gradient = avatarGradients[device.id % avatarGradients.length];
+          const alertsEnabled = alertStatusByDevice[device.id];
+          const alertsLoading = alertStatusLoading[device.id];
+          const alertsLabel = alertsEnabled === undefined ? 'Alerts' : alertsEnabled ? 'Alerts Enabled' : 'Alerts Disabled';
+          const alertsMenuClass = alertsEnabled === true
+            ? 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
+            : alertsEnabled === false
+            ? 'text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20'
+            : 'text-foreground hover:bg-muted';
           // Left border: green if active+online, amber if active+offline/unknown, red if inactive
           const accentClass = !isActive
             ? 'border-l-red-500'
@@ -609,8 +653,13 @@ export function DeviceManagement() {
                         </button>
                       )}
                       {hasPermission('notifications:manage-alerts') && (
-                        <button type="button" className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-foreground hover:bg-muted transition-colors" onClick={() => { closeActionsMenu(); handleToggleAlerts(device); }}>
-                          <Bell className="h-4 w-4 text-muted-foreground" /> Enable / Disable Alerts
+                        <button
+                          type="button"
+                          className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm transition-colors ${alertsMenuClass}`}
+                          onClick={() => { closeActionsMenu(); handleToggleAlerts(device); }}
+                          disabled={alertsLoading || updateNotificationSettingsMutation.isPending}
+                        >
+                          <Bell className="h-4 w-4" /> {alertsLabel}
                         </button>
                       )}
                       <button type="button" className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-foreground hover:bg-muted transition-colors" onClick={() => { closeActionsMenu(); handleShowCode(device.deviceVerificationCode); }}>
@@ -677,6 +726,14 @@ export function DeviceManagement() {
               <tbody className="divide-y divide-border">
                 {devices.map((device:Device) => {
                   const isActive = !device.deletedAt;
+                  const alertsEnabled = alertStatusByDevice[device.id];
+                  const alertsLoading = alertStatusLoading[device.id];
+                  const alertsLabel = alertsEnabled === undefined ? 'Alerts' : alertsEnabled ? 'Alerts Enabled' : 'Alerts Disabled';
+                  const alertsMenuClass = alertsEnabled === true
+                    ? 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
+                    : alertsEnabled === false
+                    ? 'text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20'
+                    : 'text-foreground hover:bg-muted';
                   return (
                     <tr
                       key={device.id}
@@ -744,8 +801,13 @@ export function DeviceManagement() {
                                 </button>
                               )}
                               {hasPermission('notifications:manage-alerts') && (
-                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => { closeActionsMenu(); handleToggleAlerts(device); }}>
-                                  <Bell className="h-4 w-4" /> Enable / Disable Alerts
+                                <button
+                                  type="button"
+                                  className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors ${alertsMenuClass}`}
+                                  onClick={() => { closeActionsMenu(); handleToggleAlerts(device); }}
+                                  disabled={alertsLoading || updateNotificationSettingsMutation.isPending}
+                                >
+                                  <Bell className="h-4 w-4" /> {alertsLabel}
                                 </button>
                               )}
                               {hasPermission('devices:update') && (

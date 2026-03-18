@@ -13,7 +13,12 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(grep -r \"firebase\\\\|FCM\\\\|initialization\" /Users/Apple/Documents/MDM/mdm-front-end/src --include=*.ts --include=*.tsx)",
+      "Bash(mkcert --version)",
+      "Bash(brew install:*)",
+      "Bash(mkcert -install)",
+      "Bash(mkcert localhost:*)"
     ]
   }
 }

@@ -7,7 +7,9 @@ import { usePermissionStore } from '@/store/permissionStore';
 import { ROUTES } from '@/utils/constants';
 import { toast } from '@/hooks/useToast';
 import { queryClient } from '@/main';
+import { getFcmToken } from '@/lib/firebase';
 import type {
+  LoginRequest,
   RegisterRequest,
   EmailVerificationRequest,
   UpdatePasswordRequest,
@@ -18,7 +20,10 @@ export function useLogin() {
   const setAuth = useAuthStore((state) => state.setAuth);
 
   return useMutation({
-    mutationFn: authService.login,
+    mutationFn: async (data: LoginRequest) => {
+      const fcmToken = await getFcmToken();
+      return authService.login({ ...data, fcmToken: fcmToken ?? undefined });
+    },
     onSuccess: async (data) => {
       // Handle error code 0007 (unverified email) — API returns 200 with errorCode
       // Skip OTP if the user is already active

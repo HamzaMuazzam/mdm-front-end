@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
+import { PublicRoute } from './components/common/PublicRoute';
 import { Toaster } from './components/ui/toaster';
 import { ROUTES } from './utils/constants';
 
@@ -19,11 +20,11 @@ function App() {
   return (
     <div className="min-h-screen bg-page-bg">
       <Routes>
-        {/* Public routes */}
-        <Route path={ROUTES.LOGIN} element={<LoginPage />} />
-        <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
-        <Route path={ROUTES.VERIFY_OTP} element={<VerifyOtpPage />} />
-        <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
+        {/* Public routes — redirect to dashboard if already logged in */}
+        <Route path={ROUTES.LOGIN} element={<PublicRoute><LoginPage /></PublicRoute>} />
+        <Route path={ROUTES.REGISTER} element={<PublicRoute><RegisterPage /></PublicRoute>} />
+        <Route path={ROUTES.VERIFY_OTP} element={<PublicRoute><VerifyOtpPage /></PublicRoute>} />
+        <Route path={ROUTES.FORGOT_PASSWORD} element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
 
         {/* Protected routes */}
         <Route
@@ -76,7 +77,7 @@ function App() {
         />
 
         {/* Default redirect */}
-        <Route path="/" element={<Navigate to={ROUTES.LOGIN} replace />} />
+        <Route path="/" element={<PublicRoute><Navigate to={ROUTES.LOGIN} replace /></PublicRoute>} />
         <Route path="*" element={<Navigate to={ROUTES.LOGIN} replace />} />
       </Routes>
       <Toaster />

@@ -11,7 +11,12 @@ import type { ApiResponse } from '@/types/api.types';
 
 export const authService = {
   async login(data: LoginRequest): Promise<LoginResponse> {
-    const response = await apiClient.post<LoginResponse>('/v1/users/login', data);
+    const { fcmToken, ...body } = data;
+    const response = await apiClient.post<LoginResponse>(
+      '/v1/users/login',
+      body,
+      fcmToken ? { params: { fcmToken } } : undefined,
+    );
     return response.data;
   },
 
