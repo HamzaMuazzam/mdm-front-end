@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, Eye, BarChart3, MoreVertical, Power, RotateCcw, Siren } from 'lucide-react';
+import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, Eye, BarChart3, MoreVertical, Power, RotateCcw, Siren, Mic } from 'lucide-react';
 import QRCode from 'qrcode';
 import type { CreateDeviceRequest, UpdateDeviceRequest, Device, UpdateDeviceConfigurationRequest } from '@/types/device.types';
 import { ROUTES } from '@/utils/constants';
@@ -318,6 +318,10 @@ export function DeviceManagement() {
 
   const handleSendAlert = (device: Device) => {
     navigate(`/device/${device.id}/alert`);
+  };
+
+  const handleListenAudio = (device: Device) => {
+    navigate(`/device/${device.id}/audio`);
   };
 
   const fetchAlertStatus = useCallback(async (deviceId: number) => {
@@ -640,6 +644,17 @@ export function DeviceManagement() {
                   </button>
                 )}
 
+                {hasPermission('device-audio:listen') && (
+                  <button
+                    type="button"
+                    onClick={() => handleListenAudio(device)}
+                    className="flex flex-col items-center gap-0.5 px-2.5 py-2 rounded-lg bg-green-600 hover:bg-green-700 active:bg-green-800 transition-colors text-white"
+                  >
+                    <Mic className="h-4 w-4" />
+                    <span className="text-[10px] font-semibold">Listen</span>
+                  </button>
+                )}
+
                 {/* Overflow menu */}
                 <div className="relative ml-auto" data-device-actions-menu>
                   <button
@@ -669,6 +684,11 @@ export function DeviceManagement() {
                       {hasPermission('device-alerts:send') && (
                         <button type="button" className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 transition-colors" onClick={() => { closeActionsMenu(); handleSendAlert(device); }}>
                           <Siren className="h-4 w-4" /> Send Alarm
+                        </button>
+                      )}
+                      {hasPermission('device-audio:listen') && (
+                        <button type="button" className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-green-600 hover:bg-green-50 transition-colors" onClick={() => { closeActionsMenu(); handleListenAudio(device); }}>
+                          <Mic className="h-4 w-4" /> Listen to Device
                         </button>
                       )}
                       {hasPermission('notifications:manage-alerts') && (
@@ -832,6 +852,11 @@ export function DeviceManagement() {
                               {hasPermission('device-alerts:send') && (
                                 <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50" onClick={() => { closeActionsMenu(); handleSendAlert(device); }}>
                                   <Siren className="h-4 w-4" /> Send Alarm
+                                </button>
+                              )}
+                              {hasPermission('device-audio:listen') && (
+                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-green-600 hover:bg-green-50" onClick={() => { closeActionsMenu(); handleListenAudio(device); }}>
+                                  <Mic className="h-4 w-4" /> Listen to Device
                                 </button>
                               )}
                               {hasPermission('devices:update') && (

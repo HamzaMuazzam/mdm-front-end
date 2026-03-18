@@ -24,6 +24,7 @@ export const ROUTES = {
   DEVICE_MONITOR: '/device/:deviceId/monitor',
   DEVICE_NOTIFICATIONS: '/device/:deviceId/notifications',
   DEVICE_ALERT: '/device/:deviceId/alert',
+  DEVICE_AUDIO: '/device/:deviceId/audio',
 } as const;
 
 export const ERROR_MESSAGES = {
