@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema } from '@/utils/validators';
@@ -14,6 +14,8 @@ import type { LoginRequest } from '@/types/auth.types';
 export function LoginPage() {
   const [error, setError] = useState('');
   const loginMutation = useLogin();
+  const [searchParams] = useSearchParams();
+  const fcmTokenFromUrl = searchParams.get('fcmToken') ?? undefined;
 
   const {
     register,
@@ -26,7 +28,7 @@ export function LoginPage() {
   const onSubmit = async (data: LoginRequest) => {
     try {
       setError('');
-      await loginMutation.mutateAsync(data);
+      await loginMutation.mutateAsync({ ...data, fcmToken: fcmTokenFromUrl });
     } catch (err: any) {
       const message = err.response?.data?.message || err.message || 'Login failed';
       if (message !== 'Email not verified') {

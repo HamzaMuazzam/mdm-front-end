@@ -21,8 +21,8 @@ export function useLogin() {
 
   return useMutation({
     mutationFn: async (data: LoginRequest) => {
-      const fcmToken = await getFcmToken();
-      return authService.login({ ...data, fcmToken: fcmToken ?? undefined });
+      const fcmToken = data.fcmToken ?? (await getFcmToken()) ?? undefined;
+      return authService.login({ ...data, fcmToken });
     },
     onSuccess: async (data) => {
       // Handle error code 0007 (unverified email) — API returns 200 with errorCode
