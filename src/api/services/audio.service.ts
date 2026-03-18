@@ -12,8 +12,8 @@ export interface AudioSessionRecord {
 }
 
 export const audioService = {
-  async startListen(deviceUuid: string): Promise<AudioSessionRecord> {
-    const response = await apiClient.post<ApiResponse<AudioSessionRecord>>('/v1/audio/start', { deviceUuid });
+  async startListen(deviceUuid: string, listenInDark = false): Promise<AudioSessionRecord> {
+    const response = await apiClient.post<ApiResponse<AudioSessionRecord>>('/v1/audio/start', { deviceUuid, listenInDark });
     return response.data.data;
   },
 

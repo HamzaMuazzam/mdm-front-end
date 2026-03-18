@@ -1,19 +1,23 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import mqtt, { MqttClient } from 'mqtt';
 import { MQTT_BROKER_URL, WS } from '@/utils/constants';
 
 /**
- * Subscribes to device/{deviceUuid}/audioStream, decodes base64 PCM chunks,
- * and plays them via the Web Audio API with a small jitter buffer.
+ * Subscribes to:
+ *   device/{deviceUuid}/audioStream  — plays incoming PCM chunks via Web Audio API
+ *   device/{deviceUuid}/audioAck     — listens for device-side stop events
  *
- * Returns a cleanup function — call it to disconnect and close the AudioContext.
+ * Returns `screenOnStop: true` when the device stopped the session because
+ * the screen turned on (listenInDark mode). The caller should reset `active`
+ * state and show a notification when this becomes true.
  */
 export function useAudioStream(deviceUuid: string | null, enabled: boolean) {
   const clientRef   = useRef<MqttClient | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
-  // Schedule the next buffer to play starting at this AudioContext time
   const nextTimeRef = useRef<number>(0);
-  const JITTER_SECONDS = 0.05; // 50 ms initial buffer
+  const JITTER_SECONDS = 0.05;
+
+  const [screenOnStop, setScreenOnStop] = useState(false);
 
   const stop = useCallback(() => {
     if (clientRef.current) {
@@ -27,6 +31,11 @@ export function useAudioStream(deviceUuid: string | null, enabled: boolean) {
     nextTimeRef.current = 0;
   }, []);
 
+  // Reset screenOnStop whenever a new session starts
+  useEffect(() => {
+    if (enabled) setScreenOnStop(false);
+  }, [enabled]);
+
   useEffect(() => {
     if (!enabled || !deviceUuid) {
       stop();
@@ -37,7 +46,9 @@ export function useAudioStream(deviceUuid: string | null, enabled: boolean) {
     audioCtxRef.current = audioCtx;
     nextTimeRef.current = audioCtx.currentTime + JITTER_SECONDS;
 
-    const topic = `device/${deviceUuid}/audioStream`;
+    const streamTopic = `device/${deviceUuid}/audioStream`;
+    const ackTopic    = `device/${deviceUuid}/audioAck`;
+
     const emailRaw = (() => {
       try { return JSON.parse(localStorage.getItem('user') ?? '{}')?.email ?? 'web'; }
       catch { return 'web'; }
@@ -53,19 +64,31 @@ export function useAudioStream(deviceUuid: string | null, enabled: boolean) {
     clientRef.current = client;
 
     client.on('connect', () => {
-      client.subscribe(topic, { qos: 0 });
+      client.subscribe(streamTopic, { qos: 0 });
+      client.subscribe(ackTopic,    { qos: 1 });
     });
 
-    client.on('message', (_t: string, payload: Buffer) => {
+    client.on('message', (t: string, payload: Buffer) => {
+      // ── ack channel: screen turned on → signal the page ──────────────────
+      if (t === ackTopic) {
+        try {
+          const data = JSON.parse(payload.toString()) as { status?: string };
+          if (data.status === 'screen_on') {
+            setScreenOnStop(true);
+          }
+        } catch { /* ignore */ }
+        return;
+      }
+
+      // ── audio stream: decode base64 PCM and play ─────────────────────────
       try {
         const { audio } = JSON.parse(payload.toString()) as { audio: string };
         if (!audio) return;
 
-        // Decode base64 → Int16Array → Float32Array
-        const binary = atob(audio);
-        const bytes  = new Uint8Array(binary.length);
+        const binary  = atob(audio);
+        const bytes   = new Uint8Array(binary.length);
         for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-        const int16  = new Int16Array(bytes.buffer);
+        const int16   = new Int16Array(bytes.buffer);
         const float32 = new Float32Array(int16.length);
         for (let i = 0; i < int16.length; i++) float32[i] = int16[i] / 32768;
 
@@ -79,7 +102,6 @@ export function useAudioStream(deviceUuid: string | null, enabled: boolean) {
         source.buffer = buffer;
         source.connect(ctx.destination);
 
-        // Schedule right after previous chunk, clamping to "now" if we fall behind
         const startAt = Math.max(ctx.currentTime, nextTimeRef.current);
         source.start(startAt);
         nextTimeRef.current = startAt + buffer.duration;
@@ -91,5 +113,5 @@ export function useAudioStream(deviceUuid: string | null, enabled: boolean) {
     return stop;
   }, [enabled, deviceUuid, stop]);
 
-  return { stop };
+  return { stop, screenOnStop };
 }
