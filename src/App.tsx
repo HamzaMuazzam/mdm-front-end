@@ -17,6 +17,7 @@ import { DeviceMonitorDashboardPage } from './pages/DeviceMonitorDashboardPage';
 import { DeviceNotificationsPage } from './pages/DeviceNotificationsPage';
 import { DeviceAlertPage } from './pages/DeviceAlertPage';
 import { DeviceAudioPage } from './pages/DeviceAudioPage';
+import { DeviceDataPage } from './pages/DeviceDataPage';
 
 function App() {
   return (
@@ -92,6 +93,15 @@ function App() {
           element={
             <ProtectedRoute requiresSubscription>
               <DeviceAudioPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path={ROUTES.DEVICE_DATA}
+          element={
+            <ProtectedRoute requiresSubscription>
+              <DeviceDataPage />
             </ProtectedRoute>
           }
         />
