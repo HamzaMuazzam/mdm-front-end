@@ -26,6 +26,7 @@ export interface DeviceCallLog {
   id: number;
   deviceUuid: string;
   phoneNumber: string;
+  name: string | null;
   callType: 'INCOMING' | 'OUTGOING' | 'MISSED' | 'REJECTED' | 'UNKNOWN';
   duration: number;
   callTimestamp: number;

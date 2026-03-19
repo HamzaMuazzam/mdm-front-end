@@ -293,7 +293,7 @@ export function DeviceDataPage() {
       !q || s.address.includes(q) || (s.body ?? '').toLowerCase().includes(q)
   );
   const filteredCalls = calls.filter((c) =>
-      !q || c.phoneNumber.includes(q) || c.callType.toLowerCase().includes(q)
+      !q || c.phoneNumber.includes(q) || c.callType.toLowerCase().includes(q) || (c.name ?? '').toLowerCase().includes(q)
   );
 
   if (isLoading) {
@@ -628,7 +628,10 @@ export function DeviceDataPage() {
                                   <CallTypeIcon type={c.callType} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-semibold text-slate-100 font-mono truncate">{c.phoneNumber}</p>
+                                  {c.name && (
+                                    <p className="text-sm font-semibold text-slate-100 truncate">{c.name}</p>
+                                  )}
+                                  <p className={`font-mono truncate ${c.name ? 'text-xs text-slate-500 mt-0' : 'text-sm font-semibold text-slate-100'}`}>{c.phoneNumber}</p>
                                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                             <span className={`text-[11px] font-medium ${
                                 c.callType === 'INCOMING' ? 'text-emerald-400' :
