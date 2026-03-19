@@ -7,8 +7,8 @@
 
 //TODO: for local development
 export const WS = 'wss';
-export const API_BASE_URL = 'https://logicaldevs.com/apis';
-export const MQTT_BROKER_URL = `${WS}://logicaldevs.com/mqtt`;
+export const API_BASE_URL = 'https://d68d-103-48-0-195.ngrok-free.app/apis';
+export const MQTT_BROKER_URL = `${WS}://bd8c-103-48-0-195.ngrok-free.app/mqtt`;
 
 
 export const ROUTES = {

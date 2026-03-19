@@ -17,6 +17,7 @@ const mqttHttp = axios.create({
   headers: {
     'Content-Type': 'application/json',
     accept: '*/*',
+    'ngrok-skip-browser-warning': 'true',
   },
 });
 

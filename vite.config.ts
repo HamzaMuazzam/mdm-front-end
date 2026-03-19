@@ -21,18 +21,23 @@ export default defineConfig({
     },
   },
   server: {
-    host: true,              // ✅ allow external access
+    host: true,
     port: 5173,
     strictPort: true,
 
-    origin: 'https://logicaldevs.com', // 🔥 VERY IMPORTANT
+    origin: 'https://a8ae-103-48-0-195.ngrok-free.app',
 
     hmr: {
       protocol: 'wss',
-      host: 'logicaldevs.com',
+      host: 'a8ae-103-48-0-195.ngrok-free.app',
       clientPort: 443,
     },
+    cors: {
+      origin: '*',
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['*'],
+    },
 
-    allowedHosts: ['logicaldevs.com'],
+    allowedHosts: ['a8ae-103-48-0-195.ngrok-free.app']
   },
 })
