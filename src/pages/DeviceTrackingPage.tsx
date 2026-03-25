@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft, MapPin, RefreshCw, Loader2, Download,
   ChevronLeft, ChevronRight, Map, Table2, Shield,
-  Plus, Pencil, Trash2, X, Check, Upload, Undo2, MousePointer2,
+  Plus, Pencil, Trash2, X, Check, Upload, Undo2, MousePointer2, LocateFixed,
 } from 'lucide-react';
 import {
   MapContainer, TileLayer, Marker, Popup,
@@ -103,6 +103,42 @@ const GEO_COLOR: Record<GeoType, string> = {
   LINE:    '#06b6d4',   // cyan
 };
 
+// ── Center map imperatively ───────────────────────────────────────────────────
+function CenterOnLocation({ target }: { target: [number, number] | null }) {
+  const map = useMap();
+  const prev = useRef<string>('');
+  useEffect(() => {
+    if (!target) return;
+    const key = target.join(',');
+    if (key === prev.current) return;
+    prev.current = key;
+    map.setView(target, Math.max(map.getZoom(), 15), { animate: true });
+  }, [target, map]);
+  return null;
+}
+
+// ── Pulsing user-location marker ──────────────────────────────────────────────
+function UserLocationMarker({ pos }: { pos: [number, number] }) {
+  const icon = new L.DivIcon({
+    className: '',
+    html: `
+      <div style="position:relative;width:22px;height:22px;">
+        <div style="position:absolute;inset:0;border-radius:50%;background:#3b82f6;opacity:0.25;animation:ulpulse 2s ease-out infinite;"></div>
+        <div style="position:absolute;inset:4px;border-radius:50%;background:#3b82f6;border:2.5px solid #fff;box-shadow:0 0 0 1.5px #3b82f6;"></div>
+      </div>
+      <style>@keyframes ulpulse{0%{transform:scale(1);opacity:.35}70%{transform:scale(2.8);opacity:0}100%{transform:scale(2.8);opacity:0}}</style>
+    `,
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
+    popupAnchor: [0, -14],
+  });
+  return (
+    <Marker position={pos} icon={icon}>
+      <Popup><span className="text-xs font-medium">Your Location</span></Popup>
+    </Marker>
+  );
+}
+
 // ── FitBounds helper ──────────────────────────────────────────────────────────
 function FitBounds({ positions }: { positions: [number, number][] }) {
   const map = useMap();
@@ -177,6 +213,11 @@ export function DeviceTrackingPage() {
   const drawRef = useRef(draw);
   drawRef.current = draw;
 
+  // User's current GPS location
+  const [userLocation, setUserLocation]       = useState<[number, number] | null>(null);
+  const [centerTarget, setCenterTarget]       = useState<[number, number] | null>(null);
+  const [locating, setLocating]               = useState(false);
+
   // Bulk upload
   const [uploadModal, setUploadModal] = useState(false);
   const [uploadJson, setUploadJson]   = useState('');
@@ -218,8 +259,26 @@ export function DeviceTrackingPage() {
     } catch { /**/ }
   }, [deviceUuid]);
 
+  // ── Geolocation ───────────────────────────────────────────────────────────
+  const locateUser = useCallback((andCenter = false) => {
+    if (!navigator.geolocation) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        const pos: [number, number] = [coords.latitude, coords.longitude];
+        setUserLocation(pos);
+        if (andCenter) setCenterTarget([...pos]);
+        setLocating(false);
+      },
+      () => setLocating(false),
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }, []);
+
   useEffect(() => { fetchHistory(0); setPage(0); /* eslint-disable-next-line */ }, []);
   useEffect(() => { fetchGeofences(); fetchGeoTypes(); }, [fetchGeofences, fetchGeoTypes]);
+  // Auto-center to user location on first load
+  useEffect(() => { locateUser(true); }, [locateUser]);
 
   // ── Drawing map callbacks (stable refs to avoid MapContainer re-render) ───
   const handleMapClick = useCallback((lat: number, lng: number) => {
@@ -368,8 +427,12 @@ export function DeviceTrackingPage() {
         />
 
         <MapInteractionHandler draw={draw} onMapClick={handleMapClick} onMouseMove={handleMouseMove} />
+        <CenterOnLocation target={centerTarget} />
 
         {polyline.length > 0 && !isDrawingActive && <FitBounds positions={polyline} />}
+
+        {/* User current location */}
+        {userLocation && <UserLocationMarker pos={userLocation} />}
 
         {/* Route */}
         {polyline.length > 1 && (
@@ -504,15 +567,26 @@ export function DeviceTrackingPage() {
         })()}
       </MapContainer>
 
-      {/* ── Geofences toggle ──────────────────────────────────────────────── */}
+      {/* ── Geofences toggle + My Location ────────────────────────────────── */}
       {!isDrawingActive && (
-        <button onClick={() => setShowGeoOnMap((v) => !v)}
-          className={`absolute top-3 right-3 z-[1000] flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border shadow transition-colors ${
-            showGeoOnMap ? 'bg-amber-500/20 border-amber-500/40 text-amber-400' : 'bg-slate-800/80 border-slate-600 text-slate-400'
-          }`}>
-          <Shield className="w-3.5 h-3.5" />
-          Geofences {showGeoOnMap ? 'ON' : 'OFF'}
-        </button>
+        <div className="absolute top-3 right-3 z-[1000] flex flex-col gap-2 items-end">
+          <button onClick={() => setShowGeoOnMap((v) => !v)}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border shadow transition-colors ${
+              showGeoOnMap ? 'bg-amber-500/20 border-amber-500/40 text-amber-400' : 'bg-slate-800/80 border-slate-600 text-slate-400'
+            }`}>
+            <Shield className="w-3.5 h-3.5" />
+            Geofences {showGeoOnMap ? 'ON' : 'OFF'}
+          </button>
+
+          <button
+            onClick={() => locateUser(true)}
+            disabled={locating}
+            title="Center map to my location"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border shadow transition-colors bg-blue-500/20 border-blue-500/40 text-blue-400 hover:bg-blue-500/30 disabled:opacity-50">
+            {locating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LocateFixed className="w-3.5 h-3.5" />}
+            My Location
+          </button>
+        </div>
       )}
 
       {/* ── Route legend ──────────────────────────────────────────────────── */}
