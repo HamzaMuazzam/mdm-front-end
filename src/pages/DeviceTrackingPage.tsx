@@ -572,7 +572,7 @@ export function DeviceTrackingPage() {
         <div className="absolute top-3 right-3 z-[1000] flex flex-col gap-2 items-end">
           <button onClick={() => setShowGeoOnMap((v) => !v)}
             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border shadow transition-colors ${
-              showGeoOnMap ? 'bg-amber-500/20 border-amber-500/40 text-amber-400' : 'bg-slate-800/80 border-slate-600 text-slate-400'
+              showGeoOnMap ? 'bg-amber-500/20 border-amber-500/40 text-amber-400' : 'bg-white/80 dark:bg-slate-800/80 border-gray-300 dark:border-slate-600 text-gray-500 dark:text-slate-400'
             }`}>
             <Shield className="w-3.5 h-3.5" />
             Geofences {showGeoOnMap ? 'ON' : 'OFF'}
@@ -591,10 +591,10 @@ export function DeviceTrackingPage() {
 
       {/* ── Route legend ──────────────────────────────────────────────────── */}
       {points.length > 0 && !isDrawingActive && (
-        <div className="absolute bottom-4 left-4 z-[1000] bg-slate-900/90 backdrop-blur-sm rounded-xl border border-slate-700/60 px-3 py-2 flex gap-3 text-xs text-slate-300 pointer-events-none">
-          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-green-500 ring-1 ring-slate-900" />Moving</span>
-          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-red-500   ring-1 ring-slate-900" />Idle/Stopped</span>
-          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-blue-500  ring-1 ring-slate-900" />Other</span>
+        <div className="absolute bottom-4 left-4 z-[1000] bg-white/95 dark:bg-slate-900/90 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-slate-700/60 shadow-sm px-3 py-2 flex gap-3 text-xs text-gray-700 dark:text-gray-300 pointer-events-none">
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-green-500 ring-1 ring-white dark:ring-slate-900" />Moving</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-red-500   ring-1 ring-white dark:ring-slate-900" />Idle/Stopped</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-blue-500  ring-1 ring-white dark:ring-slate-900" />Other</span>
         </div>
       )}
 
@@ -622,9 +622,9 @@ export function DeviceTrackingPage() {
       {/* No data overlay */}
       {hasLoaded && polyline.length === 0 && !loading && !isDrawingActive && (
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <div className="bg-slate-800/90 rounded-xl px-6 py-4 text-center">
-            <MapPin className="w-8 h-8 text-slate-500 mx-auto mb-2 opacity-50" />
-            <p className="text-sm text-slate-400">No location data for selected range</p>
+          <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-lg rounded-xl px-6 py-4 text-center">
+            <MapPin className="w-8 h-8 text-gray-400 dark:text-slate-500 mx-auto mb-2 opacity-50" />
+            <p className="text-sm text-gray-500 dark:text-slate-400">No location data for selected range</p>
           </div>
         </div>
       )}
@@ -636,23 +636,23 @@ export function DeviceTrackingPage() {
     <div className="min-h-screen bg-page-bg flex flex-col">
 
       {/* Header */}
-      <div className="sticky top-0 z-50 bg-card-bg border-b border-slate-700/50 px-4 py-3 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-slate-700/50 text-slate-400 hover:text-slate-200 transition-colors">
+      <div className="sticky top-0 z-50 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700/50 px-4 py-3 flex items-center gap-3">
+        <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700/50 text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:text-slate-200 transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <MapPin className="w-5 h-5 text-blue-400 shrink-0" />
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-slate-100 truncate">{device?.deviceName ?? deviceUuid ?? deviceId}</p>
-            <p className="text-xs text-slate-500">Location History</p>
+            <p className="text-sm font-semibold text-gray-900 dark:text-slate-100 truncate">{device?.deviceName ?? deviceUuid ?? deviceId}</p>
+            <p className="text-xs text-gray-400 dark:text-slate-500">Location History</p>
           </div>
         </div>
-        <div className="flex bg-slate-800 rounded-lg p-1 gap-1">
+        <div className="flex bg-gray-100 dark:bg-slate-800 rounded-lg p-1 gap-1">
           {(['map', 'table', 'geofences'] as const).map((mode) => {
             const Icon = mode === 'map' ? Map : mode === 'table' ? Table2 : Shield;
             return (
               <button key={mode} onClick={() => { setViewMode(mode); if (mode !== 'map') cancelDraw(); }}
-                className={`p-1.5 rounded transition-colors ${viewMode === mode ? 'bg-blue-600/40 text-blue-400' : 'text-slate-400 hover:text-slate-200'}`}
+                className={`p-1.5 rounded transition-colors ${viewMode === mode ? 'bg-blue-600/40 text-blue-400' : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:text-slate-200'}`}
                 title={mode.charAt(0).toUpperCase() + mode.slice(1)}>
                 <Icon className="w-4 h-4" />
               </button>
@@ -660,24 +660,24 @@ export function DeviceTrackingPage() {
           })}
         </div>
         <button onClick={() => { setUploadModal(true); setUploadMsg(null); setUploadJson(''); }}
-          className="p-1.5 rounded-lg text-slate-400 hover:text-blue-400 hover:bg-slate-700/50 transition-colors" title="Bulk upload GPS data">
+          className="p-1.5 rounded-lg text-gray-500 dark:text-slate-400 hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-slate-700/50 transition-colors" title="Bulk upload GPS data">
           <Upload className="w-4 h-4" />
         </button>
       </div>
 
       {/* Filter bar */}
       {viewMode !== 'geofences' && (
-        <div className="bg-card-bg border-b border-slate-700/50 px-4 py-3 space-y-3">
+        <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700/50 px-4 py-3 space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-slate-500 block mb-1">From</label>
+              <label className="text-xs text-gray-400 dark:text-slate-500 block mb-1">From</label>
               <input type="datetime-local" step="1" value={fromDt} onChange={(e) => setFromDt(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500" />
+                className="w-full bg-gray-100 dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-xs text-gray-800 dark:text-slate-200 focus:outline-none focus:border-blue-500" />
             </div>
             <div>
-              <label className="text-xs text-slate-500 block mb-1">To</label>
+              <label className="text-xs text-gray-400 dark:text-slate-500 block mb-1">To</label>
               <input type="datetime-local" step="1" value={toDt} onChange={(e) => setToDt(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500" />
+                className="w-full bg-gray-100 dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-xs text-gray-800 dark:text-slate-200 focus:outline-none focus:border-blue-500" />
             </div>
           </div>
           <div className="flex gap-2">
@@ -691,7 +691,7 @@ export function DeviceTrackingPage() {
             </button>
           </div>
           {hasLoaded && (
-            <p className="text-xs text-slate-500 text-center">
+            <p className="text-xs text-gray-400 dark:text-slate-500 text-center">
               {totalElements.toLocaleString()} records{totalPages > 1 && ` · Page ${page + 1}/${totalPages}`}
             </p>
           )}
@@ -709,40 +709,40 @@ export function DeviceTrackingPage() {
           <div className="flex-1 overflow-auto p-4">
             {loading && <div className="flex items-center justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-blue-400" /></div>}
             {!loading && hasLoaded && points.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-16 text-slate-500">
+              <div className="flex flex-col items-center justify-center py-16 text-gray-400 dark:text-slate-500">
                 <MapPin className="w-10 h-10 mb-3 opacity-30" />
                 <p className="text-sm">No location data for selected range</p>
               </div>
             )}
             {!loading && points.length > 0 && (
-              <div className="overflow-x-auto rounded-xl border border-slate-700/50">
+              <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-slate-700/50">
                 <table className="w-full text-xs text-left">
-                  <thead className="bg-slate-800/70 text-slate-400 uppercase tracking-wider">
+                  <thead className="bg-gray-50 dark:bg-slate-800/70 text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                     <tr>
                       {['#','Received At','Latitude','Longitude','Speed','Accuracy','Altitude','Bearing','Satellites','Provider','IG Status','Reason'].map((h) => (
                         <th key={h} className="px-3 py-2.5 whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-700/30">
+                  <tbody className="divide-y divide-gray-100 dark:divide-slate-700/30">
                     {points.map((p, i) => (
-                      <tr key={p.id} className="bg-card-bg hover:bg-slate-700/20 transition-colors">
-                        <td className="px-3 py-2 text-slate-500">{page * pageSize + i + 1}</td>
-                        <td className="px-3 py-2 text-slate-300 whitespace-nowrap">{p.receivedAt ? new Date(p.receivedAt).toLocaleString() : '-'}</td>
-                        <td className="px-3 py-2 text-slate-200 font-mono">{p.latitude?.toFixed(6)}</td>
-                        <td className="px-3 py-2 text-slate-200 font-mono">{p.longitude?.toFixed(6)}</td>
-                        <td className="px-3 py-2 text-slate-300">{p.speed != null ? `${p.speed.toFixed(1)} km/h` : '-'}</td>
-                        <td className="px-3 py-2 text-slate-300">{p.accuracy != null ? `±${p.accuracy.toFixed(0)} m` : '-'}</td>
-                        <td className="px-3 py-2 text-slate-300">{p.altitude != null ? `${p.altitude.toFixed(0)} m` : '-'}</td>
-                        <td className="px-3 py-2 text-slate-300">{p.bearing != null ? `${p.bearing.toFixed(1)}°` : '-'}</td>
-                        <td className="px-3 py-2 text-slate-300">{p.connectedSatellite}/{p.availableSatellite}</td>
-                        <td className="px-3 py-2 text-slate-300">{p.provider || '-'}</td>
+                      <tr key={p.id} className="bg-white dark:bg-slate-900 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+                        <td className="px-3 py-2 text-gray-400 dark:text-slate-500">{page * pageSize + i + 1}</td>
+                        <td className="px-3 py-2 text-gray-600 dark:text-slate-300 whitespace-nowrap">{p.receivedAt ? new Date(p.receivedAt).toLocaleString() : '-'}</td>
+                        <td className="px-3 py-2 text-gray-800 dark:text-slate-200 font-mono">{p.latitude?.toFixed(6)}</td>
+                        <td className="px-3 py-2 text-gray-800 dark:text-slate-200 font-mono">{p.longitude?.toFixed(6)}</td>
+                        <td className="px-3 py-2 text-gray-600 dark:text-slate-300">{p.speed != null ? `${p.speed.toFixed(1)} km/h` : '-'}</td>
+                        <td className="px-3 py-2 text-gray-600 dark:text-slate-300">{p.accuracy != null ? `±${p.accuracy.toFixed(0)} m` : '-'}</td>
+                        <td className="px-3 py-2 text-gray-600 dark:text-slate-300">{p.altitude != null ? `${p.altitude.toFixed(0)} m` : '-'}</td>
+                        <td className="px-3 py-2 text-gray-600 dark:text-slate-300">{p.bearing != null ? `${p.bearing.toFixed(1)}°` : '-'}</td>
+                        <td className="px-3 py-2 text-gray-600 dark:text-slate-300">{p.connectedSatellite}/{p.availableSatellite}</td>
+                        <td className="px-3 py-2 text-gray-600 dark:text-slate-300">{p.provider || '-'}</td>
                         <td className="px-3 py-2">
-                          <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${p.igStatus === 1 ? 'bg-green-500/20 text-green-400' : 'bg-slate-700 text-slate-400'}`}>
+                          <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${p.igStatus === 1 ? 'bg-green-500/20 text-green-400' : 'bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-slate-400'}`}>
                             {p.igStatus === 1 ? 'ON' : 'OFF'}
                           </span>
                         </td>
-                        <td className="px-3 py-2 text-slate-400 max-w-[120px] truncate">{p.reason || '-'}</td>
+                        <td className="px-3 py-2 text-gray-500 dark:text-slate-400 max-w-[120px] truncate">{p.reason || '-'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -759,23 +759,23 @@ export function DeviceTrackingPage() {
 
             {/* Type-select panel (shown above the list when choosing type) */}
             {draw.phase === 'type-select' && (
-              <div className="bg-slate-900 border-t-2 border-slate-600 px-4 py-4">
+              <div className="bg-white dark:bg-slate-900 border-t-2 border-gray-200 dark:border-slate-600 px-4 py-4">
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-semibold text-slate-300">Select type to draw on map</p>
-                  <button onClick={cancelDraw} className="p-1 text-slate-500 hover:text-slate-300 rounded-lg transition-colors"><X className="w-4 h-4" /></button>
+                  <p className="text-xs font-semibold text-gray-600 dark:text-slate-300">Select type to draw on map</p>
+                  <button onClick={cancelDraw} className="p-1 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:text-slate-300 rounded-lg transition-colors"><X className="w-4 h-4" /></button>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <button onClick={() => startDraw('CIRCLE')}
                     className="flex flex-col items-center gap-2 py-4 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-400 hover:bg-amber-500/20 active:scale-95 transition-all">
                     <div className="w-8 h-8 rounded-full border-2 border-amber-400" />
                     <span className="text-xs font-semibold">Circle</span>
-                    <span className="text-xs text-slate-500 text-center leading-tight">Tap center, then edge</span>
+                    <span className="text-xs text-gray-400 dark:text-slate-500 text-center leading-tight">Tap center, then edge</span>
                   </button>
                   <button onClick={() => startDraw('POLYGON')}
                     className="flex flex-col items-center gap-2 py-4 bg-purple-500/10 border border-purple-500/30 rounded-xl text-purple-400 hover:bg-purple-500/20 active:scale-95 transition-all">
                     <svg width="32" height="32" viewBox="0 0 32 32"><polygon points="16,2 30,22 24,30 8,30 2,22" fill="none" stroke="#a855f7" strokeWidth="2"/></svg>
                     <span className="text-xs font-semibold">Polygon</span>
-                    <span className="text-xs text-slate-500 text-center leading-tight">Tap points on map</span>
+                    <span className="text-xs text-gray-400 dark:text-slate-500 text-center leading-tight">Tap points on map</span>
                   </button>
                   <button onClick={() => startDraw('LINE')}
                     className="flex flex-col items-center gap-2 py-4 bg-cyan-500/10 border border-cyan-500/30 rounded-xl text-cyan-400 hover:bg-cyan-500/20 active:scale-95 transition-all">
@@ -788,7 +788,7 @@ export function DeviceTrackingPage() {
                       <circle cx="30" cy="6"  r="2.5" fill="#06b6d4"/>
                     </svg>
                     <span className="text-xs font-semibold">Line + Buffer</span>
-                    <span className="text-xs text-slate-500 text-center leading-tight">Tap waypoints on map</span>
+                    <span className="text-xs text-gray-400 dark:text-slate-500 text-center leading-tight">Tap waypoints on map</span>
                   </button>
                 </div>
               </div>
@@ -796,16 +796,16 @@ export function DeviceTrackingPage() {
 
             {/* Geofence list */}
             {draw.phase === 'idle' && (
-              <div className="bg-card-bg border-t border-slate-700/50 overflow-y-auto" style={{ maxHeight: '38vh' }}>
-                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/50">
+              <div className="bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-700/50 overflow-y-auto" style={{ maxHeight: '38vh' }}>
+                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-700/50">
                   <div className="flex items-center gap-2">
                     <Shield className="w-4 h-4 text-amber-400" />
-                    <p className="text-sm font-semibold text-slate-200">Geofences</p>
-                    <span className="text-xs bg-slate-700 text-slate-400 px-2 py-0.5 rounded-full">{geofences.length}</span>
+                    <p className="text-sm font-semibold text-gray-800 dark:text-slate-200">Geofences</p>
+                    <span className="text-xs bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-slate-400 px-2 py-0.5 rounded-full">{geofences.length}</span>
                   </div>
                   <div className="flex gap-2">
                     <button onClick={fetchGeofences} disabled={geoLoading}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-colors">
+                      className="p-1.5 rounded-lg text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700/50 transition-colors">
                       {geoLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
                     </button>
                     <button onClick={() => setDraw((d) => ({ ...d, phase: 'type-select' }))}
@@ -815,32 +815,32 @@ export function DeviceTrackingPage() {
                   </div>
                 </div>
                 {geofences.length === 0 && !geoLoading && (
-                  <div className="flex flex-col items-center justify-center py-8 text-slate-500">
+                  <div className="flex flex-col items-center justify-center py-8 text-gray-400 dark:text-slate-500">
                     <Shield className="w-8 h-8 mb-2 opacity-30" />
                     <p className="text-sm">No geofences configured</p>
                     <p className="text-xs mt-1">Tap Add Geofence to draw one on the map</p>
                   </div>
                 )}
-                <div className="divide-y divide-slate-700/30">
+                <div className="divide-y divide-gray-100 dark:divide-slate-700/30">
                   {geofences.map((g) => (
-                    <div key={g.id} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-700/20 transition-colors">
-                      <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${g.active ? 'bg-green-400' : 'bg-slate-500'}`} />
+                    <div key={g.id} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-700/20 transition-colors">
+                      <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${g.active ? 'bg-green-400' : 'bg-gray-400 dark:bg-slate-500'}`} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-slate-200 font-medium truncate">{g.name}</p>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-sm text-gray-800 dark:text-slate-200 font-medium truncate">{g.name}</p>
+                        <p className="text-xs text-gray-400 dark:text-slate-500">
                           {g.type}{g.type === 'CIRCLE' && g.radiusMeters ? ` · r=${g.radiusMeters}m` : ''}
                           {g.type === 'CIRCLE' && g.centerLat ? ` · ${g.centerLat.toFixed(4)}, ${g.centerLng?.toFixed(4)}` : ''}
                         </p>
                       </div>
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${g.active ? 'bg-green-500/20 text-green-400' : 'bg-slate-700 text-slate-400'}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${g.active ? 'bg-green-500/20 text-green-400' : 'bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-slate-400'}`}>
                         {g.active ? 'Active' : 'Inactive'}
                       </span>
                       <button onClick={() => startDraw(g.type, g)}
-                        className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-slate-700/50 rounded-lg transition-colors">
+                        className="p-1.5 text-gray-500 dark:text-slate-400 hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-slate-700/50 rounded-lg transition-colors">
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button onClick={() => deleteGeofence(g.id)} disabled={geoDeleting === g.id}
-                        className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-700/50 rounded-lg transition-colors disabled:opacity-40">
+                        className="p-1.5 text-gray-500 dark:text-slate-400 hover:text-red-400 hover:bg-gray-100 dark:hover:bg-slate-700/50 rounded-lg transition-colors disabled:opacity-40">
                         {geoDeleting === g.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                       </button>
                     </div>
@@ -853,14 +853,14 @@ export function DeviceTrackingPage() {
 
         {/* Pagination */}
         {totalPages > 1 && viewMode !== 'geofences' && (
-          <div className="bg-card-bg border-t border-slate-700/50 px-4 py-3 flex items-center justify-between">
+          <div className="bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-700/50 px-4 py-3 flex items-center justify-between">
             <button onClick={() => { setPage(page - 1); fetchHistory(page - 1); }} disabled={page === 0 || loading}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 disabled:opacity-40 disabled:pointer-events-none transition-colors">
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700/50 disabled:opacity-40 disabled:pointer-events-none transition-colors">
               <ChevronLeft className="w-4 h-4" /> Prev
             </button>
-            <span className="text-xs text-slate-400">Page {page + 1} / {totalPages}</span>
+            <span className="text-xs text-gray-500 dark:text-slate-400">Page {page + 1} / {totalPages}</span>
             <button onClick={() => { setPage(page + 1); fetchHistory(page + 1); }} disabled={page >= totalPages - 1 || loading}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 disabled:opacity-40 disabled:pointer-events-none transition-colors">
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700/50 disabled:opacity-40 disabled:pointer-events-none transition-colors">
               Next <ChevronRight className="w-4 h-4" />
             </button>
           </div>
@@ -870,18 +870,18 @@ export function DeviceTrackingPage() {
       {/* ── Bulk upload modal ─────────────────────────────────────────────── */}
       {uploadModal && (
         <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/60 px-4">
-          <div className="bg-slate-900 border border-slate-700/60 rounded-2xl w-full max-w-lg shadow-2xl">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700/50">
-              <p className="text-sm font-semibold text-slate-100">Bulk Upload GPS Data</p>
-              <button onClick={() => setUploadModal(false)} className="p-1.5 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-slate-700/50 transition-colors">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700/60 rounded-2xl w-full max-w-lg shadow-2xl">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-slate-700/50">
+              <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">Bulk Upload GPS Data</p>
+              <button onClick={() => setUploadModal(false)} className="p-1.5 text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:text-slate-200 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700/50 transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>
             <div className="p-5 space-y-3">
-              <p className="text-xs text-slate-400">Paste a JSON array of tracking point objects.</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400">Paste a JSON array of tracking point objects.</p>
               <textarea rows={10} value={uploadJson} onChange={(e) => setUploadJson(e.target.value)}
                 placeholder={'[\n  {\n    "latitude": 33.684,\n    "longitude": 73.047,\n    "speed": 0,\n    "reason": "Distance",\n    ...\n  }\n]'}
-                className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-xs text-slate-200 font-mono focus:outline-none focus:border-blue-500 placeholder-slate-500 resize-none" />
+                className="w-full bg-gray-100 dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-xs text-gray-800 dark:text-slate-200 font-mono focus:outline-none focus:border-blue-500 placeholder-gray-400 dark:placeholder-slate-500 resize-none" />
               {uploadMsg && (
                 <div className={`text-xs px-3 py-2 rounded-lg ${uploadMsg.ok ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
                   {uploadMsg.text}
@@ -889,7 +889,7 @@ export function DeviceTrackingPage() {
               )}
             </div>
             <div className="flex gap-3 px-5 pb-5">
-              <button onClick={() => setUploadModal(false)} className="flex-1 py-2.5 bg-slate-700/50 rounded-xl text-sm text-slate-400 hover:bg-slate-700 transition-colors">Close</button>
+              <button onClick={() => setUploadModal(false)} className="flex-1 py-2.5 bg-gray-100 dark:bg-slate-700/50 rounded-xl text-sm text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">Close</button>
               <button onClick={handleBulkUpload} disabled={uploading || !uploadJson.trim()}
                 className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-blue-600/20 border border-blue-500/40 text-blue-400 rounded-xl text-sm font-semibold hover:bg-blue-600/30 transition-colors disabled:opacity-50">
                 {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />} Upload
@@ -949,12 +949,12 @@ function DrawingHUD({
 
       {/* ── Instruction banner (while drawing) ─────────────────────────── */}
       {draw.phase !== 'confirm' && (
-        <div className="mx-3 mb-2 rounded-2xl border shadow-xl overflow-hidden backdrop-blur-sm"
-          style={{ borderColor: `${color}50`, background: '#0f172aef' }}>
+        <div className="mx-3 mb-2 rounded-2xl border shadow-xl overflow-hidden backdrop-blur-sm bg-white/95 dark:bg-slate-900/95"
+          style={{ borderColor: `${color}50` }}>
           <div className="flex items-center gap-3 px-4 py-3">
             <MousePointer2 className="w-4 h-4 shrink-0" style={{ color }} />
-            <p className="flex-1 text-sm font-medium text-slate-200">{stepLabel}</p>
-            <button onClick={onCancel} className="p-1.5 text-slate-500 hover:text-red-400 rounded-lg hover:bg-slate-700/50 transition-colors">
+            <p className="flex-1 text-sm font-medium text-gray-800 dark:text-slate-200">{stepLabel}</p>
+            <button onClick={onCancel} className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700/50 transition-colors">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -963,7 +963,7 @@ function DrawingHUD({
           {draw.phase === 'polygon' && (
             <div className="flex gap-2 px-4 pb-3">
               <button onClick={onUndo} disabled={draw.polygonPts.length === 0}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs text-slate-400 border border-slate-600 hover:bg-slate-700/50 disabled:opacity-40 transition-colors">
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs text-gray-500 dark:text-slate-400 border border-gray-300 dark:border-slate-600 hover:bg-gray-100 dark:hover:bg-slate-700/50 disabled:opacity-40 transition-colors">
                 <Undo2 className="w-3.5 h-3.5" /> Undo
               </button>
               <button onClick={onFinishPolygon} disabled={draw.polygonPts.length < 3}
@@ -977,7 +977,7 @@ function DrawingHUD({
           {draw.phase === 'line' && (
             <div className="flex gap-2 px-4 pb-3">
               <button onClick={onUndo} disabled={draw.polygonPts.length === 0}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs text-slate-400 border border-slate-600 hover:bg-slate-700/50 disabled:opacity-40 transition-colors">
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs text-gray-500 dark:text-slate-400 border border-gray-300 dark:border-slate-600 hover:bg-gray-100 dark:hover:bg-slate-700/50 disabled:opacity-40 transition-colors">
                 <Undo2 className="w-3.5 h-3.5" /> Undo
               </button>
               <button onClick={onFinishLine} disabled={draw.polygonPts.length < 2}
@@ -991,15 +991,15 @@ function DrawingHUD({
 
       {/* ── Confirm panel ───────────────────────────────────────────────── */}
       {draw.phase === 'confirm' && (
-        <div className="mx-3 mb-2 rounded-2xl border shadow-2xl overflow-hidden backdrop-blur-sm"
-          style={{ borderColor: `${color}50`, background: '#0f172af8' }}>
+        <div className="mx-3 mb-2 rounded-2xl border shadow-2xl overflow-hidden backdrop-blur-sm bg-white dark:bg-slate-900"
+          style={{ borderColor: `${color}50` }}>
 
           {/* Summary + Redraw */}
-          <div className="flex items-center gap-2 px-4 py-2.5 border-b border-slate-700/50">
+          <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-200 dark:border-slate-700/50 bg-gray-50 dark:bg-slate-800/40">
             <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: color }} />
-            <p className="flex-1 text-xs font-medium text-slate-300 truncate">{summaryLabel}</p>
+            <p className="flex-1 text-xs font-medium text-gray-600 dark:text-slate-300 truncate">{summaryLabel}</p>
             <button onClick={onRedraw}
-              className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-200 px-2 py-1 rounded-lg hover:bg-slate-700/50 transition-colors shrink-0">
+              className="flex items-center gap-1 text-xs text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:text-slate-200 px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700/50 transition-colors shrink-0">
               <Undo2 className="w-3 h-3" /> Redraw
             </button>
           </div>
@@ -1012,15 +1012,15 @@ function DrawingHUD({
               onChange={(e) => onNameChange(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && draw.name.trim()) onSave(); if (e.key === 'Escape') onCancel(); }}
               placeholder="Geofence name…"
-              className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-blue-500 placeholder-slate-500 transition-colors"
+              className="w-full bg-gray-100 dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-xl px-3 py-2.5 text-sm text-gray-800 dark:text-slate-200 focus:outline-none focus:border-blue-500 placeholder-gray-400 dark:placeholder-slate-500 transition-colors"
             />
 
             {/* Buffer input */}
             {showBuffer && (
-              <div className="flex items-center gap-3 bg-slate-800/60 rounded-xl px-3 py-2.5 border border-slate-700/50">
+              <div className="flex items-center gap-3 bg-gray-50 dark:bg-slate-800/60 rounded-xl px-3 py-2.5 border border-gray-200 dark:border-slate-700/50">
                 <div>
-                  <p className="text-xs font-semibold text-slate-300">Buffer Zone</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs font-semibold text-gray-600 dark:text-slate-300">Buffer Zone</p>
+                  <p className="text-xs text-gray-400 dark:text-slate-500">
                     {draw.type === 'LINE' ? 'Corridor width on each side of the line' : 'Extra zone outside the circle'}
                   </p>
                 </div>
@@ -1030,9 +1030,9 @@ function DrawingHUD({
                     value={draw.bufferMeters || ''}
                     onChange={(e) => onBufferChange(Number(e.target.value) || 0)}
                     placeholder="0"
-                    className="w-20 bg-slate-700 border border-slate-600 rounded-lg px-2 py-1.5 text-sm text-slate-200 text-right focus:outline-none focus:border-blue-500"
+                    className="w-20 bg-gray-200 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg px-2 py-1.5 text-sm text-gray-800 dark:text-slate-200 text-right focus:outline-none focus:border-blue-500"
                   />
-                  <span className="text-xs text-slate-400">m</span>
+                  <span className="text-xs text-gray-500 dark:text-slate-400">m</span>
                 </div>
               </div>
             )}
@@ -1040,7 +1040,7 @@ function DrawingHUD({
             {/* Actions */}
             <div className="flex gap-2">
               <button onClick={onCancel}
-                className="px-4 py-2.5 rounded-xl text-sm text-slate-400 hover:text-slate-200 bg-slate-700/50 hover:bg-slate-700 transition-colors">
+                className="px-4 py-2.5 rounded-xl text-sm text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:text-slate-200 bg-gray-100 dark:bg-slate-700/50 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">
                 Cancel
               </button>
               <button onClick={onSave} disabled={saving || !draw.name.trim()}
@@ -1083,9 +1083,9 @@ function PointPopup({ point, color, label }: { point: HistoryPoint; color: strin
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
         <tbody>
           {rows.map(([k, v]) => (
-            <tr key={k} style={{ borderBottom: '1px solid #1e293b' }}>
-              <td style={{ padding: '3px 6px', color: '#94a3b8', whiteSpace: 'nowrap', fontWeight: 600 }}>{k}</td>
-              <td style={{ padding: '3px 6px', color: '#f1f5f9', fontFamily: k==='Latitude'||k==='Longitude' ? 'monospace' : 'inherit' }}>{v}</td>
+            <tr key={k} style={{ borderBottom: '1px solid #e2e8f0' }}>
+              <td style={{ padding: '3px 6px', color: '#64748b', whiteSpace: 'nowrap', fontWeight: 600 }}>{k}</td>
+              <td style={{ padding: '3px 6px', color: '#1e293b', fontFamily: k==='Latitude'||k==='Longitude' ? 'monospace' : 'inherit' }}>{v}</td>
             </tr>
           ))}
         </tbody>
@@ -1099,19 +1099,19 @@ function GeofencePopup({ geo, onEdit }: { geo: GeofenceData; onEdit: () => void 
   return (
     <div style={{ fontFamily: 'system-ui,sans-serif', minWidth: 180 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-        <strong style={{ fontSize: 12, color: '#f1f5f9' }}>{geo.name}</strong>
-        <span style={{ fontSize: 10, background: geo.active ? '#14532d' : '#1e293b', color: geo.active ? '#4ade80' : '#94a3b8', padding: '1px 6px', borderRadius: 4 }}>
+        <strong style={{ fontSize: 12, color: '#1e293b' }}>{geo.name}</strong>
+        <span style={{ fontSize: 10, background: geo.active ? '#dcfce7' : '#f1f5f9', color: geo.active ? '#16a34a' : '#64748b', padding: '1px 6px', borderRadius: 4, border: `1px solid ${geo.active ? '#bbf7d0' : '#e2e8f0'}` }}>
           {geo.active ? 'Active' : 'Inactive'}
         </span>
       </div>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
         <tbody>
-          <tr><td style={{ color:'#94a3b8',padding:'2px 4px',fontWeight:600 }}>Type</td><td style={{ color:'#f1f5f9',padding:'2px 4px' }}>{geo.type}</td></tr>
+          <tr><td style={{ color:'#64748b',padding:'2px 4px',fontWeight:600 }}>Type</td><td style={{ color:'#1e293b',padding:'2px 4px' }}>{geo.type}</td></tr>
           {geo.type === 'CIRCLE' && geo.radiusMeters != null && (
-            <tr><td style={{ color:'#94a3b8',padding:'2px 4px',fontWeight:600 }}>Radius</td><td style={{ color:'#f1f5f9',padding:'2px 4px' }}>{geo.radiusMeters}m</td></tr>
+            <tr><td style={{ color:'#64748b',padding:'2px 4px',fontWeight:600 }}>Radius</td><td style={{ color:'#1e293b',padding:'2px 4px' }}>{geo.radiusMeters}m</td></tr>
           )}
           {geo.type === 'CIRCLE' && geo.centerLat != null && (
-            <tr><td style={{ color:'#94a3b8',padding:'2px 4px',fontWeight:600 }}>Center</td><td style={{ color:'#f1f5f9',padding:'2px 4px',fontFamily:'monospace',fontSize:10 }}>{geo.centerLat.toFixed(5)}, {geo.centerLng?.toFixed(5)}</td></tr>
+            <tr><td style={{ color:'#64748b',padding:'2px 4px',fontWeight:600 }}>Center</td><td style={{ color:'#1e293b',padding:'2px 4px',fontFamily:'monospace',fontSize:10 }}>{geo.centerLat.toFixed(5)}, {geo.centerLng?.toFixed(5)}</td></tr>
           )}
         </tbody>
       </table>
