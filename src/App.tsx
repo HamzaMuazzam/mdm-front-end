@@ -18,6 +18,7 @@ import { DeviceNotificationsPage } from './pages/DeviceNotificationsPage';
 import { DeviceAlertPage } from './pages/DeviceAlertPage';
 import { DeviceAudioPage } from './pages/DeviceAudioPage';
 import { DeviceDataPage } from './pages/DeviceDataPage';
+import { DeviceTrackingPage } from './pages/DeviceTrackingPage';
 
 function App() {
   return (
@@ -102,6 +103,15 @@ function App() {
           element={
             <ProtectedRoute requiresSubscription>
               <DeviceDataPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path={ROUTES.DEVICE_TRACKING}
+          element={
+            <ProtectedRoute requiresSubscription>
+              <DeviceTrackingPage />
             </ProtectedRoute>
           }
         />

@@ -57,7 +57,7 @@ export function useAudioStream(deviceUuid: string | null, enabled: boolean) {
     const client = mqtt.connect(MQTT_BROKER_URL, {
       clientId: `mdm-audio-${emailRaw}-${Date.now()}`,
       clean: true,
-      protocol: WS as 'wss' | 'ws',
+      protocol: WS,
       reconnectPeriod: 3000,
       connectTimeout: 10000,
     });

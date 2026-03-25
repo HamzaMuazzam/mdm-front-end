@@ -328,6 +328,10 @@ export function DeviceManagement() {
     navigate(`/device/${device.id}/data`);
   };
 
+  const handleTracking = (device: Device) => {
+    navigate(`/device/${device.id}/tracking`);
+  };
+
   const fetchAlertStatus = useCallback(async (deviceId: number) => {
     if (alertStatusByDevice[deviceId] !== undefined || alertStatusLoading[deviceId]) return;
     setAlertStatusLoading((prev) => ({ ...prev, [deviceId]: true }));
@@ -668,6 +672,16 @@ export function DeviceManagement() {
                     <span className="text-[10px] font-semibold">Data</span>
                   </button>
                 )}
+                {hasPermission('tracking:history') && (
+                  <button
+                    type="button"
+                    onClick={() => handleTracking(device)}
+                    className="flex flex-col items-center gap-0.5 px-2.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 transition-colors text-white"
+                  >
+                    <MapPin className="h-4 w-4" />
+                    <span className="text-[10px] font-semibold">Tracking</span>
+                  </button>
+                )}
 
                 {/* Overflow menu */}
                 <div className="relative ml-auto" data-device-actions-menu>
@@ -708,6 +722,11 @@ export function DeviceManagement() {
                       {hasPermission('device-data:read') && (
                         <button type="button" className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-violet-600 hover:bg-violet-50 transition-colors" onClick={() => { closeActionsMenu(); handleMonitorData(device); }}>
                           <Database className="h-4 w-4" /> Contacts &amp; SMS &amp; Calls
+                        </button>
+                      )}
+                      {hasPermission('tracking:history') && (
+                        <button type="button" className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-blue-600 hover:bg-blue-50 transition-colors" onClick={() => { closeActionsMenu(); handleTracking(device); }}>
+                          <MapPin className="h-4 w-4" /> Live Tracking
                         </button>
                       )}
                       {hasPermission('notifications:manage-alerts') && (
@@ -881,6 +900,11 @@ export function DeviceManagement() {
                               {hasPermission('device-data:read') && (
                                 <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-violet-600 hover:bg-violet-50" onClick={() => { closeActionsMenu(); handleMonitorData(device); }}>
                                   <Database className="h-4 w-4" /> Contacts &amp; SMS &amp; Calls
+                                </button>
+                              )}
+                              {hasPermission('tracking:history') && (
+                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50" onClick={() => { closeActionsMenu(); handleTracking(device); }}>
+                                  <MapPin className="h-4 w-4" /> Live Tracking
                                 </button>
                               )}
                               {hasPermission('devices:update') && (

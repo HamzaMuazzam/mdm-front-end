@@ -43,7 +43,7 @@ export function useVoicePushToTalk(deviceUuid: string | null, enabled: boolean) 
     const client = mqtt.connect(MQTT_BROKER_URL, {
       clientId: `mdm-ptt-${emailRaw}-${Date.now()}`,
       clean: true,
-      protocol: WS as 'wss' | 'ws',
+      protocol: WS,
       reconnectPeriod: 3000,
       connectTimeout: 10000,
     });

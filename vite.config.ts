@@ -25,11 +25,11 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
 
-    origin: 'https://a8ae-103-48-0-195.ngrok-free.app',
+    origin: 'http://10.10.10.81',
 
     hmr: {
-      protocol: 'wss',
-      host: 'a8ae-103-48-0-195.ngrok-free.app',
+      protocol: 'ws',
+      host: '10.10.10.81:8083',
       clientPort: 443,
     },
     cors: {
@@ -38,6 +38,8 @@ export default defineConfig({
       allowedHeaders: ['*'],
     },
 
-    allowedHosts: ['a8ae-103-48-0-195.ngrok-free.app']
+    allowedHosts: ['10.10.10.81']
   },
 })
+
+// in all above urls these are react web urls.

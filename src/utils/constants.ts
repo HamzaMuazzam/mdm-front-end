@@ -6,9 +6,9 @@
 
 
 //TODO: for local development
-export const WS = 'wss';
-export const API_BASE_URL = 'https://d68d-103-48-0-195.ngrok-free.app/apis';
-export const MQTT_BROKER_URL = `${WS}://bd8c-103-48-0-195.ngrok-free.app/mqtt`;
+export const WS = 'ws';
+export const API_BASE_URL = 'http://10.10.10.81:9000/apis';
+export const MQTT_BROKER_URL = `ws://10.10.10.81:8083`;
 
 
 export const ROUTES = {
@@ -24,7 +24,8 @@ export const ROUTES = {
   DEVICE_NOTIFICATIONS: '/device/:deviceId/notifications',
   DEVICE_ALERT: '/device/:deviceId/alert',
   DEVICE_AUDIO: '/device/:deviceId/audio',
-  DEVICE_DATA:  '/device/:deviceId/data',
+  DEVICE_DATA:     '/device/:deviceId/data',
+  DEVICE_TRACKING: '/device/:deviceId/tracking',
 } as const;
 
 export const ERROR_MESSAGES = {

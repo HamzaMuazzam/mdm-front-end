@@ -32,8 +32,12 @@ export function connectMqtt(): void {
   const email = getUserEmail();
   if (email === null) return;
 
-  // Disconnect any previous connection
-  // disconnectMqtt();
+  // Clean up any existing client that is connecting but not yet connected
+  if (client) {
+    client.removeAllListeners();
+    client.end(true);
+    client = null;
+  }
 
   client = mqtt.connect(MQTT_BROKER_URL, {
     clientId: `mdm-web-${email}`,
