@@ -204,11 +204,16 @@ export function DeviceTrackingPage() {
   const [geoDeleting, setGeoDeleting]   = useState<number | null>(null);
   const [geoSaving, setGeoSaving]       = useState(false);
   const [showGeoOnMap, setShowGeoOnMap] = useState(true);
+  const [geoPage, setGeoPage]           = useState(0);
+  const [geoTotalPages, setGeoTotalPages] = useState(0);
+  const [geoTotal, setGeoTotal]         = useState(0);
 
   // Geofence events
   const [geoEvents, setGeoEvents]           = useState<GeofenceEventData[]>([]);
   const [geoEventsLoading, setGeoEventsLoading] = useState(false);
   const [geoEventsTotal, setGeoEventsTotal] = useState(0);
+  const [geoEventsPage, setGeoEventsPage]   = useState(0);
+  const [geoEventsTotalPages, setGeoEventsTotalPages] = useState(0);
 
   // Drawing state
   const [draw, setDraw] = useState<DrawState>(BLANK_DRAW);
@@ -246,12 +251,17 @@ export function DeviceTrackingPage() {
   }, [deviceUuid, fromDt, toDt, pageSize]);
 
   // ── Fetch geofences ───────────────────────────────────────────────────────
-  const fetchGeofences = useCallback(async () => {
+  const fetchGeofences = useCallback(async (pg = 0) => {
     if (!deviceUuid) return;
     setGeoLoading(true);
     try {
-      const resp = await trackingService.getGeofences(deviceUuid, { page: 0, size: 200 });
-      if (resp.success && resp.data) setGeofences(resp.data.content);
+      const resp = await trackingService.getGeofences(deviceUuid, { page: pg, size: 8 });
+      if (resp.success && resp.data) {
+        setGeofences(resp.data.content);
+        setGeoPage(pg);
+        setGeoTotalPages(resp.data.totalPages);
+        setGeoTotal(resp.data.totalElements);
+      }
     } catch { /**/ } finally { setGeoLoading(false); }
   }, [deviceUuid]);
 
@@ -265,14 +275,16 @@ export function DeviceTrackingPage() {
   }, [deviceUuid]);
 
   // ── Fetch geofence events ─────────────────────────────────────────────────
-  const fetchGeoEvents = useCallback(async () => {
+  const fetchGeoEvents = useCallback(async (pg = 0) => {
     if (!deviceUuid) return;
     setGeoEventsLoading(true);
     try {
-      const resp = await trackingService.getGeofenceEvents(deviceUuid, { page: 0, size: 50 });
+      const resp = await trackingService.getGeofenceEvents(deviceUuid, { page: pg, size: 10 });
       if (resp.success && resp.data) {
         setGeoEvents(resp.data.content);
         setGeoEventsTotal(resp.data.totalElements);
+        setGeoEventsPage(pg);
+        setGeoEventsTotalPages(resp.data.totalPages);
       }
     } catch { /**/ } finally { setGeoEventsLoading(false); }
   }, [deviceUuid]);
@@ -407,7 +419,7 @@ export function DeviceTrackingPage() {
       const resp = draw.editId != null
         ? await trackingService.updateGeofence(deviceUuid, draw.editId, req)
         : await trackingService.createGeofence(deviceUuid, req);
-      if (resp.success) { cancelDraw(); fetchGeofences(); }
+      if (resp.success) { cancelDraw(); fetchGeofences(draw.editId != null ? geoPage : 0); }
     } catch { /**/ } finally { setGeoSaving(false); }
   }
 
@@ -416,7 +428,10 @@ export function DeviceTrackingPage() {
     setGeoDeleting(id);
     try {
       await trackingService.deleteGeofence(deviceUuid, id);
-      setGeofences((prev) => prev.filter((g) => g.id !== id));
+      // If this was the only item on the page, go back one page
+      const remainingOnPage = geofences.length - 1;
+      const nextPage = remainingOnPage === 0 && geoPage > 0 ? geoPage - 1 : geoPage;
+      fetchGeofences(nextPage);
     } catch { /**/ } finally { setGeoDeleting(null); }
   }
 
@@ -695,7 +710,7 @@ export function DeviceTrackingPage() {
             {mapElement}
 
             {/* ── View-mode switcher overlay ──────────────────────────── */}
-            <div className="absolute left-4 top-4 z-[1000] flex items-center gap-1 rounded-2xl border border-white/65 bg-white/86 p-1.5 shadow-xl shadow-slate-900/10 backdrop-blur-md dark:border-slate-700/60 dark:bg-slate-950/84">
+            <div className="absolute right-4 top-4 z-[1000] flex items-center gap-1 rounded-2xl border border-white/65 bg-white/86 p-1.5 shadow-xl shadow-slate-900/10 backdrop-blur-md dark:border-slate-700/60 dark:bg-slate-950/84">
               <button
                 onClick={() => setLeftMode('map')}
                 title="Full map"
@@ -860,14 +875,16 @@ export function DeviceTrackingPage() {
               </div>
 
               {/* ── Section: Geofences ──────────────────────────────────── */}
-              <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+              <div className="flex-[0.48] flex flex-col overflow-hidden min-h-0">
 
                 {/* Geofence header */}
                 <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-700/50 bg-gray-50 dark:bg-slate-800/40">
                   <div className="flex items-center gap-2">
                     <Shield className="w-4 h-4 text-amber-500" />
                     <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Geofences</span>
-                    <span className="text-xs bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-slate-400 px-2 py-0.5 rounded-full font-medium">{geofences.length}</span>
+                    {geoTotal > 0 && (
+                      <span className="text-xs bg-amber-500/15 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full font-medium">{geoTotal}</span>
+                    )}
                   </div>
                   <div className="flex items-center gap-1">
                     {/* Geofences ON/OFF toggle */}
@@ -876,7 +893,7 @@ export function DeviceTrackingPage() {
                       className={`p-1.5 rounded-lg text-xs transition-colors ${showGeoOnMap ? 'text-amber-500 bg-amber-500/15' : 'text-gray-400 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-slate-700/50'}`}>
                       <Shield className="w-3.5 h-3.5" />
                     </button>
-                    <button onClick={fetchGeofences} disabled={geoLoading}
+                    <button onClick={() => fetchGeofences(geoPage)} disabled={geoLoading}
                       className="p-1.5 rounded-lg text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700/50 transition-colors">
                       {geoLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                     </button>
@@ -1028,46 +1045,81 @@ export function DeviceTrackingPage() {
                 )}
 
                 {/* Geofence list */}
-                <div className="overflow-y-auto max-h-52">
-                  {geofences.length === 0 && !geoLoading && draw.phase === 'idle' && (
-                    <div className="flex flex-col items-center justify-center py-10 text-gray-400 dark:text-slate-500">
-                      <Shield className="w-8 h-8 mb-2 opacity-25" />
+                <div className="flex-1 overflow-y-auto min-h-0">
+                  {geoLoading && (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="w-5 h-5 animate-spin text-amber-500" />
+                    </div>
+                  )}
+                  {!geoLoading && geofences.length === 0 && draw.phase === 'idle' && (
+                    <div className="flex flex-col items-center justify-center py-8 text-gray-400 dark:text-slate-500">
+                      <Shield className="w-7 h-7 mb-2 opacity-25" />
                       <p className="text-sm">No geofences yet</p>
                       <p className="text-xs mt-1 text-center px-4">Click Add to draw one on the map</p>
                     </div>
                   )}
-                  <div className="divide-y divide-gray-100 dark:divide-slate-700/30">
-                    {geofences.map((g) => (
-                      <div key={g.id} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-700/20 transition-colors">
-                        <div className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center" style={{ background: `${GEO_COLOR[g.type]}20`, border: `1.5px solid ${GEO_COLOR[g.type]}60` }}>
-                          <div className="w-2 h-2 rounded-full" style={{ background: GEO_COLOR[g.type] }} />
+                  {!geoLoading && (
+                    <div className="divide-y divide-gray-100 dark:divide-slate-700/30">
+                      {geofences.map((g) => (
+                        <div key={g.id} className="flex items-center gap-2 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-slate-700/20 transition-colors">
+                          <div className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center" style={{ background: `${GEO_COLOR[g.type]}20`, border: `1.5px solid ${GEO_COLOR[g.type]}60` }}>
+                            <div className="w-2 h-2 rounded-full" style={{ background: GEO_COLOR[g.type] }} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-gray-800 dark:text-slate-200 font-semibold truncate">{g.name}</p>
+                            <p className="text-[10px] text-gray-400 dark:text-slate-500 truncate">
+                              {g.type}{g.type === 'CIRCLE' && g.radiusMeters ? ` · ${g.radiusMeters}m` : ''}
+                              {g.bufferMeters ? ` · buf=${g.bufferMeters}m` : ''}
+                            </p>
+                          </div>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold shrink-0 ${g.active ? 'bg-green-500/15 text-green-600 dark:text-green-400' : 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400'}`}>
+                            {g.active ? 'Active' : 'Off'}
+                          </span>
+                          <button onClick={() => startDraw(g.type, g)}
+                            className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-slate-700/50 rounded-lg transition-colors">
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                          <button onClick={() => deleteGeofence(g.id)} disabled={geoDeleting === g.id}
+                            className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-slate-700/50 rounded-lg transition-colors disabled:opacity-40">
+                            {geoDeleting === g.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                          </button>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-gray-800 dark:text-slate-200 font-medium truncate">{g.name}</p>
-                          <p className="text-xs text-gray-400 dark:text-slate-500">
-                            {g.type}{g.type === 'CIRCLE' && g.radiusMeters ? ` · ${g.radiusMeters}m` : ''}
-                            {g.bufferMeters ? ` · buf=${g.bufferMeters}m` : ''}
-                          </p>
-                        </div>
-                        <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium shrink-0 ${g.active ? 'bg-green-500/15 text-green-600 dark:text-green-400' : 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400'}`}>
-                          {g.active ? 'Active' : 'Off'}
-                        </span>
-                        <button onClick={() => startDraw(g.type, g)}
-                          className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-slate-700/50 rounded-lg transition-colors">
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={() => deleteGeofence(g.id)} disabled={geoDeleting === g.id}
-                          className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-slate-700/50 rounded-lg transition-colors disabled:opacity-40">
-                          {geoDeleting === g.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
+
+                {/* Geofence pagination footer */}
+                {geoTotalPages > 1 && (
+                  <div className="shrink-0 flex items-center justify-between px-3 py-2 border-t border-gray-100 dark:border-slate-700/40 bg-gray-50/60 dark:bg-slate-800/30">
+                    <span className="text-[10px] text-gray-400 dark:text-slate-500">
+                      Page {geoPage + 1} of {geoTotalPages}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => fetchGeofences(geoPage - 1)} disabled={geoPage === 0 || geoLoading}
+                        className="rounded-lg p-1 text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-800 disabled:opacity-40 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200">
+                        <ChevronLeft className="w-3.5 h-3.5" />
+                      </button>
+                      {Array.from({ length: Math.min(geoTotalPages, 7) }, (_, i) => {
+                        const start = Math.max(0, Math.min(geoPage - 3, geoTotalPages - 7));
+                        return start + i;
+                      }).map((i) => (
+                        <button key={i} onClick={() => fetchGeofences(i)} disabled={geoLoading}
+                          className={`w-5 h-5 rounded text-[10px] font-semibold transition-colors ${i === geoPage ? 'bg-amber-500 text-white' : 'text-gray-500 hover:bg-gray-200 dark:text-slate-400 dark:hover:bg-slate-700'}`}>
+                          {i + 1}
+                        </button>
+                      ))}
+                      <button onClick={() => fetchGeofences(geoPage + 1)} disabled={geoPage >= geoTotalPages - 1 || geoLoading}
+                        className="rounded-lg p-1 text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-800 disabled:opacity-40 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200">
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* ── Section: Geofence Events ─────────────────────────────── */}
-              <div className="flex-1 flex flex-col overflow-hidden min-h-0 border-t border-gray-200 dark:border-slate-700/50">
+              <div className="flex-[0.52] flex flex-col overflow-hidden min-h-0 border-t border-gray-200 dark:border-slate-700/50">
 
                 {/* Header */}
                 <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-700/50 bg-gray-50 dark:bg-slate-800/40">
@@ -1078,44 +1130,73 @@ export function DeviceTrackingPage() {
                       <span className="text-xs bg-blue-500/15 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full font-medium">{geoEventsTotal}</span>
                     )}
                   </div>
-                  <button onClick={fetchGeoEvents} disabled={geoEventsLoading}
+                  <button onClick={() => fetchGeoEvents(0)} disabled={geoEventsLoading}
                     className="p-1.5 rounded-lg text-gray-500 dark:text-slate-400 hover:text-gray-800 hover:bg-gray-100 dark:hover:bg-slate-700/50 transition-colors">
                     {geoEventsLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                   </button>
                 </div>
 
                 {/* Events list */}
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto min-h-0">
+                  {geoEventsLoading && (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
+                    </div>
+                  )}
                   {!geoEventsLoading && geoEvents.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-10 text-gray-400 dark:text-slate-500">
-                      <Activity className="w-8 h-8 mb-2 opacity-25" />
+                    <div className="flex flex-col items-center justify-center py-8 text-gray-400 dark:text-slate-500">
+                      <Activity className="w-7 h-7 mb-2 opacity-25" />
                       <p className="text-sm">No events yet</p>
                       <p className="text-xs mt-1 text-center px-4">ENTER / EXIT events appear here</p>
                     </div>
                   )}
-                  <div className="divide-y divide-gray-100 dark:divide-slate-700/30">
-                    {geoEvents.map((ev) => (
-                      <div key={ev.id} className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-700/20 transition-colors">
-                        <span className={`mt-0.5 shrink-0 text-xs font-bold px-1.5 py-0.5 rounded ${
-                          ev.eventType === 'ENTER'
-                            ? 'bg-green-500/15 text-green-600 dark:text-green-400'
-                            : 'bg-red-500/15 text-red-600 dark:text-red-400'
-                        }`}>
-                          {ev.eventType}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-800 dark:text-slate-200 truncate">{ev.geofenceName}</p>
-                          <p className="text-xs text-gray-400 dark:text-slate-500">
-                            {ev.latitude.toFixed(5)}, {ev.longitude.toFixed(5)}
-                          </p>
-                          <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
-                            {new Date(ev.eventTime).toLocaleString()}
-                          </p>
+                  {!geoEventsLoading && (
+                    <div className="divide-y divide-gray-100 dark:divide-slate-700/30">
+                      {geoEvents.map((ev) => (
+                        <div key={ev.id} className="flex items-start gap-2.5 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-slate-700/20 transition-colors">
+                          <span className={`mt-0.5 shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                            ev.eventType === 'ENTER'
+                              ? 'bg-green-500/15 text-green-600 dark:text-green-400'
+                              : 'bg-red-500/15 text-red-600 dark:text-red-400'
+                          }`}>
+                            {ev.eventType}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold text-gray-800 dark:text-slate-200 truncate">{ev.geofenceName}</p>
+                            <p className="text-[10px] text-gray-400 dark:text-slate-500 font-mono">
+                              {ev.latitude.toFixed(5)}, {ev.longitude.toFixed(5)}
+                            </p>
+                            <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5">
+                              {new Date(ev.eventTime).toLocaleString()}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
+
+                {/* Events pagination footer */}
+                {geoEventsTotalPages > 1 && (
+                  <div className="shrink-0 flex items-center justify-between px-3 py-2 border-t border-gray-100 dark:border-slate-700/40 bg-gray-50/60 dark:bg-slate-800/30">
+                    <span className="text-[10px] text-gray-400 dark:text-slate-500">
+                      Page {geoEventsPage + 1} of {geoEventsTotalPages}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => fetchGeoEvents(geoEventsPage - 1)} disabled={geoEventsPage === 0 || geoEventsLoading}
+                        className="rounded-lg p-1 text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-800 disabled:opacity-40 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200">
+                        <ChevronLeft className="w-3.5 h-3.5" />
+                      </button>
+                      <span className="text-[10px] text-gray-500 dark:text-slate-400 min-w-[2rem] text-center">
+                        {geoEventsPage + 1} / {geoEventsTotalPages}
+                      </span>
+                      <button onClick={() => fetchGeoEvents(geoEventsPage + 1)} disabled={geoEventsPage >= geoEventsTotalPages - 1 || geoEventsLoading}
+                        className="rounded-lg p-1 text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-800 disabled:opacity-40 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200">
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
             </div>
