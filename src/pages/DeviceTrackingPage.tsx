@@ -5,7 +5,7 @@ import {
   ArrowLeft, MapPin, RefreshCw, Loader2, Download,
   ChevronLeft, ChevronRight, Shield, Sheet, LayoutPanelTop,
   Plus, Pencil, Trash2, X, Check, Upload, Undo2, MousePointer2,
-  PanelRightClose, PanelRightOpen, Maximize2, Minimize2,
+  PanelRightClose, PanelRightOpen, Maximize2, Minimize2, Activity,
 } from 'lucide-react';
 import { MQTT_BROKER_URL, WS } from '@/utils/constants';
 import {
@@ -23,6 +23,7 @@ import {
   type HistoryPoint,
   type GeofenceData,
   type GeofenceRequest,
+  type GeofenceEventData,
 } from '@/api/services/tracking.service';
 
 // ── Leaflet icon fix ──────────────────────────────────────────────────────────
@@ -204,6 +205,11 @@ export function DeviceTrackingPage() {
   const [geoSaving, setGeoSaving]       = useState(false);
   const [showGeoOnMap, setShowGeoOnMap] = useState(true);
 
+  // Geofence events
+  const [geoEvents, setGeoEvents]           = useState<GeofenceEventData[]>([]);
+  const [geoEventsLoading, setGeoEventsLoading] = useState(false);
+  const [geoEventsTotal, setGeoEventsTotal] = useState(0);
+
   // Drawing state
   const [draw, setDraw] = useState<DrawState>(BLANK_DRAW);
   const drawRef = useRef(draw);
@@ -256,6 +262,19 @@ export function DeviceTrackingPage() {
       const resp = await trackingService.getGeofenceTypes(deviceUuid);
       if (resp.success && resp.data) setGeoTypes(resp.data);
     } catch { /**/ }
+  }, [deviceUuid]);
+
+  // ── Fetch geofence events ─────────────────────────────────────────────────
+  const fetchGeoEvents = useCallback(async () => {
+    if (!deviceUuid) return;
+    setGeoEventsLoading(true);
+    try {
+      const resp = await trackingService.getGeofenceEvents(deviceUuid, { page: 0, size: 50 });
+      if (resp.success && resp.data) {
+        setGeoEvents(resp.data.content);
+        setGeoEventsTotal(resp.data.totalElements);
+      }
+    } catch { /**/ } finally { setGeoEventsLoading(false); }
   }, [deviceUuid]);
 
   // ── Live tracking MQTT client (QoS 0, clean session) ─────────────────────
@@ -320,7 +339,7 @@ export function DeviceTrackingPage() {
   }, [deviceUuid]);
 
   useEffect(() => { fetchHistory(0); setPage(0); /* eslint-disable-next-line */ }, []);
-  useEffect(() => { fetchGeofences(); fetchGeoTypes(); }, [fetchGeofences, fetchGeoTypes]);
+  useEffect(() => { fetchGeofences(); fetchGeoTypes(); fetchGeoEvents(); }, [fetchGeofences, fetchGeoTypes, fetchGeoEvents]);
 
   // ── Drawing map callbacks (stable refs to avoid MapContainer re-render) ───
   const handleMapClick = useCallback((lat: number, lng: number) => {
@@ -841,7 +860,7 @@ export function DeviceTrackingPage() {
               </div>
 
               {/* ── Section: Geofences ──────────────────────────────────── */}
-              <div className="flex-1 flex flex-col overflow-hidden">
+              <div className="flex-1 flex flex-col overflow-hidden min-h-0">
 
                 {/* Geofence header */}
                 <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-700/50 bg-gray-50 dark:bg-slate-800/40">
@@ -1009,7 +1028,7 @@ export function DeviceTrackingPage() {
                 )}
 
                 {/* Geofence list */}
-                <div className="flex-1 overflow-y-auto">
+                <div className="overflow-y-auto max-h-52">
                   {geofences.length === 0 && !geoLoading && draw.phase === 'idle' && (
                     <div className="flex flex-col items-center justify-center py-10 text-gray-400 dark:text-slate-500">
                       <Shield className="w-8 h-8 mb-2 opacity-25" />
@@ -1046,6 +1065,59 @@ export function DeviceTrackingPage() {
                   </div>
                 </div>
               </div>
+
+              {/* ── Section: Geofence Events ─────────────────────────────── */}
+              <div className="flex-1 flex flex-col overflow-hidden min-h-0 border-t border-gray-200 dark:border-slate-700/50">
+
+                {/* Header */}
+                <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-700/50 bg-gray-50 dark:bg-slate-800/40">
+                  <div className="flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-blue-500" />
+                    <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Events</span>
+                    {geoEventsTotal > 0 && (
+                      <span className="text-xs bg-blue-500/15 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full font-medium">{geoEventsTotal}</span>
+                    )}
+                  </div>
+                  <button onClick={fetchGeoEvents} disabled={geoEventsLoading}
+                    className="p-1.5 rounded-lg text-gray-500 dark:text-slate-400 hover:text-gray-800 hover:bg-gray-100 dark:hover:bg-slate-700/50 transition-colors">
+                    {geoEventsLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+
+                {/* Events list */}
+                <div className="flex-1 overflow-y-auto">
+                  {!geoEventsLoading && geoEvents.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-10 text-gray-400 dark:text-slate-500">
+                      <Activity className="w-8 h-8 mb-2 opacity-25" />
+                      <p className="text-sm">No events yet</p>
+                      <p className="text-xs mt-1 text-center px-4">ENTER / EXIT events appear here</p>
+                    </div>
+                  )}
+                  <div className="divide-y divide-gray-100 dark:divide-slate-700/30">
+                    {geoEvents.map((ev) => (
+                      <div key={ev.id} className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-700/20 transition-colors">
+                        <span className={`mt-0.5 shrink-0 text-xs font-bold px-1.5 py-0.5 rounded ${
+                          ev.eventType === 'ENTER'
+                            ? 'bg-green-500/15 text-green-600 dark:text-green-400'
+                            : 'bg-red-500/15 text-red-600 dark:text-red-400'
+                        }`}>
+                          {ev.eventType}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-800 dark:text-slate-200 truncate">{ev.geofenceName}</p>
+                          <p className="text-xs text-gray-400 dark:text-slate-500">
+                            {ev.latitude.toFixed(5)}, {ev.longitude.toFixed(5)}
+                          </p>
+                          <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
+                            {new Date(ev.eventTime).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
             </div>
           )}
         </div>

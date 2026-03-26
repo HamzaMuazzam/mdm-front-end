@@ -77,6 +77,28 @@ export interface GeofenceRequest {
   bufferMeters?: number | null;
 }
 
+// ── Geofence events ───────────────────────────────────────────────────────────
+
+export interface GeofenceEventData {
+  id: number;
+  eventType: 'ENTER' | 'EXIT';
+  latitude: number;
+  longitude: number;
+  eventTime: string;
+  deviceUuid: string;
+  geofenceId: number;
+  geofenceName: string;
+}
+
+export interface GeofenceEventPage {
+  totalPages: number;
+  totalElements: number;
+  content: GeofenceEventData[];
+  first: boolean;
+  last: boolean;
+  number: number;
+}
+
 // ── Tracking bulk create ──────────────────────────────────────────────────────
 
 export interface TrackingUploadPoint {
@@ -148,6 +170,17 @@ export const trackingService = {
 
   async deleteGeofence(deviceUuid: string, id: number): Promise<ApiResponse<unknown>> {
     const res = await apiClient.delete<ApiResponse<unknown>>(`/v1/tracking/${deviceUuid}/geofences/${id}`);
+    return res.data;
+  },
+
+  async getGeofenceEvents(
+    deviceUuid: string,
+    params: { page?: number; size?: number } = {}
+  ): Promise<ApiResponse<GeofenceEventPage>> {
+    const res = await apiClient.get<ApiResponse<GeofenceEventPage>>(
+      `/v1/tracking/${deviceUuid}/geofenceEvents`,
+      { params: { page: params.page ?? 0, size: params.size ?? 30 } }
+    );
     return res.data;
   },
 };
