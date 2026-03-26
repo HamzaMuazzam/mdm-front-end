@@ -764,7 +764,7 @@ export function DeviceTrackingPage() {
                   <table className="w-full text-left text-xs">
                     <thead className="sticky top-0 bg-[linear-gradient(180deg,rgba(248,250,252,0.96),rgba(241,245,249,0.92))] text-slate-500 uppercase tracking-wider dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.96),rgba(15,23,42,0.92))] dark:text-slate-400">
                       <tr>
-                        {['#','Received At','Lat','Lng','Speed','Accuracy','Alt','Bearing','Satellites','Provider','IG','Reason'].map((h) => (
+                        {['#','ID','Local Primary ID','Received At','Device RDT','GPS RDT','Lat','Lng','Speed','Accuracy','Alt','Bearing','Satellites','Provider','Version','Upload Retry','IG','Reason'].map((h) => (
                           <th key={h} className="whitespace-nowrap border-b border-slate-200/70 px-3 py-2.5 dark:border-slate-700/50">{h}</th>
                         ))}
                       </tr>
@@ -773,15 +773,21 @@ export function DeviceTrackingPage() {
                       {points.map((p, i) => (
                         <tr key={p.id} className="bg-white/80 transition-colors hover:bg-sky-50/60 dark:bg-transparent dark:hover:bg-slate-800/40">
                           <td className="px-3 py-2 text-slate-400 dark:text-slate-500">{page * pageSize + i + 1}</td>
+                          <td className="px-3 py-2 font-mono text-slate-400 dark:text-slate-500">{p.id > 0 ? p.id : '-'}</td>
+                          <td className="px-3 py-2 font-mono text-slate-600 dark:text-slate-300">{p.localPrimaryId || '-'}</td>
                           <td className="whitespace-nowrap px-3 py-2 text-slate-600 dark:text-slate-300">{p.receivedAt ? new Date(p.receivedAt).toLocaleString() : '-'}</td>
+                          <td className="whitespace-nowrap px-3 py-2 text-slate-600 dark:text-slate-300">{p.deviceRdt || '-'}</td>
+                          <td className="whitespace-nowrap px-3 py-2 text-slate-600 dark:text-slate-300">{p.gpsRdt || '-'}</td>
                           <td className="px-3 py-2 font-mono text-slate-800 dark:text-slate-200">{p.latitude?.toFixed(6)}</td>
                           <td className="px-3 py-2 font-mono text-slate-800 dark:text-slate-200">{p.longitude?.toFixed(6)}</td>
-                          <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{p.speed != null ? `${p.speed.toFixed(1)}` : '-'}</td>
+                          <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{p.speed != null ? p.speed.toFixed(1) : '-'}</td>
                           <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{p.accuracy != null ? `±${p.accuracy.toFixed(0)}` : '-'}</td>
-                          <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{p.altitude != null ? `${p.altitude.toFixed(0)}` : '-'}</td>
+                          <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{p.altitude != null ? p.altitude.toFixed(0) : '-'}</td>
                           <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{p.bearing != null ? `${p.bearing.toFixed(1)}°` : '-'}</td>
                           <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{p.connectedSatellite}/{p.availableSatellite}</td>
                           <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{p.provider || '-'}</td>
+                          <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{p.versionNo || '-'}</td>
+                          <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{p.uploadRetryCount ?? '-'}</td>
                           <td className="px-3 py-1.5">
                             <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${p.igStatus === 1 ? 'bg-green-500/15 text-green-600 dark:text-green-400' : 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400'}`}>
                               {p.igStatus === 1 ? 'ON' : 'OFF'}
