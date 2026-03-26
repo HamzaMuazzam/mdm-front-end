@@ -110,6 +110,151 @@ const GEO_COLOR: Record<GeoType, string> = {
   LINE:    '#06b6d4',   // cyan
 };
 
+const BLANK_CONFIG: TrackingConfigRequest = {
+  configurationTimer: undefined,
+  uploadTimer: undefined,
+  movingTimer: undefined,
+  stopTimer: undefined,
+  heartbeatTimer: undefined,
+  angleThreshold: undefined,
+  overSpeedingThreshold: undefined,
+  distanceThreshold: undefined,
+  retryCounter: undefined,
+  setMinUpdateIntervalMillis: undefined,
+  setMinUpdateDistanceMeters: undefined,
+  baseURL: undefined,
+};
+
+type TrackingConfigFieldKey = keyof TrackingConfigRequest;
+
+interface TrackingConfigFieldDefinition {
+  key: TrackingConfigFieldKey;
+  label: string;
+  description: string;
+  unit?: string;
+  step?: number;
+  min?: number;
+  inputType?: 'number' | 'text';
+  placeholder?: string;
+  cardSpanClassName?: string;
+}
+
+interface TrackingConfigSectionDefinition {
+  id: string;
+  title: string;
+  eyebrow: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+  surfaceClassName: string;
+  badgeClassName: string;
+  iconClassName: string;
+  gridClassName: string;
+  fields: TrackingConfigFieldDefinition[];
+}
+
+const TRACKING_CONFIG_SECTIONS: TrackingConfigSectionDefinition[] = [
+  {
+    id: 'timers',
+    title: 'Timing Logs',
+    eyebrow: 'Device rhythm',
+    description: 'How often the tracker wakes up, samples data, uploads, and keeps the session alive.',
+    icon: Timer,
+    surfaceClassName: 'border-sky-200/70 bg-sky-50/85 dark:border-sky-500/20 dark:bg-sky-500/10',
+    badgeClassName: 'border-sky-200/80 bg-sky-500/10 text-sky-700 dark:border-sky-500/25 dark:bg-sky-500/15 dark:text-sky-200',
+    iconClassName: 'bg-sky-500/15 text-sky-600 shadow-lg shadow-sky-500/10 dark:bg-sky-500/15 dark:text-sky-100',
+    gridClassName: 'md:grid-cols-2 xl:grid-cols-3',
+    fields: [
+      { key: 'configurationTimer', label: 'Configuration Timer', description: 'How often the device refreshes its config from the platform.', unit: 's', step: 1, min: 0 },
+      { key: 'uploadTimer', label: 'Upload Timer', description: 'The Logs used to push live tracking points upstream.', unit: 's', step: 1, min: 0 },
+      { key: 'movingTimer', label: 'Moving Timer', description: 'Delay before movement is treated as an active trip.', unit: 's', step: 1, min: 0 },
+      { key: 'stopTimer', label: 'Stop Timer', description: 'How long the device waits before it marks the vehicle as stopped.', unit: 's', step: 1, min: 0 },
+      { key: 'heartbeatTimer', label: 'Heartbeat Timer', description: 'Keep-alive interval used to confirm the tracker is online.', unit: 's', step: 1, min: 0 },
+    ],
+  },
+  {
+    id: 'thresholds',
+    title: 'Motion Intelligence',
+    eyebrow: 'Decision thresholds',
+    description: 'Sensitivity settings that control direction changes, alerts, distance sampling, and retry behavior.',
+    icon: Gauge,
+    surfaceClassName: 'border-amber-200/70 bg-amber-50/85 dark:border-amber-500/20 dark:bg-amber-500/10',
+    badgeClassName: 'border-amber-200/80 bg-amber-500/10 text-amber-700 dark:border-amber-500/25 dark:bg-amber-500/15 dark:text-amber-200',
+    iconClassName: 'bg-amber-500/15 text-amber-600 shadow-lg shadow-amber-500/10 dark:bg-amber-500/15 dark:text-amber-100',
+    gridClassName: 'md:grid-cols-2 xl:grid-cols-4',
+    fields: [
+      { key: 'angleThreshold', label: 'Angle Threshold', description: 'Minimum turn angle required before a new point is considered meaningful.', unit: 'deg', step: 0.5, min: 0 },
+      { key: 'overSpeedingThreshold', label: 'Over-Speed Threshold', description: 'Speed limit that triggers over-speeding behavior or flags.', unit: 'km/h', step: 1, min: 0 },
+      { key: 'distanceThreshold', label: 'Distance Threshold', description: 'Minimum movement before a new point is worth recording.', unit: 'm', step: 1, min: 0 },
+      { key: 'retryCounter', label: 'Retry Counter', description: 'How many times failed uploads should be retried before giving up.', step: 1, min: 0 },
+    ],
+  },
+  {
+    id: 'connection',
+    title: 'GPS & Delivery',
+    eyebrow: 'Acquisition and routing',
+    description: 'Control minimum GPS update density and the server endpoint the device should target.',
+    icon: SatelliteDish,
+    surfaceClassName: 'border-emerald-200/70 bg-emerald-50/85 dark:border-emerald-500/20 dark:bg-emerald-500/10',
+    badgeClassName: 'border-emerald-200/80 bg-emerald-500/10 text-emerald-700 dark:border-emerald-500/25 dark:bg-emerald-500/15 dark:text-emerald-200',
+    iconClassName: 'bg-emerald-500/15 text-emerald-600 shadow-lg shadow-emerald-500/10 dark:bg-emerald-500/15 dark:text-emerald-100',
+    gridClassName: 'md:grid-cols-2',
+    fields: [
+      { key: 'setMinUpdateIntervalMillis', label: 'Min GPS Update Interval', description: 'Minimum time between two GPS fixes coming from the device.', unit: 'ms', step: 1, min: 0 },
+      { key: 'setMinUpdateDistanceMeters', label: 'Min GPS Update Distance', description: 'Minimum movement required before a fresh GPS fix is emitted.', unit: 'm', step: 0.5, min: 0 },
+      {
+        key: 'baseURL',
+        label: 'Server Base URL',
+        description: 'Optional endpoint override that gets pushed down to the tracker.',
+        inputType: 'text',
+        placeholder: 'https://tracking.example.com',
+        cardSpanClassName: 'md:col-span-2',
+      },
+    ],
+  },
+];
+
+const TRACKING_CONFIG_FIELD_COUNT = TRACKING_CONFIG_SECTIONS.reduce(
+  (count, section) => count + section.fields.length,
+  0
+);
+
+function buildTrackingConfigDraft(config?: TrackingConfigResponse | null): TrackingConfigRequest {
+  if (!config) return { ...BLANK_CONFIG };
+
+  return {
+    configurationTimer: config.configurationTimer ?? undefined,
+    uploadTimer: config.uploadTimer ?? undefined,
+    movingTimer: config.movingTimer ?? undefined,
+    stopTimer: config.stopTimer ?? undefined,
+    heartbeatTimer: config.heartbeatTimer ?? undefined,
+    angleThreshold: config.angleThreshold ?? undefined,
+    overSpeedingThreshold: config.overSpeedingThreshold ?? undefined,
+    distanceThreshold: config.distanceThreshold ?? undefined,
+    retryCounter: config.retryCounter ?? undefined,
+    setMinUpdateIntervalMillis: config.setMinUpdateIntervalMillis ?? undefined,
+    setMinUpdateDistanceMeters: config.setMinUpdateDistanceMeters ?? undefined,
+    baseURL: config.baseURL ?? '',
+  };
+}
+
+function getTrackingConfigValue(
+  source: TrackingConfigRequest | TrackingConfigResponse | null,
+  key: TrackingConfigFieldKey
+): string | number | undefined {
+  return source ? (source[key] as string | number | undefined) : undefined;
+}
+
+function getTrackingEndpointLabel(value: string | number | undefined): string {
+  const url = typeof value === 'string' ? value.trim() : '';
+  if (!url) return 'Default endpoint';
+
+  try {
+    return new URL(url).host;
+  } catch {
+    return url.replace(/^https?:\/\//, '');
+  }
+}
+
 // ── Center map imperatively ───────────────────────────────────────────────────
 function CenterOnLocation({ target }: { target: [number, number] | null }) {
   const map = useMap();
@@ -245,17 +390,46 @@ export function DeviceTrackingPage() {
   const [configSaving, setConfigSaving]   = useState(false);
   const [configData, setConfigData]       = useState<TrackingConfigResponse | null>(null);
   const [configEditing, setConfigEditing] = useState(false);
-  const BLANK_CONFIG: TrackingConfigRequest = {
-    configurationTimer: undefined, uploadTimer: undefined, movingTimer: undefined,
-    stopTimer: undefined, heartbeatTimer: undefined, angleThreshold: undefined,
-    overSpeedingThreshold: undefined, distanceThreshold: undefined, retryCounter: undefined,
-    setMinUpdateIntervalMillis: undefined, setMinUpdateDistanceMeters: undefined, baseURL: undefined,
-  };
-  const [configForm, setConfigForm] = useState<TrackingConfigRequest>(BLANK_CONFIG);
+  const [configForm, setConfigForm] = useState<TrackingConfigRequest>({ ...BLANK_CONFIG });
 
   const polyline: [number, number][] = points.map((p) => [p.latitude, p.longitude]);
   const mapCenter: [number, number]  = polyline.length > 0
     ? polyline[Math.floor(polyline.length / 2)] : [33.6844, 73.0479];
+  const configPreviewSource = configEditing ? configForm : configData;
+  const configHeroStats = configData ? [
+    {
+      label: 'Upload Logs',
+      value: getTrackingConfigValue(configPreviewSource, 'uploadTimer') ?? '—',
+      unit: 's',
+      detail: 'Point upload interval',
+      Icon: Upload,
+      accentClassName: 'from-sky-500/20 to-cyan-400/10 text-sky-50',
+    },
+    {
+      label: 'Heartbeat',
+      value: getTrackingConfigValue(configPreviewSource, 'heartbeatTimer') ?? '—',
+      unit: 's',
+      detail: 'Online ping interval',
+      Icon: Activity,
+      accentClassName: 'from-indigo-500/20 to-blue-400/10 text-slate-50',
+    },
+    {
+      label: 'Motion threshold',
+      value: getTrackingConfigValue(configPreviewSource, 'distanceThreshold') ?? '—',
+      unit: 'm',
+      detail: 'Distance before logging',
+      Icon: Gauge,
+      accentClassName: 'from-amber-500/20 to-orange-400/10 text-amber-50',
+    },
+    {
+      label: 'Endpoint',
+      value: getTrackingEndpointLabel(getTrackingConfigValue(configPreviewSource, 'baseURL')),
+      unit: '',
+      detail: 'Server target',
+      Icon: Link2,
+      accentClassName: 'from-emerald-500/20 to-teal-400/10 text-emerald-50',
+    },
+  ] : [];
 
   // ── Fetch history ─────────────────────────────────────────────────────────
   const fetchHistory = useCallback(async (pg: number) => {
@@ -477,14 +651,61 @@ export function DeviceTrackingPage() {
   }
 
   // ── Tracking config ───────────────────────────────────────────────────────
+  const startConfigEditing = useCallback(() => {
+    setConfigForm(buildTrackingConfigDraft(configData));
+    setConfigEditing(true);
+  }, [configData]);
+
+  const cancelConfigEditing = useCallback(() => {
+    setConfigForm(buildTrackingConfigDraft(configData));
+    setConfigEditing(false);
+  }, [configData]);
+
+  const closeConfigModal = useCallback(() => {
+    if (configSaving) return;
+    setConfigModal(false);
+    setConfigEditing(false);
+    setConfigForm(buildTrackingConfigDraft(configData));
+  }, [configData, configSaving]);
+
+  useEffect(() => {
+    if (!configModal) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || configSaving) return;
+      if (configEditing) {
+        cancelConfigEditing();
+        return;
+      }
+      closeConfigModal();
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [cancelConfigEditing, closeConfigModal, configEditing, configModal, configSaving]);
+
   async function openConfig() {
     setConfigModal(true);
     setConfigEditing(false);
+    setConfigForm({ ...BLANK_CONFIG });
+    setConfigData(null);
     if (!deviceUuid) return;
     setConfigLoading(true);
     try {
       const resp = await trackingService.getConfig(deviceUuid);
-      if (resp.success && resp.data) setConfigData(resp.data);
+      if (resp.success && resp.data) {
+        setConfigData(resp.data);
+        setConfigForm(buildTrackingConfigDraft(resp.data));
+      } else {
+        setConfigData(null);
+      }
     } catch { /**/ } finally { setConfigLoading(false); }
   }
 
@@ -496,7 +717,10 @@ export function DeviceTrackingPage() {
       setConfigEditing(false);
       // Refresh displayed values
       const resp = await trackingService.getConfig(deviceUuid);
-      if (resp.success && resp.data) setConfigData(resp.data);
+      if (resp.success && resp.data) {
+        setConfigData(resp.data);
+        setConfigForm(buildTrackingConfigDraft(resp.data));
+      }
     } catch { /**/ } finally { setConfigSaving(false); }
   }
 
@@ -1589,263 +1813,388 @@ export function DeviceTrackingPage() {
 
       {/* ── Tracking config modal ────────────────────────────────────────── */}
       {configModal && (
-        <div className="fixed inset-0 z-[2000] flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm px-0 md:px-4">
-          <div className="bg-white dark:bg-slate-900 border border-gray-200/80 dark:border-slate-700/60 rounded-t-3xl md:rounded-2xl w-full md:max-w-2xl shadow-2xl flex flex-col max-h-[92vh] md:max-h-[85vh]">
+        <div
+          className="fixed inset-0 z-[2000] overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.18),transparent_32%),radial-gradient(circle_at_bottom,rgba(16,185,129,0.14),transparent_34%),rgba(2,6,23,0.76)] px-0 py-0 backdrop-blur-xl md:px-6 md:py-8 animate-in fade-in-0 duration-200"
+          onClick={() => {
+            if (!configEditing && !configSaving) closeConfigModal();
+          }}
+        >
+          <div className="flex min-h-full items-end justify-center md:items-center">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="tracking-config-title"
+              onClick={(event) => event.stopPropagation()}
+              className="relative flex h-[100svh] w-full flex-col overflow-hidden border border-white/20 bg-white/95 shadow-[0_30px_120px_rgba(2,6,23,0.48)] backdrop-blur-2xl dark:border-slate-700/70 dark:bg-slate-950/95 md:h-auto md:max-h-[92vh] md:max-w-5xl md:rounded-[32px] animate-in slide-in-from-bottom-10 md:zoom-in-95 duration-300"
+            >
+              <div className="pointer-events-none absolute -left-20 top-16 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
+              <div className="pointer-events-none absolute -right-20 top-0 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl" />
+              <div className="pointer-events-none absolute bottom-0 right-10 h-56 w-56 rounded-full bg-emerald-400/10 blur-3xl" />
 
-            {/* Modal header */}
-            <div className="shrink-0 flex items-center gap-3 px-5 py-4 border-b border-gray-200 dark:border-slate-700/50">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#1e3a5f_0%,#2563eb_50%,#38bdf8_100%)] shadow-[0_8px_24px_rgba(37,99,235,0.28)]">
-                <Settings className="w-5 h-5 text-white" />
+              <div className="relative shrink-0 border-b border-slate-200/70 bg-white/80 backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-950/75">
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
+                <div className="flex flex-col gap-4 px-5 py-5 md:px-6">
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] bg-[linear-gradient(135deg,#0f172a_0%,#2563eb_52%,#22d3ee_100%)] shadow-[0_18px_48px_rgba(37,99,235,0.35)]">
+                      <Settings className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-full border border-slate-200/80 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-600 shadow-sm dark:border-slate-700/80 dark:bg-slate-900/70 dark:text-slate-300">
+                          Tracking Control Center
+                        </span>
+                        <span className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ${configEditing ? 'border-amber-200/80 bg-amber-500/10 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-200' : 'border-emerald-200/80 bg-emerald-500/10 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-200'}`}>
+                          {configEditing ? 'Edit mode' : 'Live view'}
+                        </span>
+                        <span className="rounded-full border border-slate-200/80 bg-slate-100/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500 dark:border-slate-700/70 dark:bg-slate-900/60 dark:text-slate-400">
+                          {TRACKING_CONFIG_FIELD_COUNT} parameters
+                        </span>
+                      </div>
+                      <h2 id="tracking-config-title" className="mt-3 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white md:text-[2rem]">
+                        Tracking Configuration
+                      </h2>
+                      <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                        <span className="font-semibold text-slate-900 dark:text-slate-100">{device?.deviceName ?? 'Unknown device'}</span>
+                        <span className="mx-2 text-slate-300 dark:text-slate-600">/</span>
+                        <span className="font-mono text-xs break-all">{deviceUuid ?? 'Device UUID unavailable'}</span>
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      {!configEditing && configData && (
+                        <button
+                          onClick={startConfigEditing}
+                          className="hidden sm:inline-flex items-center gap-2 rounded-2xl border border-blue-500/20 bg-blue-500/10 px-4 py-2.5 text-sm font-semibold text-blue-700 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-blue-500/15 dark:border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-100"
+                        >
+                          <SlidersHorizontal className="h-4 w-4" />
+                          Edit Configuration
+                        </button>
+                      )}
+                      <button
+                        onClick={closeConfigModal}
+                        disabled={configSaving}
+                        aria-label="Close tracking configuration"
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200/80 bg-white/90 text-slate-500 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700/80 dark:bg-slate-900/80 dark:text-slate-300 dark:hover:bg-slate-800"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-gray-900 dark:text-slate-100">Tracking Configuration</p>
-                <p className="text-xs text-gray-400 dark:text-slate-500 truncate">{device?.deviceName ?? deviceUuid}</p>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                {!configEditing ? (
-                  <button onClick={() => {
-                    setConfigEditing(true);
-                    setConfigForm({
-                      configurationTimer:        configData?.configurationTimer        ?? undefined,
-                      uploadTimer:               configData?.uploadTimer               ?? undefined,
-                      movingTimer:               configData?.movingTimer               ?? undefined,
-                      stopTimer:                 configData?.stopTimer                 ?? undefined,
-                      heartbeatTimer:            configData?.heartbeatTimer            ?? undefined,
-                      angleThreshold:            configData?.angleThreshold            ?? undefined,
-                      overSpeedingThreshold:     configData?.overSpeedingThreshold     ?? undefined,
-                      distanceThreshold:         configData?.distanceThreshold         ?? undefined,
-                      retryCounter:              configData?.retryCounter              ?? undefined,
-                      setMinUpdateIntervalMillis: configData?.setMinUpdateIntervalMillis ?? undefined,
-                      setMinUpdateDistanceMeters: configData?.setMinUpdateDistanceMeters ?? undefined,
-                      baseURL:                   configData?.baseURL                   ?? '',
-                    });
-                  }}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-colors">
-                    <SlidersHorizontal className="w-3.5 h-3.5" /> Edit Config
-                  </button>
+
+              <div className="relative flex-1 overflow-y-auto min-h-0">
+                {configLoading ? (
+                  <div className="flex min-h-[420px] flex-col items-center justify-center gap-4 px-6 text-center">
+                    <div className="relative flex h-20 w-20 items-center justify-center rounded-full border border-white/30 bg-white/70 shadow-[0_20px_50px_rgba(37,99,235,0.16)] backdrop-blur-xl dark:border-slate-700/60 dark:bg-slate-900/70">
+                      <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(59,130,246,0.18),transparent_60%)]" />
+                      <Loader2 className="relative h-8 w-8 animate-spin text-blue-500" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <p className="text-base font-semibold text-slate-900 dark:text-slate-100">Loading live configuration</p>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">Pulling the latest tracking profile and preparing the control surface.</p>
+                    </div>
+                  </div>
+                ) : configData ? (
+                  <div className="space-y-6 px-5 pb-6 pt-5 md:px-6 md:pb-7">
+                    <section className="relative overflow-hidden rounded-[30px] bg-[linear-gradient(135deg,#0f172a_0%,#1d4ed8_48%,#0891b2_100%)] p-5 text-white shadow-[0_28px_90px_rgba(15,23,42,0.36)] md:p-6">
+                      <div className="pointer-events-none absolute -left-10 top-0 h-44 w-44 rounded-full bg-white/10 blur-3xl" />
+                      <div className="pointer-events-none absolute bottom-0 right-0 h-48 w-48 rounded-full bg-cyan-300/20 blur-3xl" />
+                      <div className="relative space-y-5">
+                        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                          <div className="max-w-3xl">
+                            <div className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-50/90">
+                              Tracking overview
+                            </div>
+                            <h3 className="mt-4 text-2xl font-semibold tracking-tight text-white md:text-3xl">
+                              Current tracking profile
+                            </h3>
+                            <p className="mt-3 max-w-2xl text-sm leading-6 text-sky-50/78">
+                              {configEditing
+                                ? 'You are editing the live values below. The summary updates instantly so the draft stays easy to review.'
+                                : 'This top section shows the key live values at a glance. Open edit mode to change timers, thresholds, GPS rules, and endpoint settings.'}
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap gap-2 xl:max-w-sm xl:justify-end">
+                            <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold text-sky-50/90">
+                              {configEditing ? 'Draft preview' : 'Live values'}
+                            </span>
+                            <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold text-sky-50/90">
+                              {TRACKING_CONFIG_SECTIONS.length} groups
+                            </span>
+                            <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold text-sky-50/90">
+                              {TRACKING_CONFIG_FIELD_COUNT} settings
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                          {configHeroStats.map(({ label, value, unit, detail, Icon, accentClassName }) => (
+                            <div
+                              key={label}
+                              className={`rounded-[24px] border border-white/10 bg-gradient-to-br ${accentClassName} px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-sm`}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/65">{label}</p>
+                                  <p className={`mt-2 font-semibold tracking-tight text-white ${String(value).length > 18 ? 'text-base break-all md:text-lg' : 'text-2xl'}`}>
+                                    {value}
+                                    {unit && <span className="ml-1.5 text-sm font-medium text-white/65">{unit}</span>}
+                                  </p>
+                                  <p className="mt-1 text-xs leading-5 text-white/70">{detail}</p>
+                                </div>
+                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-white/80">
+                                  <Icon className="h-4 w-4" />
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </section>
+
+                    {configEditing ? (
+                      <div className="space-y-5">
+                        <section className="rounded-[28px] border border-slate-200/80 bg-white/80 p-5 shadow-[0_18px_60px_rgba(15,23,42,0.06)] backdrop-blur-sm dark:border-slate-800/80 dark:bg-slate-900/65">
+                          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                            <div className="max-w-2xl">
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">Draft workspace</p>
+                              <h4 className="mt-2 text-lg font-semibold text-slate-950 dark:text-slate-100">Fine-tune the device profile before you push it.</h4>
+                              <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                                Each change is saved to the database and then delivered to the device through MQTT as soon as you hit save.
+                              </p>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {['Database saved', 'MQTT pushed', 'Esc exits draft'].map((item) => (
+                                <span
+                                  key={item}
+                                  className="rounded-full border border-slate-200/80 bg-slate-100/70 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:border-slate-700/70 dark:bg-slate-800/80 dark:text-slate-300"
+                                >
+                                  {item}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </section>
+
+                        {TRACKING_CONFIG_SECTIONS.map((section) => {
+                          const SectionIcon = section.icon;
+                          return (
+                            <section
+                              key={section.id}
+                              className={`relative overflow-hidden rounded-[28px] border p-5 shadow-[0_18px_60px_rgba(15,23,42,0.06)] ${section.surfaceClassName}`}
+                            >
+                              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                                <div className="flex items-start gap-3">
+                                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] ${section.iconClassName}`}>
+                                    <SectionIcon className="h-5 w-5" />
+                                  </div>
+                                  <div>
+                                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">{section.eyebrow}</p>
+                                    <h4 className="mt-1 text-lg font-semibold text-slate-950 dark:text-slate-100">{section.title}</h4>
+                                    <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">{section.description}</p>
+                                  </div>
+                                </div>
+                                <span className={`inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${section.badgeClassName}`}>
+                                  {section.fields.length} controls
+                                </span>
+                              </div>
+
+                              <div className={`mt-5 grid gap-3 ${section.gridClassName}`}>
+                                {section.fields.map((field) => {
+                                  const isTextField = field.inputType === 'text';
+                                  const fieldValue = configForm[field.key];
+
+                                  return (
+                                    <div
+                                      key={field.key}
+                                      className={`rounded-[24px] border border-white/70 bg-white/90 p-4 shadow-[0_14px_35px_rgba(15,23,42,0.05)] backdrop-blur-sm dark:border-white/10 dark:bg-slate-950/75 ${field.cardSpanClassName ?? ''}`}
+                                    >
+                                      <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0">
+                                          <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-600 dark:text-slate-300">{field.label}</label>
+                                          <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">{field.description}</p>
+                                        </div>
+                                        {field.unit && !isTextField && (
+                                          <span className="shrink-0 rounded-full bg-slate-900/5 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:bg-white/5 dark:text-slate-400">
+                                            {field.unit}
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      {isTextField ? (
+                                        <div className="mt-4 space-y-2">
+                                          <input
+                                            type="text"
+                                            placeholder={field.placeholder}
+                                            value={(fieldValue as string | undefined) ?? ''}
+                                            onChange={(event) => setConfigForm((current) => ({ ...current, [field.key]: event.target.value }))}
+                                            className="h-12 w-full rounded-2xl border border-slate-200 bg-white/90 px-4 text-sm font-medium text-slate-900 outline-none transition-all placeholder:text-slate-300 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-500/10 dark:border-slate-700 dark:bg-slate-950/90 dark:text-slate-100 dark:placeholder:text-slate-600"
+                                          />
+                                          <p className="text-xs text-slate-400 dark:text-slate-500">Leave blank to keep the platform default endpoint.</p>
+                                        </div>
+                                      ) : (
+                                        <div className="mt-4 flex items-center gap-3">
+                                          <input
+                                            type="number"
+                                            min={field.min ?? 0}
+                                            step={field.step ?? 1}
+                                            placeholder="Auto"
+                                            value={(fieldValue as number | undefined) ?? ''}
+                                            onChange={(event) => setConfigForm((current) => ({
+                                              ...current,
+                                              [field.key]: event.target.value === '' ? undefined : Number(event.target.value),
+                                            }))}
+                                            className="h-12 w-full rounded-2xl border border-slate-200 bg-white/90 px-4 text-base font-semibold text-slate-900 outline-none transition-all placeholder:text-slate-300 focus:border-sky-400 focus:ring-4 focus:ring-sky-500/10 dark:border-slate-700 dark:bg-slate-950/90 dark:text-slate-100 dark:placeholder:text-slate-600"
+                                          />
+                                          {field.unit && (
+                                            <span className="shrink-0 rounded-2xl border border-slate-200/80 bg-slate-100/80 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:border-slate-700/80 dark:bg-slate-800/70 dark:text-slate-400">
+                                              {field.unit}
+                                            </span>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </section>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="space-y-5">
+                        {TRACKING_CONFIG_SECTIONS.map((section) => {
+                          const SectionIcon = section.icon;
+
+                          return (
+                            <section
+                              key={section.id}
+                              className={`relative overflow-hidden rounded-[28px] border p-5 shadow-[0_18px_60px_rgba(15,23,42,0.06)] ${section.surfaceClassName}`}
+                            >
+                              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                                <div className="flex items-start gap-3">
+                                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] ${section.iconClassName}`}>
+                                    <SectionIcon className="h-5 w-5" />
+                                  </div>
+                                  <div>
+                                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">{section.eyebrow}</p>
+                                    <h4 className="mt-1 text-lg font-semibold text-slate-950 dark:text-slate-100">{section.title}</h4>
+                                    <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">{section.description}</p>
+                                  </div>
+                                </div>
+                                <span className={`inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${section.badgeClassName}`}>
+                                  {section.fields.length} controls
+                                </span>
+                              </div>
+
+                              <div className={`mt-5 grid gap-3 ${section.gridClassName}`}>
+                                {section.fields.map((field) => {
+                                  const value = getTrackingConfigValue(configData, field.key);
+                                  const isEmpty = value === undefined || value === null || value === '';
+                                  const isTextField = field.inputType === 'text';
+
+                                  return (
+                                    <div
+                                      key={field.key}
+                                      className={`group rounded-[24px] border border-white/70 bg-white/90 p-4 shadow-[0_14px_35px_rgba(15,23,42,0.05)] backdrop-blur-sm transition-transform duration-200 hover:-translate-y-1 dark:border-white/10 dark:bg-slate-950/75 ${field.cardSpanClassName ?? ''}`}
+                                    >
+                                      <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0">
+                                          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-600 dark:text-slate-300">{field.label}</p>
+                                          <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">{field.description}</p>
+                                        </div>
+                                        {field.unit && !isTextField && (
+                                          <span className="shrink-0 rounded-full bg-slate-900/5 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:bg-white/5 dark:text-slate-400">
+                                            {field.unit}
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      {isTextField ? (
+                                        <div className="mt-4 rounded-2xl border border-dashed border-slate-200/80 bg-slate-50/80 px-4 py-3 dark:border-slate-700/70 dark:bg-slate-900/60">
+                                          <p className={`text-sm ${isEmpty ? 'italic text-slate-400 dark:text-slate-500' : 'font-mono font-medium text-slate-900 dark:text-slate-100 break-all'}`}>
+                                            {isEmpty ? 'Default endpoint is in use.' : String(value)}
+                                          </p>
+                                        </div>
+                                      ) : (
+                                        <div className="mt-5 flex items-end gap-2">
+                                          <span className={`text-3xl font-semibold tracking-tight ${isEmpty ? 'text-slate-300 dark:text-slate-600' : 'text-slate-950 dark:text-white'}`}>
+                                            {isEmpty ? '—' : value}
+                                          </span>
+                                          {field.unit && <span className="pb-1 text-sm font-medium text-slate-400 dark:text-slate-500">{field.unit}</span>}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </section>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 ) : (
-                  <>
-                    <button onClick={() => setConfigEditing(false)} disabled={configSaving}
-                      className="px-3 py-2 rounded-xl text-xs font-semibold text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">
-                      Cancel
-                    </button>
-                    <button onClick={saveConfig} disabled={configSaving}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-blue-600/15 border border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-600/25 transition-colors disabled:opacity-50">
-                      {configSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />} Send
-                    </button>
-                  </>
+                  <div className="flex min-h-[420px] flex-col items-center justify-center px-6 py-16 text-center">
+                    <div className="flex h-20 w-20 items-center justify-center rounded-[28px] border border-slate-200/80 bg-white/90 shadow-[0_20px_50px_rgba(15,23,42,0.08)] dark:border-slate-800/80 dark:bg-slate-900/80">
+                      <Settings className="h-9 w-9 text-slate-300 dark:text-slate-600" />
+                    </div>
+                    <h3 className="mt-5 text-xl font-semibold text-slate-950 dark:text-slate-100">Configuration unavailable</h3>
+                    <p className="mt-2 max-w-md text-sm leading-6 text-slate-500 dark:text-slate-400">
+                      We could not find a tracking configuration for this device yet. Try again after the backend publishes one for the selected tracker.
+                    </p>
+                  </div>
                 )}
-                <button onClick={() => { setConfigModal(false); setConfigEditing(false); }}
-                  className="p-2 rounded-xl text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
-                  <X className="w-4 h-4" />
-                </button>
+              </div>
+
+              <div className="relative shrink-0 border-t border-slate-200/70 bg-white/85 px-5 py-4 backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-950/80 md:px-6">
+                {configEditing ? (
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <p className="max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
+                      Saving this draft writes the new values to the platform and immediately pushes them to the device.
+                    </p>
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                      <button
+                        onClick={cancelConfigEditing}
+                        disabled={configSaving}
+                        className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-100 px-5 py-3 text-sm font-semibold text-slate-600 transition-all hover:-translate-y-0.5 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                      >
+                        Discard Draft
+                      </button>
+                      <button
+                        onClick={saveConfig}
+                        disabled={configSaving}
+                        className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#0f172a_0%,#2563eb_54%,#22d3ee_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_45px_rgba(37,99,235,0.28)] transition-all hover:-translate-y-0.5 hover:shadow-[0_22px_55px_rgba(37,99,235,0.36)] disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {configSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                        Save &amp; Push to Device
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <p className="max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
+                      Live values are grouped here for quick review. Open edit mode when you want to send a polished update to the device.
+                    </p>
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                      <button
+                        onClick={closeConfigModal}
+                        className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-100 px-5 py-3 text-sm font-semibold text-slate-600 transition-all hover:-translate-y-0.5 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                      >
+                        Close
+                      </button>
+                      <button
+                        onClick={startConfigEditing}
+                        className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#0f172a_0%,#2563eb_54%,#22d3ee_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_45px_rgba(37,99,235,0.28)] transition-all hover:-translate-y-0.5 hover:shadow-[0_22px_55px_rgba(37,99,235,0.36)]"
+                      >
+                        <SlidersHorizontal className="h-4 w-4" />
+                        Edit Configuration
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-
-            {/* Modal body */}
-            <div className="flex-1 overflow-y-auto min-h-0">
-              {configLoading ? (
-                <div className="flex flex-col items-center justify-center py-16 gap-3">
-                  <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-                  <p className="text-sm text-gray-400 dark:text-slate-500">Loading configuration…</p>
-                </div>
-              ) : configData ? (
-                <div className="p-5 space-y-5">
-
-                  {/* ── Current Config Display — all 12 fields ──────────── */}
-                  {!configEditing && <div className="space-y-3">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400 dark:text-slate-500">Current Device Config</p>
-
-                    {/* Timers — 5 fields */}
-                    <div className="rounded-2xl border border-gray-100 dark:border-slate-700/50 bg-gray-50/60 dark:bg-slate-800/30 overflow-hidden">
-                      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-100 dark:border-slate-700/40">
-                        <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-500/10">
-                          <Timer className="w-3.5 h-3.5 text-indigo-500" />
-                        </div>
-                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Timers</span>
-                        <span className="text-[10px] text-gray-400 dark:text-slate-500 ml-auto">5 fields</span>
-                      </div>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-px bg-gray-100 dark:bg-slate-700/30">
-                        {[
-                          { label: 'Configuration Timer',    desc: 'Config fetch interval',     value: configData.configurationTimer, unit: 's'   },
-                          { label: 'Upload Timer',           desc: 'Live data upload interval',  value: configData.uploadTimer,        unit: 's'   },
-                          { label: 'Moving Timer',           desc: 'Trip start detection',       value: configData.movingTimer,        unit: 's'   },
-                          { label: 'Stop Timer',             desc: 'Idle / stop detection',      value: configData.stopTimer,          unit: 's'   },
-                          { label: 'Heartbeat Timer',        desc: 'Keep-alive interval',        value: configData.heartbeatTimer,     unit: 's'   },
-                        ].map(({ label, desc, value, unit }) => (
-                          <div key={label} className="bg-white dark:bg-slate-900/60 px-4 py-3">
-                            <p className="text-[10px] font-semibold text-gray-500 dark:text-slate-400 truncate">{label}</p>
-                            <p className="text-[10px] text-gray-400 dark:text-slate-500 mb-1 truncate">{desc}</p>
-                            <p className="text-sm font-bold text-gray-900 dark:text-slate-100">
-                              {value ?? '—'}<span className="text-xs font-normal text-gray-400 dark:text-slate-500 ml-1">{unit}</span>
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Thresholds — 4 fields */}
-                    <div className="rounded-2xl border border-gray-100 dark:border-slate-700/50 bg-gray-50/60 dark:bg-slate-800/30 overflow-hidden">
-                      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-100 dark:border-slate-700/40">
-                        <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-orange-500/10">
-                          <Gauge className="w-3.5 h-3.5 text-orange-500" />
-                        </div>
-                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Thresholds &amp; Retries</span>
-                        <span className="text-[10px] text-gray-400 dark:text-slate-500 ml-auto">4 fields</span>
-                      </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-gray-100 dark:bg-slate-700/30">
-                        {[
-                          { label: 'Angle Threshold',       desc: 'Direction change trigger',  value: configData.angleThreshold,         unit: '°'    },
-                          { label: 'Over-Speed Threshold',  desc: 'Speed alert limit',         value: configData.overSpeedingThreshold,  unit: 'km/h' },
-                          { label: 'Distance Threshold',    desc: 'Min distance to log point', value: configData.distanceThreshold,      unit: 'm'    },
-                          { label: 'Retry Counter',         desc: 'Upload retry attempts',     value: configData.retryCounter,           unit: ''     },
-                        ].map(({ label, desc, value, unit }) => (
-                          <div key={label} className="bg-white dark:bg-slate-900/60 px-4 py-3">
-                            <p className="text-[10px] font-semibold text-gray-500 dark:text-slate-400 truncate">{label}</p>
-                            <p className="text-[10px] text-gray-400 dark:text-slate-500 mb-1 truncate">{desc}</p>
-                            <p className="text-sm font-bold text-gray-900 dark:text-slate-100">
-                              {value ?? '—'}<span className="text-xs font-normal text-gray-400 dark:text-slate-500 ml-1">{unit}</span>
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* GPS Update + Base URL — 3 fields */}
-                    <div className="rounded-2xl border border-gray-100 dark:border-slate-700/50 bg-gray-50/60 dark:bg-slate-800/30 overflow-hidden">
-                      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-100 dark:border-slate-700/40">
-                        <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-green-500/10">
-                          <SatelliteDish className="w-3.5 h-3.5 text-green-500" />
-                        </div>
-                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">GPS &amp; Connection</span>
-                        <span className="text-[10px] text-gray-400 dark:text-slate-500 ml-auto">3 fields</span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-px bg-gray-100 dark:bg-slate-700/30">
-                        {[
-                          { label: 'Min GPS Update Interval', desc: 'Minimum time between GPS fixes',    value: configData.setMinUpdateIntervalMillis,  unit: 'ms' },
-                          { label: 'Min GPS Update Distance', desc: 'Minimum movement between GPS fixes', value: configData.setMinUpdateDistanceMeters,  unit: 'm'  },
-                        ].map(({ label, desc, value, unit }) => (
-                          <div key={label} className="bg-white dark:bg-slate-900/60 px-4 py-3">
-                            <p className="text-[10px] font-semibold text-gray-500 dark:text-slate-400 truncate">{label}</p>
-                            <p className="text-[10px] text-gray-400 dark:text-slate-500 mb-1 truncate">{desc}</p>
-                            <p className="text-sm font-bold text-gray-900 dark:text-slate-100">
-                              {value ?? '—'}<span className="text-xs font-normal text-gray-400 dark:text-slate-500 ml-1">{unit}</span>
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                      {/* Base URL — always shown */}
-                      <div className="bg-white dark:bg-slate-900/60 border-t border-gray-100 dark:border-slate-700/30 px-4 py-3 flex items-center gap-3">
-                        <Link2 className="w-3.5 h-3.5 shrink-0 text-slate-400 dark:text-slate-500" />
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <p className="text-[10px] font-semibold text-gray-500 dark:text-slate-400">Server Base URL</p>
-                            <p className="text-[10px] text-gray-400 dark:text-slate-500">Override server address sent to device</p>
-                          </div>
-                          <p className="text-xs font-mono text-gray-700 dark:text-slate-300 break-all">{configData.baseURL || <span className="text-gray-300 dark:text-slate-600 italic">not set</span>}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>}
-
-                  {/* ── Edit Config Form — all 12 fields ───────────────── */}
-                  {configEditing && (() => {
-                    const numField = (key: keyof TrackingConfigRequest, label: string, desc: string, unit: string, step = 1) => (
-                      <div key={key} className="bg-white dark:bg-slate-900/60 px-4 py-3">
-                        <label className="text-[10px] font-semibold text-gray-500 dark:text-slate-400 block truncate">{label}</label>
-                        <p className="text-[10px] text-gray-400 dark:text-slate-500 mb-1.5 truncate">{desc}</p>
-                        <div className="flex items-center gap-1.5">
-                          <input type="number" min="0" step={step} placeholder="—"
-                            value={(configForm[key] as number | undefined) ?? ''}
-                            onChange={(e) => setConfigForm((f) => ({ ...f, [key]: e.target.value === '' ? undefined : Number(e.target.value) }))}
-                            className="flex-1 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl px-3 py-1.5 text-sm font-semibold text-gray-800 dark:text-slate-200 focus:outline-none focus:border-blue-500 placeholder-gray-300 dark:placeholder-slate-600" />
-                          {unit && <span className="text-[10px] font-semibold text-gray-400 dark:text-slate-500 shrink-0">{unit}</span>}
-                        </div>
-                      </div>
-                    );
-                    return (
-                      <div className="space-y-3">
-                        <p className="text-[10px] text-gray-400 dark:text-slate-500 text-center">Saved to database and pushed to device via MQTT.</p>
-
-                        {/* Timers — 5 fields */}
-                        <div className="rounded-2xl border border-indigo-100 dark:border-indigo-500/20 bg-indigo-50/30 dark:bg-indigo-500/5 overflow-hidden">
-                          <div className="flex items-center gap-2 px-4 py-2.5 border-b border-indigo-100 dark:border-indigo-500/20">
-                            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-500/10">
-                              <Timer className="w-3.5 h-3.5 text-indigo-500" />
-                            </div>
-                            <span className="text-xs font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wide">Timers</span>
-                          </div>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-px bg-indigo-100/60 dark:bg-indigo-500/10">
-                            {numField('configurationTimer', 'Configuration Timer', 'Config fetch interval', 's')}
-                            {numField('uploadTimer',        'Upload Timer',        'Live data upload interval', 's')}
-                            {numField('movingTimer',        'Moving Timer',        'Trip start detection', 's')}
-                            {numField('stopTimer',          'Stop Timer',          'Idle / stop detection', 's')}
-                            {numField('heartbeatTimer',     'Heartbeat Timer',     'Keep-alive interval', 's')}
-                          </div>
-                        </div>
-
-                        {/* Thresholds & Retries — 4 fields */}
-                        <div className="rounded-2xl border border-orange-100 dark:border-orange-500/20 bg-orange-50/30 dark:bg-orange-500/5 overflow-hidden">
-                          <div className="flex items-center gap-2 px-4 py-2.5 border-b border-orange-100 dark:border-orange-500/20">
-                            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-orange-500/10">
-                              <Gauge className="w-3.5 h-3.5 text-orange-500" />
-                            </div>
-                            <span className="text-xs font-bold text-orange-700 dark:text-orange-300 uppercase tracking-wide">Thresholds &amp; Retries</span>
-                          </div>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-orange-100/60 dark:bg-orange-500/10">
-                            {numField('angleThreshold',       'Angle Threshold',       'Direction change trigger',   '°',    0.5)}
-                            {numField('overSpeedingThreshold','Over-Speed Threshold',  'Speed alert limit',          'km/h'     )}
-                            {numField('distanceThreshold',    'Distance Threshold',    'Min distance to log point',  'm'        )}
-                            {numField('retryCounter',         'Retry Counter',         'Upload retry attempts',      ''         )}
-                          </div>
-                        </div>
-
-                        {/* GPS & Connection — 3 fields */}
-                        <div className="rounded-2xl border border-green-100 dark:border-green-500/20 bg-green-50/30 dark:bg-green-500/5 overflow-hidden">
-                          <div className="flex items-center gap-2 px-4 py-2.5 border-b border-green-100 dark:border-green-500/20">
-                            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-green-500/10">
-                              <SatelliteDish className="w-3.5 h-3.5 text-green-500" />
-                            </div>
-                            <span className="text-xs font-bold text-green-700 dark:text-green-300 uppercase tracking-wide">GPS &amp; Connection</span>
-                          </div>
-                          <div className="grid grid-cols-2 gap-px bg-green-100/60 dark:bg-green-500/10">
-                            {numField('setMinUpdateIntervalMillis', 'Min GPS Update Interval', 'Min time between GPS fixes',     'ms')}
-                            {numField('setMinUpdateDistanceMeters', 'Min GPS Update Distance', 'Min movement between GPS fixes', 'm', 0.5)}
-                          </div>
-                          <div className="bg-white dark:bg-slate-900/60 border-t border-green-100 dark:border-green-500/10 px-4 py-3">
-                            <label className="text-[10px] font-semibold text-gray-500 dark:text-slate-400 block mb-0.5">Server Base URL</label>
-                            <p className="text-[10px] text-gray-400 dark:text-slate-500 mb-1.5">Override server address sent to device</p>
-                            <input type="text" placeholder="https://…"
-                              value={configForm.baseURL ?? ''}
-                              onChange={(e) => setConfigForm((f) => ({ ...f, baseURL: e.target.value }))}
-                              className="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl px-3 py-1.5 text-sm font-mono text-gray-800 dark:text-slate-200 focus:outline-none focus:border-blue-500 placeholder-gray-300 dark:placeholder-slate-600" />
-                          </div>
-                        </div>
-
-                        {/* Save / Cancel */}
-                        <div className="flex gap-3 pt-1">
-                          <button onClick={() => setConfigEditing(false)} disabled={configSaving}
-                            className="flex-1 py-3 rounded-2xl text-sm font-semibold text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">
-                            Cancel
-                          </button>
-                          <button onClick={saveConfig} disabled={configSaving}
-                            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold bg-[linear-gradient(135deg,#1e3a5f_0%,#2563eb_54%,#38bdf8_100%)] text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-shadow disabled:opacity-50">
-                            {configSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                            Save &amp; Push to Device
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-16 gap-3">
-                  <Settings className="w-10 h-10 text-gray-200 dark:text-slate-700" />
-                  <p className="text-sm text-gray-400 dark:text-slate-500">No configuration found</p>
-                </div>
-              )}
-            </div>
-
           </div>
         </div>
       )}
