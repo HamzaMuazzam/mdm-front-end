@@ -122,16 +122,16 @@ function CenterOnLocation({ target }: { target: [number, number] | null }) {
 
 
 // ── FitBounds helper ──────────────────────────────────────────────────────────
-function FitBounds({ positions }: { positions: [number, number][] }) {
+// Only fits when `trigger` changes (incremented by history fetch), NOT on every
+// position change — so live MQTT points never move or zoom the map.
+function FitBounds({ positions, trigger }: { positions: [number, number][]; trigger: number }) {
   const map = useMap();
-  const prev = useRef('');
+  const prevTrigger = useRef(-1);
   useEffect(() => {
-    if (!positions.length) return;
-    const key = `${positions[0]}${positions[positions.length-1]}`;
-    if (key === prev.current) return;
-    prev.current = key;
+    if (!positions.length || trigger === prevTrigger.current) return;
+    prevTrigger.current = trigger;
     map.fitBounds(L.latLngBounds(positions), { padding: [30, 30] });
-  }, [positions, map]);
+  }, [trigger, positions, map]);
   return null;
 }
 
@@ -209,10 +209,12 @@ export function DeviceTrackingPage() {
   const drawRef = useRef(draw);
   drawRef.current = draw;
 
+  // Controls when FitBounds runs — only incremented on history fetch, never on MQTT
+  const [fitBoundsKey, setFitBoundsKey]       = useState(0);
+
   // Live tracking via MQTT
   const [centerTarget, setCenterTarget]       = useState<[number, number] | null>(null);
   const trackingClientRef                     = useRef<MqttClient | null>(null);
-  const liveCenteredRef                       = useRef(false);
 
   // Bulk upload
   const [uploadModal, setUploadModal] = useState(false);
@@ -232,6 +234,7 @@ export function DeviceTrackingPage() {
       const resp = await trackingService.getHistory(deviceUuid, { from: fromDt, to: toDt, page: pg, size: pageSize });
       if (resp.success && resp.data) {
         setPoints(resp.data.content); setTotalPages(resp.data.totalPages); setTotalElements(resp.data.totalElements);
+        setFitBoundsKey((k) => k + 1);
       }
     } catch { /**/ } finally { setLoading(false); setHasLoaded(true); }
   }, [deviceUuid, fromDt, toDt, pageSize]);
@@ -313,7 +316,6 @@ export function DeviceTrackingPage() {
       client.unsubscribe(topic);
       client.end(true);
       trackingClientRef.current = null;
-      liveCenteredRef.current = false;
     };
   }, [deviceUuid]);
 
@@ -478,7 +480,7 @@ export function DeviceTrackingPage() {
         <MapInteractionHandler draw={draw} onMapClick={handleMapClick} onMouseMove={handleMouseMove} />
         <CenterOnLocation target={centerTarget} />
 
-        {polyline.length > 0 && !isDrawingActive && <FitBounds positions={polyline} />}
+        {polyline.length > 0 && !isDrawingActive && <FitBounds positions={polyline} trigger={fitBoundsKey} />}
 
         {/* Route */}
         {polyline.length > 1 && (
