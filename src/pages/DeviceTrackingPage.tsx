@@ -95,13 +95,13 @@ function buildRouteSegments(pts: { latitude: number; longitude: number; speed: n
 function bearingIcon(bearing: number, color: string): L.DivIcon {
   return new L.DivIcon({
     className: '',
-    html: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14"
+    html: `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 14 14"
                 style="transform:rotate(${bearing ?? 0}deg);display:block">
              <polygon points="7,1 11,13 7,10 3,13"
                       fill="${color}" stroke="${color}" stroke-width="1.2"/>
            </svg>`,
-    iconSize: [14, 14],
-    iconAnchor: [7, 7],
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
   });
 }
 
@@ -479,9 +479,11 @@ export function DeviceTrackingPage() {
   // Speed-colored segments (replaces the heavy per-point CircleMarker approach)
   const routeSegments = useMemo(() => buildRouteSegments(points), [points]);
 
-  // Direction arrows — at most ~60 evenly spaced, skip first/last (covered by pins)
+  // Direction arrows — evenly sampled across all loaded points.
+  // Keys are lat/lng-based (not index) so prepending live MQTT points never causes
+  // React to remount/reposition existing arrows.
   const arrowPoints = useMemo(() => {
-    if (points.length < 4) return [];
+    if (points.length < 2) return [];
     const step = Math.max(1, Math.floor(points.length / 60));
     return points.filter((_, i) => i > 0 && i % step === 0 && i < points.length - 1);
   }, [points]);
@@ -921,11 +923,11 @@ export function DeviceTrackingPage() {
         {/* Speed-colored route segments */}
         {routeSegments.map((seg, i) => (
           <Polyline key={`seg-${i}`} positions={seg.pts}
-            pathOptions={{ color: seg.color, weight: 4, opacity: 0.92, lineCap: 'round', lineJoin: 'round' }} />
+            pathOptions={{ color: seg.color, weight: 7, opacity: 0.92, lineCap: 'round', lineJoin: 'round' }} />
         ))}
         {/* Direction arrows (bearing) */}
-        {arrowPoints.map((p, i) => (
-          <Marker key={`arr-${i}`} position={[p.latitude, p.longitude]}
+        {arrowPoints.map((p) => (
+          <Marker key={`arr-${p.latitude.toFixed(5)}-${p.longitude.toFixed(5)}`} position={[p.latitude, p.longitude]}
             icon={bearingIcon(p.bearing ?? 0, speedColor(p.speed ?? 0))}
             zIndexOffset={-100} />
         ))}
