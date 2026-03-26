@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import mqtt, { MqttClient } from 'mqtt';
 import {
@@ -55,6 +55,54 @@ function getPointColor(reason: string): string {
   if (r.includes('moving') || r.includes('drive') || r.includes('motion') || r.includes('start') || r.includes('trip')) return '#22c55e';
   if (r.includes('idle') || r.includes('stop') || r.includes('park') || r.includes('stationary') || r.includes('halt')) return '#ef4444';
   return '#3b82f6';
+}
+
+// ── Speed-colored route helpers ───────────────────────────────────────────────
+/** Maps speed (km/h) → line color, matching Traccar-style gradient */
+function speedColor(kmh: number): string {
+  if (kmh <= 0)   return '#94a3b8'; // stopped    – slate
+  if (kmh < 10)   return '#22c55e'; // very slow  – green
+  if (kmh < 30)   return '#84cc16'; // slow       – lime
+  if (kmh < 60)   return '#eab308'; // moderate   – yellow
+  if (kmh < 90)   return '#f97316'; // fast       – orange
+  if (kmh < 120)  return '#ef4444'; // very fast  – red
+  return '#ff0000';                  // over-speed – purple
+}
+
+interface RouteSeg { pts: [number, number][]; color: string; }
+
+/** Group consecutive same-color points into segments — greatly reduces Leaflet objects */
+function buildRouteSegments(pts: { latitude: number; longitude: number; speed: number }[]): RouteSeg[] {
+  if (pts.length < 2) return [];
+  const segs: RouteSeg[] = [];
+  let seg: RouteSeg = {
+    pts: [[pts[0].latitude, pts[0].longitude]],
+    color: speedColor(pts[0].speed ?? 0),
+  };
+  for (let i = 1; i < pts.length; i++) {
+    const c = speedColor(pts[i].speed ?? 0);
+    seg.pts.push([pts[i].latitude, pts[i].longitude]);
+    if (c !== seg.color) {
+      segs.push(seg);
+      seg = { pts: [[pts[i].latitude, pts[i].longitude]], color: c };
+    }
+  }
+  if (seg.pts.length >= 2) segs.push(seg);
+  return segs;
+}
+
+/** Small direction arrow rotated to bearing */
+function bearingIcon(bearing: number, color: string): L.DivIcon {
+  return new L.DivIcon({
+    className: '',
+    html: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14"
+                style="transform:rotate(${bearing ?? 0}deg);display:block">
+             <polygon points="7,1 11,13 7,10 3,13"
+                      fill="${color}" stroke="${color}" stroke-width="1.2"/>
+           </svg>`,
+    iconSize: [14, 14],
+    iconAnchor: [7, 7],
+  });
 }
 
 function parsePolygonPoints(raw: string | null): [number, number][] {
@@ -298,6 +346,35 @@ function InvalidateMapSize({ layoutKey }: { layoutKey: string }) {
   return null;
 }
 
+// ── Nearest-point hover — single shared popup, no per-point DOM ──────────────
+function PointHoverHandler({
+  points,
+  onHover,
+}: {
+  points: HistoryPoint[];
+  onHover: (p: HistoryPoint | null) => void;
+}) {
+  const map = useMapEvents({
+    mousemove(e) {
+      if (!points.length) return;
+      const THRESH_SQ = 18 * 18;
+      let best: HistoryPoint | null = null;
+      let bestD = Infinity;
+      for (const p of points) {
+        const cp = map.latLngToContainerPoint([p.latitude, p.longitude]);
+        const d = (cp.x - e.containerPoint.x) ** 2 + (cp.y - e.containerPoint.y) ** 2;
+        if (d < THRESH_SQ && d < bestD) { bestD = d; best = p; }
+      }
+      onHover(best);
+    },
+    mouseout() { onHover(null); },
+  });
+  useEffect(() => { return () => { onHover(null); }; }, [onHover]);
+  // suppress unused var warning
+  void map;
+  return null;
+}
+
 // ── Map interaction handler (clicks + mouse-move for drawing) ─────────────────
 function MapInteractionHandler({
   draw, onMapClick, onMouseMove,
@@ -363,6 +440,9 @@ export function DeviceTrackingPage() {
   const [geoEventsPage, setGeoEventsPage]   = useState(0);
   const [geoEventsTotalPages, setGeoEventsTotalPages] = useState(0);
 
+  // Hovered GPS point (for shared popup)
+  const [hoverPoint, setHoverPoint] = useState<HistoryPoint | null>(null);
+
   // Drawing state
   const [draw, setDraw] = useState<DrawState>(BLANK_DRAW);
   const drawRef = useRef(draw);
@@ -395,6 +475,16 @@ export function DeviceTrackingPage() {
   const polyline: [number, number][] = points.map((p) => [p.latitude, p.longitude]);
   const mapCenter: [number, number]  = polyline.length > 0
     ? polyline[Math.floor(polyline.length / 2)] : [33.6844, 73.0479];
+
+  // Speed-colored segments (replaces the heavy per-point CircleMarker approach)
+  const routeSegments = useMemo(() => buildRouteSegments(points), [points]);
+
+  // Direction arrows — at most ~60 evenly spaced, skip first/last (covered by pins)
+  const arrowPoints = useMemo(() => {
+    if (points.length < 4) return [];
+    const step = Math.max(1, Math.floor(points.length / 60));
+    return points.filter((_, i) => i > 0 && i % step === 0 && i < points.length - 1);
+  }, [points]);
   const configPreviewSource = configEditing ? configForm : configData;
   const configHeroStats = configData ? [
     {
@@ -811,27 +901,34 @@ export function DeviceTrackingPage() {
 
         <InvalidateMapSize layoutKey={`${leftMode}-${tableOpen}-${rightOpen}`} />
         <MapInteractionHandler draw={draw} onMapClick={handleMapClick} onMouseMove={handleMouseMove} />
+        {!isDrawingActive && <PointHoverHandler points={points} onHover={setHoverPoint} />}
         <CenterOnLocation target={centerTarget} />
 
         {polyline.length > 0 && !isDrawingActive && <FitBounds positions={polyline} trigger={fitBoundsKey} />}
 
-        {/* Route */}
-        {polyline.length > 1 && (
-          <>
-            <Polyline positions={polyline} color="#0f172a" weight={9} opacity={0.5} />
-            <Polyline positions={polyline} color="#3b82f6" weight={5} opacity={1} />
-          </>
+        {/* Single shared popup — shown when hovering near a GPS point */}
+        {hoverPoint && !isDrawingActive && (
+          <Popup
+            position={[hoverPoint.latitude, hoverPoint.longitude]}
+            autoPan={false}
+            closeButton={false}
+            offset={[0, -4]}
+          >
+            <PointPopup point={hoverPoint} color={speedColor(hoverPoint.speed ?? 0)} />
+          </Popup>
         )}
-        {points.map((p) => {
-          const color = getPointColor(p.reason);
-          return (
-            <CircleMarker key={p.id} center={[p.latitude, p.longitude]} radius={5}
-              pathOptions={{ color: '#0f172a', weight: 1.5, fillColor: color, fillOpacity: 0.95 }}
-              eventHandlers={{ mouseover: (e) => e.target.openPopup(), mouseout: (e) => e.target.closePopup() }}>
-              <Popup minWidth={220} maxWidth={280} autoPan={false}><PointPopup point={p} color={color} /></Popup>
-            </CircleMarker>
-          );
-        })}
+
+        {/* Speed-colored route segments */}
+        {routeSegments.map((seg, i) => (
+          <Polyline key={`seg-${i}`} positions={seg.pts}
+            pathOptions={{ color: seg.color, weight: 4, opacity: 0.92, lineCap: 'round', lineJoin: 'round' }} />
+        ))}
+        {/* Direction arrows (bearing) */}
+        {arrowPoints.map((p, i) => (
+          <Marker key={`arr-${i}`} position={[p.latitude, p.longitude]}
+            icon={bearingIcon(p.bearing ?? 0, speedColor(p.speed ?? 0))}
+            zIndexOffset={-100} />
+        ))}
         {polyline.length > 0 && (
           <Marker position={polyline[0]} icon={startPin}>
             <Popup minWidth={220} maxWidth={280} autoPan={false}><PointPopup point={points[0]} color="#22c55e" label="START" /></Popup>
@@ -948,12 +1045,27 @@ export function DeviceTrackingPage() {
         })()}
       </MapContainer>
 
-      {/* ── Route legend ──────────────────────────────────────────────────── */}
+      {/* ── Speed legend ───────────────────────────────────────────────────── */}
       {points.length > 0 && (
-        <div className="pointer-events-none absolute bottom-4 left-4 z-[1000] flex gap-3 rounded-2xl border border-white/60 bg-white/92 px-3.5 py-2.5 text-xs text-slate-700 shadow-xl shadow-slate-900/10 backdrop-blur-md dark:border-slate-700/60 dark:bg-slate-950/88 dark:text-slate-300">
-          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-green-500 ring-1 ring-white dark:ring-slate-900" />Moving</span>
-          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-red-500   ring-1 ring-white dark:ring-slate-900" />Idle/Stopped</span>
-          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-blue-500  ring-1 ring-white dark:ring-slate-900" />Other</span>
+        <div className="pointer-events-none absolute bottom-4 left-4 z-[1000] rounded-2xl border border-white/60 bg-white/92 px-3.5 py-2.5 shadow-xl shadow-slate-900/10 backdrop-blur-md dark:border-slate-700/60 dark:bg-slate-950/88">
+          <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500 mb-1.5">Speed</p>
+          <div className="flex flex-col gap-1">
+            {([
+              { color: '#94a3b8', label: 'Stopped',     range: '0 km/h'   },
+              { color: '#22c55e', label: 'Very slow',   range: '< 10'     },
+              { color: '#84cc16', label: 'Slow',        range: '10 – 30'  },
+              { color: '#eab308', label: 'Moderate',    range: '30 – 60'  },
+              { color: '#f97316', label: 'Fast',        range: '60 – 90'  },
+              { color: '#ef4444', label: 'Very fast',   range: '90 – 120' },
+              { color: '#ff0000', label: 'Over-speed',  range: '120+'     },
+            ]).map(({ color, label, range }) => (
+              <span key={label} className="flex items-center gap-2 text-[10px] text-slate-600 dark:text-slate-300">
+                <span className="w-5 h-1.5 rounded-full shrink-0" style={{ background: color }} />
+                <span className="font-medium">{label}</span>
+                <span className="text-slate-400 dark:text-slate-500 ml-auto pl-2">{range}</span>
+              </span>
+            ))}
+          </div>
         </div>
       )}
 

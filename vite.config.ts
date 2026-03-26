@@ -25,11 +25,11 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
 
-    origin: 'http://10.10.10.81',
+    origin: 'http://192.168.100.3',
 
     hmr: {
       protocol: 'ws',
-      host: '10.10.10.81',
+      host: '192.168.100.3',
       port: 5173,
     },
     cors: {
@@ -38,7 +38,7 @@ export default defineConfig({
       allowedHeaders: ['*'],
     },
 
-    allowedHosts: ['10.10.10.81']
+    allowedHosts: ['192.168.100.3']
   },
 })
 
