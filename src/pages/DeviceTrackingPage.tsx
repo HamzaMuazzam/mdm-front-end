@@ -6,6 +6,7 @@ import {
   ChevronLeft, ChevronRight, Shield, Sheet, LayoutPanelTop,
   Plus, Pencil, Trash2, X, Check, Upload, Undo2, MousePointer2,
   PanelRightClose, PanelRightOpen, Maximize2, Minimize2, Activity,
+  Settings, Timer, Gauge, SatelliteDish, Link2, SlidersHorizontal,
 } from 'lucide-react';
 import { MQTT_BROKER_URL, WS } from '@/utils/constants';
 import {
@@ -24,6 +25,8 @@ import {
   type GeofenceData,
   type GeofenceRequest,
   type GeofenceEventData,
+  type TrackingConfigResponse,
+  type TrackingConfigRequest,
 } from '@/api/services/tracking.service';
 
 // ── Leaflet icon fix ──────────────────────────────────────────────────────────
@@ -182,7 +185,7 @@ export function DeviceTrackingPage() {
 
   const [rightOpen, setRightOpen]   = useState(true);
   const [tableOpen, setTableOpen]   = useState(true);
-  const [leftMode, setLeftMode]     = useState<'split' | 'map' | 'table'>('split');
+  const [leftMode, setLeftMode]     = useState<'split' | 'map' | 'table'>('map');
 
   // History
   const [fromDt, setFromDt]       = useState(todayStart);
@@ -235,6 +238,20 @@ export function DeviceTrackingPage() {
 
   // Mobile bottom nav
   const [mobileTab, setMobileTab] = useState<'map' | 'history' | 'geofences' | 'events'>('map');
+
+  // Tracking config modal
+  const [configModal, setConfigModal]     = useState(false);
+  const [configLoading, setConfigLoading] = useState(false);
+  const [configSaving, setConfigSaving]   = useState(false);
+  const [configData, setConfigData]       = useState<TrackingConfigResponse | null>(null);
+  const [configEditing, setConfigEditing] = useState(false);
+  const BLANK_CONFIG: TrackingConfigRequest = {
+    configurationTimer: undefined, uploadTimer: undefined, movingTimer: undefined,
+    stopTimer: undefined, heartbeatTimer: undefined, angleThreshold: undefined,
+    overSpeedingThreshold: undefined, distanceThreshold: undefined, retryCounter: undefined,
+    setMinUpdateIntervalMillis: undefined, setMinUpdateDistanceMeters: undefined, baseURL: undefined,
+  };
+  const [configForm, setConfigForm] = useState<TrackingConfigRequest>(BLANK_CONFIG);
 
   const polyline: [number, number][] = points.map((p) => [p.latitude, p.longitude]);
   const mapCenter: [number, number]  = polyline.length > 0
@@ -457,6 +474,30 @@ export function DeviceTrackingPage() {
     } catch (e) {
       setUploadMsg({ ok: false, text: `Parse error: ${(e as Error).message}` });
     } finally { setUploading(false); }
+  }
+
+  // ── Tracking config ───────────────────────────────────────────────────────
+  async function openConfig() {
+    setConfigModal(true);
+    setConfigEditing(false);
+    if (!deviceUuid) return;
+    setConfigLoading(true);
+    try {
+      const resp = await trackingService.getConfig(deviceUuid);
+      if (resp.success && resp.data) setConfigData(resp.data);
+    } catch { /**/ } finally { setConfigLoading(false); }
+  }
+
+  async function saveConfig() {
+    if (!deviceUuid) return;
+    setConfigSaving(true);
+    try {
+      await trackingService.updateConfig(deviceUuid, configForm);
+      setConfigEditing(false);
+      // Refresh displayed values
+      const resp = await trackingService.getConfig(deviceUuid);
+      if (resp.success && resp.data) setConfigData(resp.data);
+    } catch { /**/ } finally { setConfigSaving(false); }
   }
 
   // ── Excel export ──────────────────────────────────────────────────────────
@@ -724,6 +765,11 @@ export function DeviceTrackingPage() {
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">Live route intelligence, geofence tooling, and export-grade location history</p>
           </div>
+          {/* Config button */}
+          <button onClick={openConfig} title="Tracking configuration"
+            className="rounded-2xl border border-white/70 bg-white/80 p-2.5 text-slate-500 shadow-sm transition-colors hover:bg-white hover:text-blue-600 dark:border-slate-700/60 dark:bg-slate-900/70 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-blue-400">
+            <Settings className="w-5 h-5" />
+          </button>
           {/* Panel toggle */}
           <button onClick={() => setRightOpen((v) => !v)}
             title={rightOpen ? 'Close panel' : 'Open panel'}
@@ -1540,6 +1586,269 @@ export function DeviceTrackingPage() {
         </div>
 
       </div>
+
+      {/* ── Tracking config modal ────────────────────────────────────────── */}
+      {configModal && (
+        <div className="fixed inset-0 z-[2000] flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm px-0 md:px-4">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200/80 dark:border-slate-700/60 rounded-t-3xl md:rounded-2xl w-full md:max-w-2xl shadow-2xl flex flex-col max-h-[92vh] md:max-h-[85vh]">
+
+            {/* Modal header */}
+            <div className="shrink-0 flex items-center gap-3 px-5 py-4 border-b border-gray-200 dark:border-slate-700/50">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#1e3a5f_0%,#2563eb_50%,#38bdf8_100%)] shadow-[0_8px_24px_rgba(37,99,235,0.28)]">
+                <Settings className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-gray-900 dark:text-slate-100">Tracking Configuration</p>
+                <p className="text-xs text-gray-400 dark:text-slate-500 truncate">{device?.deviceName ?? deviceUuid}</p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {!configEditing ? (
+                  <button onClick={() => {
+                    setConfigEditing(true);
+                    setConfigForm({
+                      configurationTimer:        configData?.configurationTimer        ?? undefined,
+                      uploadTimer:               configData?.uploadTimer               ?? undefined,
+                      movingTimer:               configData?.movingTimer               ?? undefined,
+                      stopTimer:                 configData?.stopTimer                 ?? undefined,
+                      heartbeatTimer:            configData?.heartbeatTimer            ?? undefined,
+                      angleThreshold:            configData?.angleThreshold            ?? undefined,
+                      overSpeedingThreshold:     configData?.overSpeedingThreshold     ?? undefined,
+                      distanceThreshold:         configData?.distanceThreshold         ?? undefined,
+                      retryCounter:              configData?.retryCounter              ?? undefined,
+                      setMinUpdateIntervalMillis: configData?.setMinUpdateIntervalMillis ?? undefined,
+                      setMinUpdateDistanceMeters: configData?.setMinUpdateDistanceMeters ?? undefined,
+                      baseURL:                   configData?.baseURL                   ?? '',
+                    });
+                  }}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-colors">
+                    <SlidersHorizontal className="w-3.5 h-3.5" /> Edit Config
+                  </button>
+                ) : (
+                  <>
+                    <button onClick={() => setConfigEditing(false)} disabled={configSaving}
+                      className="px-3 py-2 rounded-xl text-xs font-semibold text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">
+                      Cancel
+                    </button>
+                    <button onClick={saveConfig} disabled={configSaving}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-blue-600/15 border border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-600/25 transition-colors disabled:opacity-50">
+                      {configSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />} Send
+                    </button>
+                  </>
+                )}
+                <button onClick={() => { setConfigModal(false); setConfigEditing(false); }}
+                  className="p-2 rounded-xl text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal body */}
+            <div className="flex-1 overflow-y-auto min-h-0">
+              {configLoading ? (
+                <div className="flex flex-col items-center justify-center py-16 gap-3">
+                  <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                  <p className="text-sm text-gray-400 dark:text-slate-500">Loading configuration…</p>
+                </div>
+              ) : configData ? (
+                <div className="p-5 space-y-5">
+
+                  {/* ── Current Config Display — all 12 fields ──────────── */}
+                  {!configEditing && <div className="space-y-3">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400 dark:text-slate-500">Current Device Config</p>
+
+                    {/* Timers — 5 fields */}
+                    <div className="rounded-2xl border border-gray-100 dark:border-slate-700/50 bg-gray-50/60 dark:bg-slate-800/30 overflow-hidden">
+                      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-100 dark:border-slate-700/40">
+                        <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-500/10">
+                          <Timer className="w-3.5 h-3.5 text-indigo-500" />
+                        </div>
+                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Timers</span>
+                        <span className="text-[10px] text-gray-400 dark:text-slate-500 ml-auto">5 fields</span>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-px bg-gray-100 dark:bg-slate-700/30">
+                        {[
+                          { label: 'Configuration Timer',    desc: 'Config fetch interval',     value: configData.configurationTimer, unit: 's'   },
+                          { label: 'Upload Timer',           desc: 'Live data upload interval',  value: configData.uploadTimer,        unit: 's'   },
+                          { label: 'Moving Timer',           desc: 'Trip start detection',       value: configData.movingTimer,        unit: 's'   },
+                          { label: 'Stop Timer',             desc: 'Idle / stop detection',      value: configData.stopTimer,          unit: 's'   },
+                          { label: 'Heartbeat Timer',        desc: 'Keep-alive interval',        value: configData.heartbeatTimer,     unit: 's'   },
+                        ].map(({ label, desc, value, unit }) => (
+                          <div key={label} className="bg-white dark:bg-slate-900/60 px-4 py-3">
+                            <p className="text-[10px] font-semibold text-gray-500 dark:text-slate-400 truncate">{label}</p>
+                            <p className="text-[10px] text-gray-400 dark:text-slate-500 mb-1 truncate">{desc}</p>
+                            <p className="text-sm font-bold text-gray-900 dark:text-slate-100">
+                              {value ?? '—'}<span className="text-xs font-normal text-gray-400 dark:text-slate-500 ml-1">{unit}</span>
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Thresholds — 4 fields */}
+                    <div className="rounded-2xl border border-gray-100 dark:border-slate-700/50 bg-gray-50/60 dark:bg-slate-800/30 overflow-hidden">
+                      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-100 dark:border-slate-700/40">
+                        <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-orange-500/10">
+                          <Gauge className="w-3.5 h-3.5 text-orange-500" />
+                        </div>
+                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Thresholds &amp; Retries</span>
+                        <span className="text-[10px] text-gray-400 dark:text-slate-500 ml-auto">4 fields</span>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-gray-100 dark:bg-slate-700/30">
+                        {[
+                          { label: 'Angle Threshold',       desc: 'Direction change trigger',  value: configData.angleThreshold,         unit: '°'    },
+                          { label: 'Over-Speed Threshold',  desc: 'Speed alert limit',         value: configData.overSpeedingThreshold,  unit: 'km/h' },
+                          { label: 'Distance Threshold',    desc: 'Min distance to log point', value: configData.distanceThreshold,      unit: 'm'    },
+                          { label: 'Retry Counter',         desc: 'Upload retry attempts',     value: configData.retryCounter,           unit: ''     },
+                        ].map(({ label, desc, value, unit }) => (
+                          <div key={label} className="bg-white dark:bg-slate-900/60 px-4 py-3">
+                            <p className="text-[10px] font-semibold text-gray-500 dark:text-slate-400 truncate">{label}</p>
+                            <p className="text-[10px] text-gray-400 dark:text-slate-500 mb-1 truncate">{desc}</p>
+                            <p className="text-sm font-bold text-gray-900 dark:text-slate-100">
+                              {value ?? '—'}<span className="text-xs font-normal text-gray-400 dark:text-slate-500 ml-1">{unit}</span>
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* GPS Update + Base URL — 3 fields */}
+                    <div className="rounded-2xl border border-gray-100 dark:border-slate-700/50 bg-gray-50/60 dark:bg-slate-800/30 overflow-hidden">
+                      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-100 dark:border-slate-700/40">
+                        <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-green-500/10">
+                          <SatelliteDish className="w-3.5 h-3.5 text-green-500" />
+                        </div>
+                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">GPS &amp; Connection</span>
+                        <span className="text-[10px] text-gray-400 dark:text-slate-500 ml-auto">3 fields</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-px bg-gray-100 dark:bg-slate-700/30">
+                        {[
+                          { label: 'Min GPS Update Interval', desc: 'Minimum time between GPS fixes',    value: configData.setMinUpdateIntervalMillis,  unit: 'ms' },
+                          { label: 'Min GPS Update Distance', desc: 'Minimum movement between GPS fixes', value: configData.setMinUpdateDistanceMeters,  unit: 'm'  },
+                        ].map(({ label, desc, value, unit }) => (
+                          <div key={label} className="bg-white dark:bg-slate-900/60 px-4 py-3">
+                            <p className="text-[10px] font-semibold text-gray-500 dark:text-slate-400 truncate">{label}</p>
+                            <p className="text-[10px] text-gray-400 dark:text-slate-500 mb-1 truncate">{desc}</p>
+                            <p className="text-sm font-bold text-gray-900 dark:text-slate-100">
+                              {value ?? '—'}<span className="text-xs font-normal text-gray-400 dark:text-slate-500 ml-1">{unit}</span>
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                      {/* Base URL — always shown */}
+                      <div className="bg-white dark:bg-slate-900/60 border-t border-gray-100 dark:border-slate-700/30 px-4 py-3 flex items-center gap-3">
+                        <Link2 className="w-3.5 h-3.5 shrink-0 text-slate-400 dark:text-slate-500" />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <p className="text-[10px] font-semibold text-gray-500 dark:text-slate-400">Server Base URL</p>
+                            <p className="text-[10px] text-gray-400 dark:text-slate-500">Override server address sent to device</p>
+                          </div>
+                          <p className="text-xs font-mono text-gray-700 dark:text-slate-300 break-all">{configData.baseURL || <span className="text-gray-300 dark:text-slate-600 italic">not set</span>}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>}
+
+                  {/* ── Edit Config Form — all 12 fields ───────────────── */}
+                  {configEditing && (() => {
+                    const numField = (key: keyof TrackingConfigRequest, label: string, desc: string, unit: string, step = 1) => (
+                      <div key={key} className="bg-white dark:bg-slate-900/60 px-4 py-3">
+                        <label className="text-[10px] font-semibold text-gray-500 dark:text-slate-400 block truncate">{label}</label>
+                        <p className="text-[10px] text-gray-400 dark:text-slate-500 mb-1.5 truncate">{desc}</p>
+                        <div className="flex items-center gap-1.5">
+                          <input type="number" min="0" step={step} placeholder="—"
+                            value={(configForm[key] as number | undefined) ?? ''}
+                            onChange={(e) => setConfigForm((f) => ({ ...f, [key]: e.target.value === '' ? undefined : Number(e.target.value) }))}
+                            className="flex-1 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl px-3 py-1.5 text-sm font-semibold text-gray-800 dark:text-slate-200 focus:outline-none focus:border-blue-500 placeholder-gray-300 dark:placeholder-slate-600" />
+                          {unit && <span className="text-[10px] font-semibold text-gray-400 dark:text-slate-500 shrink-0">{unit}</span>}
+                        </div>
+                      </div>
+                    );
+                    return (
+                      <div className="space-y-3">
+                        <p className="text-[10px] text-gray-400 dark:text-slate-500 text-center">Saved to database and pushed to device via MQTT.</p>
+
+                        {/* Timers — 5 fields */}
+                        <div className="rounded-2xl border border-indigo-100 dark:border-indigo-500/20 bg-indigo-50/30 dark:bg-indigo-500/5 overflow-hidden">
+                          <div className="flex items-center gap-2 px-4 py-2.5 border-b border-indigo-100 dark:border-indigo-500/20">
+                            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-500/10">
+                              <Timer className="w-3.5 h-3.5 text-indigo-500" />
+                            </div>
+                            <span className="text-xs font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wide">Timers</span>
+                          </div>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-px bg-indigo-100/60 dark:bg-indigo-500/10">
+                            {numField('configurationTimer', 'Configuration Timer', 'Config fetch interval', 's')}
+                            {numField('uploadTimer',        'Upload Timer',        'Live data upload interval', 's')}
+                            {numField('movingTimer',        'Moving Timer',        'Trip start detection', 's')}
+                            {numField('stopTimer',          'Stop Timer',          'Idle / stop detection', 's')}
+                            {numField('heartbeatTimer',     'Heartbeat Timer',     'Keep-alive interval', 's')}
+                          </div>
+                        </div>
+
+                        {/* Thresholds & Retries — 4 fields */}
+                        <div className="rounded-2xl border border-orange-100 dark:border-orange-500/20 bg-orange-50/30 dark:bg-orange-500/5 overflow-hidden">
+                          <div className="flex items-center gap-2 px-4 py-2.5 border-b border-orange-100 dark:border-orange-500/20">
+                            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-orange-500/10">
+                              <Gauge className="w-3.5 h-3.5 text-orange-500" />
+                            </div>
+                            <span className="text-xs font-bold text-orange-700 dark:text-orange-300 uppercase tracking-wide">Thresholds &amp; Retries</span>
+                          </div>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-orange-100/60 dark:bg-orange-500/10">
+                            {numField('angleThreshold',       'Angle Threshold',       'Direction change trigger',   '°',    0.5)}
+                            {numField('overSpeedingThreshold','Over-Speed Threshold',  'Speed alert limit',          'km/h'     )}
+                            {numField('distanceThreshold',    'Distance Threshold',    'Min distance to log point',  'm'        )}
+                            {numField('retryCounter',         'Retry Counter',         'Upload retry attempts',      ''         )}
+                          </div>
+                        </div>
+
+                        {/* GPS & Connection — 3 fields */}
+                        <div className="rounded-2xl border border-green-100 dark:border-green-500/20 bg-green-50/30 dark:bg-green-500/5 overflow-hidden">
+                          <div className="flex items-center gap-2 px-4 py-2.5 border-b border-green-100 dark:border-green-500/20">
+                            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-green-500/10">
+                              <SatelliteDish className="w-3.5 h-3.5 text-green-500" />
+                            </div>
+                            <span className="text-xs font-bold text-green-700 dark:text-green-300 uppercase tracking-wide">GPS &amp; Connection</span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-px bg-green-100/60 dark:bg-green-500/10">
+                            {numField('setMinUpdateIntervalMillis', 'Min GPS Update Interval', 'Min time between GPS fixes',     'ms')}
+                            {numField('setMinUpdateDistanceMeters', 'Min GPS Update Distance', 'Min movement between GPS fixes', 'm', 0.5)}
+                          </div>
+                          <div className="bg-white dark:bg-slate-900/60 border-t border-green-100 dark:border-green-500/10 px-4 py-3">
+                            <label className="text-[10px] font-semibold text-gray-500 dark:text-slate-400 block mb-0.5">Server Base URL</label>
+                            <p className="text-[10px] text-gray-400 dark:text-slate-500 mb-1.5">Override server address sent to device</p>
+                            <input type="text" placeholder="https://…"
+                              value={configForm.baseURL ?? ''}
+                              onChange={(e) => setConfigForm((f) => ({ ...f, baseURL: e.target.value }))}
+                              className="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl px-3 py-1.5 text-sm font-mono text-gray-800 dark:text-slate-200 focus:outline-none focus:border-blue-500 placeholder-gray-300 dark:placeholder-slate-600" />
+                          </div>
+                        </div>
+
+                        {/* Save / Cancel */}
+                        <div className="flex gap-3 pt-1">
+                          <button onClick={() => setConfigEditing(false)} disabled={configSaving}
+                            className="flex-1 py-3 rounded-2xl text-sm font-semibold text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">
+                            Cancel
+                          </button>
+                          <button onClick={saveConfig} disabled={configSaving}
+                            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold bg-[linear-gradient(135deg,#1e3a5f_0%,#2563eb_54%,#38bdf8_100%)] text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-shadow disabled:opacity-50">
+                            {configSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                            Save &amp; Push to Device
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 gap-3">
+                  <Settings className="w-10 h-10 text-gray-200 dark:text-slate-700" />
+                  <p className="text-sm text-gray-400 dark:text-slate-500">No configuration found</p>
+                </div>
+              )}
+            </div>
+
+          </div>
+        </div>
+      )}
 
       {/* ── Bulk upload modal ─────────────────────────────────────────────── */}
       {uploadModal && (

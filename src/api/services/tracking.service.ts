@@ -99,6 +99,39 @@ export interface GeofenceEventPage {
   number: number;
 }
 
+// ── Tracking config ───────────────────────────────────────────────────────────
+
+export interface TrackingConfigResponse {
+  id: number;
+  configurationTimer: number;
+  uploadTimer: number;
+  retryCounter: number;
+  angleThreshold: number;
+  overSpeedingThreshold: number;
+  distanceThreshold: number;
+  movingTimer: number;
+  stopTimer: number;
+  heartbeatTimer: number;
+  baseURL: string;
+  setMinUpdateIntervalMillis: number;
+  setMinUpdateDistanceMeters: number;
+}
+
+export interface TrackingConfigRequest {
+  configurationTimer?: number;
+  uploadTimer?: number;
+  movingTimer?: number;
+  stopTimer?: number;
+  heartbeatTimer?: number;
+  angleThreshold?: number;
+  overSpeedingThreshold?: number;
+  distanceThreshold?: number;
+  retryCounter?: number;
+  setMinUpdateIntervalMillis?: number;
+  setMinUpdateDistanceMeters?: number;
+  baseURL?: string;
+}
+
 // ── Tracking bulk create ──────────────────────────────────────────────────────
 
 export interface TrackingUploadPoint {
@@ -170,6 +203,20 @@ export const trackingService = {
 
   async deleteGeofence(deviceUuid: string, id: number): Promise<ApiResponse<unknown>> {
     const res = await apiClient.delete<ApiResponse<unknown>>(`/v1/tracking/${deviceUuid}/geofences/${id}`);
+    return res.data;
+  },
+
+  async getConfig(deviceUuid: string): Promise<ApiResponse<TrackingConfigResponse>> {
+    const res = await apiClient.get<ApiResponse<TrackingConfigResponse>>(
+      `/v1/tracking/${deviceUuid}/config`
+    );
+    return res.data;
+  },
+
+  async updateConfig(deviceUuid: string, req: TrackingConfigRequest): Promise<ApiResponse<TrackingConfigResponse>> {
+    const res = await apiClient.put<ApiResponse<TrackingConfigResponse>>(
+      `/v1/tracking/${deviceUuid}/config`, req
+    );
     return res.data;
   },
 
