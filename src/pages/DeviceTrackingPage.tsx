@@ -120,27 +120,6 @@ function CenterOnLocation({ target }: { target: [number, number] | null }) {
   return null;
 }
 
-// ── Pulsing live device location marker ───────────────────────────────────────
-function LiveDeviceMarker({ pos }: { pos: [number, number] }) {
-  const icon = new L.DivIcon({
-    className: '',
-    html: `
-      <div style="position:relative;width:22px;height:22px;">
-        <div style="position:absolute;inset:0;border-radius:50%;background:#22c55e;opacity:0.25;animation:livepulse 2s ease-out infinite;"></div>
-        <div style="position:absolute;inset:4px;border-radius:50%;background:#22c55e;border:2.5px solid #fff;box-shadow:0 0 0 1.5px #22c55e;"></div>
-      </div>
-      <style>@keyframes livepulse{0%{transform:scale(1);opacity:.35}70%{transform:scale(2.8);opacity:0}100%{transform:scale(2.8);opacity:0}}</style>
-    `,
-    iconSize: [22, 22],
-    iconAnchor: [11, 11],
-    popupAnchor: [0, -14],
-  });
-  return (
-    <Marker position={pos} icon={icon}>
-      <Popup><span className="text-xs font-medium">Live Location</span></Popup>
-    </Marker>
-  );
-}
 
 // ── FitBounds helper ──────────────────────────────────────────────────────────
 function FitBounds({ positions }: { positions: [number, number][] }) {
@@ -230,8 +209,7 @@ export function DeviceTrackingPage() {
   const drawRef = useRef(draw);
   drawRef.current = draw;
 
-  // Live device location via MQTT
-  const [liveLocation, setLiveLocation]       = useState<[number, number] | null>(null);
+  // Live tracking via MQTT
   const [centerTarget, setCenterTarget]       = useState<[number, number] | null>(null);
   const trackingClientRef                     = useRef<MqttClient | null>(null);
   const liveCenteredRef                       = useRef(false);
@@ -300,14 +278,32 @@ export function DeviceTrackingPage() {
     client.on('message', (_topic, payload) => {
       try {
         const data = JSON.parse(payload.toString());
-        if (data.latitude != null && data.longitude != null) {
-          const pos: [number, number] = [data.latitude, data.longitude];
-          setLiveLocation(pos);
-          if (!liveCenteredRef.current) {
-            liveCenteredRef.current = true;
-            setCenterTarget([...pos]);
-          }
-        }
+        if (data.latitude == null || data.longitude == null) return;
+
+        // Map MQTT payload (CreateLocationRequest) → HistoryPoint shape
+        const livePoint: HistoryPoint = {
+          id: -(Date.now()),                          // temporary negative id to avoid collisions
+          latitude: data.latitude,
+          longitude: data.longitude,
+          speed: data.speed ?? 0,
+          accuracy: data.accuracy ?? 0,
+          altitude: data.altitude ?? 0,
+          bearing: data.bearing ?? 0,
+          availableSatellite: data.availableSatellite ?? 0,
+          connectedSatellite: data.connectedSatellite ?? 0,
+          deviceRdt: data.deviceRDT ?? '',
+          gpsRdt: data.gpsRDT ?? '',
+          receivedAt: new Date().toISOString(),
+          uploadRetryCount: data.uploadRetryCount ?? 0,
+          provider: data.provider ?? '',
+          versionNo: data.versionNo ?? '',
+          igStatus: data.igStatus ?? 0,
+          reason: data.reason ?? '',
+          localPrimaryId: data.localPrimaryId ?? 0,
+        };
+
+        setPoints((prev) => [livePoint, ...prev]);
+        setHasLoaded(true);
       } catch { /**/ }
     });
 
@@ -483,9 +479,6 @@ export function DeviceTrackingPage() {
         <CenterOnLocation target={centerTarget} />
 
         {polyline.length > 0 && !isDrawingActive && <FitBounds positions={polyline} />}
-
-        {/* Live device location */}
-        {liveLocation && <LiveDeviceMarker pos={liveLocation} />}
 
         {/* Route */}
         {polyline.length > 1 && (
