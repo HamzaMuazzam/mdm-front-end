@@ -29,8 +29,8 @@ export default defineConfig({
 
     hmr: {
       protocol: 'ws',
-      host: '10.10.10.81:8083',
-      clientPort: 443,
+      host: '10.10.10.81',
+      port: 5173,
     },
     cors: {
       origin: '*',
