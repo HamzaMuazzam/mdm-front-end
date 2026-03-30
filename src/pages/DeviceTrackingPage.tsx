@@ -5,7 +5,7 @@ import {
   ArrowLeft, MapPin, RefreshCw, Loader2, Download,
   ChevronLeft, ChevronRight, Shield, Sheet, LayoutPanelTop,
   Plus, Pencil, Trash2, X, Check, Upload, Undo2, MousePointer2,
-  PanelRightClose, PanelRightOpen, Maximize2, Minimize2, Activity,
+  Maximize2, Minimize2, Activity,
   Settings, Timer, Gauge, SatelliteDish, Link2, SlidersHorizontal,
   Play, Pause, SkipBack, AlertTriangle, Route,
 } from 'lucide-react';
@@ -401,6 +401,60 @@ function MapInteractionHandler({
   return null;
 }
 
+// ── Pinned marker (navigate-to from panel items) ─────────────────────────────
+interface PinnedMarkerInfo {
+  lat: number;
+  lng: number;
+  title: string;
+  detail: string;
+  color: string;
+}
+
+function PinnedMarkerLayer({ info }: { info: PinnedMarkerInfo }) {
+  const markerRef = useRef<L.Marker>(null);
+  useEffect(() => {
+    if (markerRef.current) {
+      markerRef.current.openPopup();
+    }
+  }, [info.lat, info.lng, info.title]);
+
+  const icon = new L.DivIcon({
+    className: '',
+    html: `<div style="position:relative;width:36px;height:36px;">
+      <div style="position:absolute;inset:0;border-radius:50%;background:${info.color};opacity:0.25;"></div>
+      <div style="position:absolute;inset:6px;border-radius:50%;background:${info.color};border:2.5px solid white;box-shadow:0 2px 10px rgba(0,0,0,0.35);"></div>
+    </div>`,
+    iconSize: [36, 36],
+    iconAnchor: [18, 18],
+    popupAnchor: [0, -20],
+  });
+
+  return (
+    <Marker ref={markerRef} position={[info.lat, info.lng]} icon={icon} zIndexOffset={3000}>
+      <Popup autoPan closeButton>
+        <div style={{ minWidth: 170, padding: '2px 0' }}>
+          <p style={{ fontWeight: 700, fontSize: 13, marginBottom: 3, color: info.color }}>{info.title}</p>
+          <p style={{ fontSize: 11, color: '#64748b', marginBottom: 4, lineHeight: 1.4 }}>{info.detail}</p>
+          <p style={{ fontSize: 10, fontFamily: 'monospace', color: '#94a3b8' }}>{info.lat.toFixed(6)}, {info.lng.toFixed(6)}</p>
+        </div>
+      </Popup>
+    </Marker>
+  );
+}
+
+/** Compute a representative [lat, lng] for any geofence shape */
+function geofenceCenter(g: { type: string; centerLat: number | null; centerLng: number | null; polygonPoints: string | null }): [number, number] | null {
+  if (g.type === 'CIRCLE' && g.centerLat != null && g.centerLng != null) {
+    return [g.centerLat, g.centerLng];
+  }
+  const pts = parsePolygonPoints(g.polygonPoints);
+  if (pts.length === 0) return null;
+  // centroid for polygon, first point for line
+  const lat = pts.reduce((s, p) => s + p[0], 0) / pts.length;
+  const lng = pts.reduce((s, p) => s + p[1], 0) / pts.length;
+  return [lat, lng];
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 export function DeviceTrackingPage() {
   const { deviceId } = useParams<{ deviceId: string }>();
@@ -409,8 +463,9 @@ export function DeviceTrackingPage() {
   const device      = devices?.find((d) => String(d.id) === deviceId);
   const deviceUuid  = device?.deviceUuid;
 
-  const [rightOpen, setRightOpen]   = useState(true);
+  const [rightOpen]   = useState(false);
   const [tableOpen, setTableOpen]   = useState(true);
+  const [activePanel, setActivePanel] = useState<'history' | 'geofences' | 'events' | 'trips' | 'alerts' | null>(null);
   const [leftMode, setLeftMode]     = useState<'split' | 'map' | 'table'>('map');
 
   // History
@@ -457,6 +512,9 @@ export function DeviceTrackingPage() {
 
   // Live tracking via MQTT
   const [centerTarget, setCenterTarget]       = useState<[number, number] | null>(null);
+
+  // Pinned marker (navigate-to from panel items)
+  const [pinnedMarker, setPinnedMarker] = useState<PinnedMarkerInfo | null>(null);
   const trackingClientRef                     = useRef<MqttClient | null>(null);
 
   // Bulk upload
@@ -1028,7 +1086,7 @@ export function DeviceTrackingPage() {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         />
 
-        <InvalidateMapSize layoutKey={`${leftMode}-${tableOpen}-${rightOpen}`} />
+        <InvalidateMapSize layoutKey={`${leftMode}-${tableOpen}`} />
         <MapInteractionHandler draw={draw} onMapClick={handleMapClick} onMouseMove={handleMouseMove} />
         {!isDrawingActive && <PointHoverHandler points={points} onHover={setHoverPoint} />}
         <CenterOnLocation target={centerTarget} />
@@ -1098,6 +1156,9 @@ export function DeviceTrackingPage() {
             <Popup minWidth={220} maxWidth={280} autoPan={false}><PointPopup point={points[points.length - 1]} color="#ef4444" label="END" /></Popup>
           </Marker>
         )}
+
+        {/* Pinned marker from panel item navigation */}
+        {pinnedMarker && <PinnedMarkerLayer key={`${pinnedMarker.lat},${pinnedMarker.lng},${pinnedMarker.title}`} info={pinnedMarker} />}
 
         {/* Saved geofence overlays */}
         {showGeoOnMap && geofences.filter((g) => g.active).map((g) => {
@@ -1265,12 +1326,79 @@ export function DeviceTrackingPage() {
             className="rounded-2xl border border-white/70 bg-white/80 p-2.5 text-slate-500 shadow-sm transition-colors hover:bg-white hover:text-blue-600 dark:border-slate-700/60 dark:bg-slate-900/70 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-blue-400">
             <Settings className="w-5 h-5" />
           </button>
-          {/* Panel toggle */}
-          <button onClick={() => setRightOpen((v) => !v)}
-            title={rightOpen ? 'Close panel' : 'Open panel'}
-            className="hidden md:flex rounded-2xl border border-white/70 bg-white/80 p-2.5 text-slate-500 shadow-sm transition-colors hover:bg-white hover:text-sky-600 dark:border-slate-700/60 dark:bg-slate-900/70 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-sky-300">
-            {rightOpen ? <PanelRightClose className="w-5 h-5" /> : <PanelRightOpen className="w-5 h-5" />}
+        </div>
+      </div>
+
+      {/* ── Top Options Toolbar ───────────────────────────────────────────── */}
+      <div className="max-md:hidden shrink-0 z-40 border-b border-slate-200/70 bg-white/80 px-5 py-2 backdrop-blur-xl dark:border-slate-700/50 dark:bg-slate-950/72">
+        <div className="flex items-center gap-2">
+          {/* History */}
+          <button onClick={() => setActivePanel(activePanel === 'history' ? null : 'history')}
+            className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-colors border ${activePanel === 'history' ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20' : 'bg-white/80 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-300'}`}>
+            <Sheet className="w-3.5 h-3.5" />
+            History
+            {hasLoaded && totalElements > 0 && (
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${activePanel === 'history' ? 'bg-white/25 text-white' : 'bg-blue-500/15 text-blue-600 dark:text-blue-400'}`}>{totalElements.toLocaleString()}</span>
+            )}
           </button>
+
+          {/* Geofences */}
+          <button onClick={() => setActivePanel(activePanel === 'geofences' ? null : 'geofences')}
+            className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-colors border ${activePanel === 'geofences' ? 'bg-amber-500 text-white border-amber-500 shadow-md shadow-amber-500/20' : 'bg-white/80 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-amber-50 dark:hover:bg-slate-700/50 hover:text-amber-600 dark:hover:text-amber-300'}`}>
+            <Shield className="w-3.5 h-3.5" />
+            Geofences
+            {geoTotal > 0 && (
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${activePanel === 'geofences' ? 'bg-white/25 text-white' : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'}`}>{geoTotal}</span>
+            )}
+          </button>
+
+          {/* Events */}
+          <button onClick={() => setActivePanel(activePanel === 'events' ? null : 'events')}
+            className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-colors border ${activePanel === 'events' ? 'bg-blue-500 text-white border-blue-500 shadow-md shadow-blue-500/20' : 'bg-white/80 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-300'}`}>
+            <Activity className="w-3.5 h-3.5" />
+            Events
+            {geoEventsTotal > 0 && (
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${activePanel === 'events' ? 'bg-white/25 text-white' : 'bg-blue-500/15 text-blue-600 dark:text-blue-400'}`}>{geoEventsTotal}</span>
+            )}
+          </button>
+
+          {/* Trips */}
+          <button onClick={() => setActivePanel(activePanel === 'trips' ? null : 'trips')}
+            className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-colors border ${activePanel === 'trips' ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-500/20' : 'bg-white/80 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-slate-700/50 hover:text-indigo-600 dark:hover:text-indigo-300'}`}>
+            <Route className="w-3.5 h-3.5" />
+            Trips
+            {tripsTotal > 0 && (
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${activePanel === 'trips' ? 'bg-white/25 text-white' : 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400'}`}>{tripsTotal}</span>
+            )}
+          </button>
+
+          {/* Alerts */}
+          <button onClick={() => setActivePanel(activePanel === 'alerts' ? null : 'alerts')}
+            className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-colors border ${activePanel === 'alerts' ? 'bg-orange-500 text-white border-orange-500 shadow-md shadow-orange-500/20' : 'bg-white/80 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-orange-50 dark:hover:bg-slate-700/50 hover:text-orange-600 dark:hover:text-orange-300'}`}>
+            <AlertTriangle className="w-3.5 h-3.5" />
+            Alerts
+            {trackEventsTotal > 0 && (
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${activePanel === 'alerts' ? 'bg-white/25 text-white' : 'bg-orange-500/15 text-orange-600 dark:text-orange-400'}`}>{trackEventsTotal}</span>
+            )}
+          </button>
+
+          <div className="flex-1" />
+
+          {/* View mode switcher - moved from map overlay */}
+          <div className="flex items-center gap-1 rounded-2xl border border-slate-200/70 dark:border-slate-700/60 bg-white/86 dark:bg-slate-950/84 p-1">
+            <button onClick={() => setLeftMode('map')} title="Full map"
+              className={`flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${leftMode === 'map' ? 'bg-[linear-gradient(135deg,#0f172a_0%,#2563eb_54%,#38bdf8_100%)] text-white shadow-lg shadow-blue-500/25' : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800/70'}`}>
+              <Maximize2 className="w-3.5 h-3.5" /><span>Map</span>
+            </button>
+            <button onClick={() => setLeftMode('split')} title="Split view"
+              className={`flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${leftMode === 'split' ? 'bg-[linear-gradient(135deg,#0f172a_0%,#2563eb_54%,#38bdf8_100%)] text-white shadow-lg shadow-blue-500/25' : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800/70'}`}>
+              <LayoutPanelTop className="w-3.5 h-3.5" /><span>Split</span>
+            </button>
+            <button onClick={() => setLeftMode('table')} title="Full table"
+              className={`flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${leftMode === 'table' ? 'bg-[linear-gradient(135deg,#0f172a_0%,#2563eb_54%,#38bdf8_100%)] text-white shadow-lg shadow-blue-500/25' : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800/70'}`}>
+              <Sheet className="w-3.5 h-3.5" /><span>Table</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1284,30 +1412,6 @@ export function DeviceTrackingPage() {
           <div className={`relative flex min-h-0 min-w-0 overflow-hidden transition-all duration-300 ease-out ${mapPaneClass}`}>
             {mapElement}
 
-            {/* ── View-mode switcher overlay ──────────────────────────── */}
-            <div className="hidden md:flex absolute right-4 top-4 z-[1000] items-center gap-1 rounded-2xl border border-white/65 bg-white/86 p-1.5 shadow-xl shadow-slate-900/10 backdrop-blur-md dark:border-slate-700/60 dark:bg-slate-950/84">
-              <button
-                onClick={() => setLeftMode('map')}
-                title="Full map"
-                className={`flex items-center gap-1 rounded-xl px-3 py-2 text-xs font-semibold transition-colors ${leftMode === 'map' ? 'bg-[linear-gradient(135deg,#0f172a_0%,#2563eb_54%,#38bdf8_100%)] text-white shadow-lg shadow-blue-500/25' : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800/70'}`}>
-                <Maximize2 className="w-3.5 h-3.5" />
-                <span>Map</span>
-              </button>
-              <button
-                onClick={() => setLeftMode('split')}
-                title="Split view"
-                className={`flex items-center gap-1 rounded-xl px-3 py-2 text-xs font-semibold transition-colors ${leftMode === 'split' ? 'bg-[linear-gradient(135deg,#0f172a_0%,#2563eb_54%,#38bdf8_100%)] text-white shadow-lg shadow-blue-500/25' : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800/70'}`}>
-                <LayoutPanelTop className="w-3.5 h-3.5" />
-                <span>Split</span>
-              </button>
-              <button
-                onClick={() => setLeftMode('table')}
-                title="Full table"
-                className={`flex items-center gap-1 rounded-xl px-3 py-2 text-xs font-semibold transition-colors ${leftMode === 'table' ? 'bg-[linear-gradient(135deg,#0f172a_0%,#2563eb_54%,#38bdf8_100%)] text-white shadow-lg shadow-blue-500/25' : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800/70'}`}>
-                <Sheet className="w-3.5 h-3.5" />
-                <span>Table</span>
-              </button>
-            </div>
           </div>
 
           {/* Table section */}
@@ -1413,8 +1517,8 @@ export function DeviceTrackingPage() {
           </div>
         </div>
 
-        {/* ── Right collapsible panel ───────────────────────────────────── */}
-        <div className={`max-md:hidden shrink-0 flex flex-col overflow-hidden rounded-[28px] border border-white/70 bg-white/80 shadow-[0_24px_80px_rgba(15,23,42,0.10)] backdrop-blur-sm transition-all duration-300 ease-in-out dark:border-slate-700/60 dark:bg-slate-950/60 ${rightOpen ? 'w-80' : 'w-0 border-transparent bg-transparent shadow-none'}`}>
+        {/* ── Right collapsible panel (legacy shell kept for state compat) ── */}
+        <div className="hidden">
           {rightOpen && (
             <div className="w-80 h-full flex flex-col overflow-hidden">
 
@@ -2165,6 +2269,472 @@ export function DeviceTrackingPage() {
         </div>
 
       </div>
+
+      {/* ── Full-screen panel overlay (desktop top-bar sections) ─────────── */}
+      {activePanel && (
+        <div className="max-md:hidden fixed inset-0 z-[9999] flex" onClick={() => setActivePanel(null)}>
+          {/* Backdrop */}
+          <div className="flex-1 bg-black/30 backdrop-blur-sm" />
+          {/* Panel */}
+          <div
+            className="w-full max-w-2xl flex flex-col bg-white dark:bg-slate-900 shadow-[0_0_80px_rgba(15,23,42,0.25)] border-l border-slate-200/70 dark:border-slate-700/60 animate-in slide-in-from-right-8 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* ── Panel header ─── */}
+            <div className="shrink-0 flex items-center gap-3 px-6 py-4 border-b border-slate-200/70 dark:border-slate-700/50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md">
+              {activePanel === 'history' && <><Sheet className="w-5 h-5 text-blue-500" /><h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex-1">History Filters</h2></>}
+              {activePanel === 'geofences' && <><Shield className="w-5 h-5 text-amber-500" /><h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex-1">Geofences</h2>{geoTotal > 0 && <span className="text-xs bg-amber-500/15 text-amber-600 dark:text-amber-400 px-2.5 py-0.5 rounded-full font-semibold">{geoTotal}</span>}</>}
+              {activePanel === 'events' && <><Activity className="w-5 h-5 text-blue-500" /><h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex-1">Geofence Events</h2>{geoEventsTotal > 0 && <span className="text-xs bg-blue-500/15 text-blue-600 dark:text-blue-400 px-2.5 py-0.5 rounded-full font-semibold">{geoEventsTotal}</span>}</>}
+              {activePanel === 'trips' && <><Route className="w-5 h-5 text-indigo-500" /><h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex-1">Trips</h2>{tripsTotal > 0 && <span className="text-xs bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 px-2.5 py-0.5 rounded-full font-semibold">{tripsTotal}</span>}</>}
+              {activePanel === 'alerts' && <><AlertTriangle className="w-5 h-5 text-orange-500" /><h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex-1">Tracking Alerts</h2>{trackEventsTotal > 0 && <span className="text-xs bg-orange-500/15 text-orange-600 dark:text-orange-400 px-2.5 py-0.5 rounded-full font-semibold">{trackEventsTotal}</span>}</>}
+              <button onClick={() => setActivePanel(null)}
+                className="ml-2 p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* ── History panel ─── */}
+            {activePanel === 'history' && (
+              <div className="flex flex-col flex-1 overflow-hidden min-h-0">
+                <div className="shrink-0 px-6 py-5 space-y-4 border-b border-slate-200/70 dark:border-slate-700/50">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-1.5 uppercase tracking-wide">From</label>
+                      <input type="datetime-local" step="1" value={fromDt} onChange={(e) => setFromDt(e.target.value)}
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-1.5 uppercase tracking-wide">To</label>
+                      <input type="datetime-local" step="1" value={toDt} onChange={(e) => setToDt(e.target.value)}
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500" />
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <button onClick={() => { setPage(0); fetchHistory(0); }} disabled={loading}
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 shadow-sm">
+                      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />} Search History
+                    </button>
+                    <button onClick={exportAllToExcel} disabled={loading || !hasLoaded || totalElements === 0}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-green-600/15 border border-green-500/30 text-green-700 dark:text-green-400 rounded-xl text-sm font-semibold hover:bg-green-600/25 transition-colors disabled:opacity-50">
+                      <Download className="w-4 h-4" /> Excel
+                    </button>
+                    <button onClick={() => { setUploadModal(true); setUploadMsg(null); setUploadJson(''); }}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-sm font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                      <Upload className="w-4 h-4" />
+                    </button>
+                  </div>
+                  {hasLoaded && totalElements > 0 && (
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      <span className="font-semibold text-slate-700 dark:text-slate-200">{totalElements.toLocaleString()}</span> route records · page {page + 1} of {totalPages || 1}
+                    </p>
+                  )}
+                </div>
+                <div className="flex-1 overflow-y-auto min-h-0">
+                  {loading && <div className="flex items-center justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-blue-400" /></div>}
+                  {!loading && hasLoaded && points.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+                      <MapPin className="w-10 h-10 mb-3 opacity-25" />
+                      <p className="text-sm">No location data for selected range</p>
+                    </div>
+                  )}
+                  <div className="divide-y divide-slate-100 dark:divide-slate-700/30">
+                    {points.map((p, i) => (
+                      <div key={p.id} className="flex items-start gap-3 px-6 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer"
+                        onClick={() => {
+                          setCenterTarget([p.latitude, p.longitude]);
+                          setPinnedMarker({ lat: p.latitude, lng: p.longitude, title: p.reason || 'Location Point', detail: `${p.speed != null ? p.speed.toFixed(1) + ' km/h · ' : ''}${p.receivedAt ? new Date(p.receivedAt).toLocaleString() : ''}`, color: getPointColor(p.reason) });
+                          setActivePanel(null);
+                        }}>
+                        <div className="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0" style={{ background: getPointColor(p.reason) }} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{p.reason || 'Location point'}</p>
+                            <span className="text-xs text-slate-400 shrink-0">{p.speed != null ? `${p.speed.toFixed(1)} km/h` : ''}</span>
+                          </div>
+                          <p className="text-xs font-mono text-slate-400 dark:text-slate-500">{p.latitude.toFixed(6)}, {p.longitude.toFixed(6)}</p>
+                          <p className="text-xs text-slate-400 mt-0.5">{p.receivedAt ? new Date(p.receivedAt).toLocaleString() : '-'}</p>
+                        </div>
+                        <span className="text-[10px] text-slate-300 dark:text-slate-600 shrink-0 pt-1">#{page * pageSize + i + 1}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {totalPages > 1 && (
+                  <div className="shrink-0 flex items-center justify-between px-6 py-3 border-t border-slate-200/70 dark:border-slate-700/50">
+                    <button onClick={() => { setPage(page - 1); fetchHistory(page - 1); }} disabled={page === 0 || loading}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-40 transition-colors">
+                      <ChevronLeft className="w-4 h-4" /> Prev
+                    </button>
+                    <span className="text-sm text-slate-500">{page + 1} / {totalPages}</span>
+                    <button onClick={() => { setPage(page + 1); fetchHistory(page + 1); }} disabled={page >= totalPages - 1 || loading}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-40 transition-colors">
+                      Next <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Geofences panel ─── */}
+            {activePanel === 'geofences' && (
+              <div className="flex flex-col flex-1 overflow-hidden min-h-0">
+                {/* Toolbar */}
+                <div className="shrink-0 flex items-center gap-2 px-6 py-3 border-b border-slate-200/70 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-800/40">
+                  <button onClick={() => setShowGeoOnMap((v) => !v)} title={showGeoOnMap ? 'Hide on map' : 'Show on map'}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${showGeoOnMap ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-transparent'}`}>
+                    <Shield className="w-3.5 h-3.5" /> {showGeoOnMap ? 'Visible on map' : 'Hidden from map'}
+                  </button>
+                  <button onClick={() => fetchGeofences(geoPage)} disabled={geoLoading}
+                    className="p-2 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                    {geoLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                  </button>
+                  <div className="flex-1" />
+                  {draw.phase === 'idle' && (
+                    <button onClick={() => setDraw((d) => ({ ...d, phase: 'type-select' }))}
+                      className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-xl text-sm font-semibold hover:bg-amber-600 transition-colors shadow-sm">
+                      <Plus className="w-4 h-4" /> Add Geofence
+                    </button>
+                  )}
+                  {draw.phase !== 'idle' && (
+                    <button onClick={cancelDraw}
+                      className="flex items-center gap-2 px-4 py-2 bg-red-500/15 border border-red-500/30 text-red-600 dark:text-red-400 rounded-xl text-sm font-semibold hover:bg-red-500/25 transition-colors">
+                      <X className="w-4 h-4" /> Cancel Drawing
+                    </button>
+                  )}
+                </div>
+
+                {/* Type selector */}
+                {draw.phase === 'type-select' && (
+                  <div className="shrink-0 px-6 py-5 border-b border-slate-200/70 dark:border-slate-700/50 space-y-3">
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Select a shape to draw on the map</p>
+                    <div className="grid grid-cols-3 gap-3">
+                      <button onClick={() => startDraw('CIRCLE')}
+                        className="flex flex-col items-center gap-2 py-5 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-amber-500 hover:bg-amber-500/20 active:scale-95 transition-all">
+                        <div className="w-9 h-9 rounded-full border-2 border-amber-500" />
+                        <span className="text-sm font-semibold">Circle</span>
+                      </button>
+                      <button onClick={() => startDraw('POLYGON')}
+                        className="flex flex-col items-center gap-2 py-5 bg-purple-500/10 border border-purple-500/30 rounded-2xl text-purple-500 hover:bg-purple-500/20 active:scale-95 transition-all">
+                        <svg width="36" height="36" viewBox="0 0 32 32"><polygon points="16,2 30,22 24,30 8,30 2,22" fill="none" stroke="#a855f7" strokeWidth="2.5"/></svg>
+                        <span className="text-sm font-semibold">Polygon</span>
+                      </button>
+                      <button onClick={() => startDraw('LINE')}
+                        className="flex flex-col items-center gap-2 py-5 bg-cyan-500/10 border border-cyan-500/30 rounded-2xl text-cyan-500 hover:bg-cyan-500/20 active:scale-95 transition-all">
+                        <svg width="36" height="36" viewBox="0 0 32 32"><path d="M4 26 L14 10 L24 18 L30 6" fill="none" stroke="#06b6d4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M4 26 L14 10 L24 18 L30 6" fill="none" stroke="#06b6d4" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" opacity="0.18"/></svg>
+                        <span className="text-sm font-semibold">Line</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Drawing active */}
+                {(draw.phase === 'circle-center' || draw.phase === 'circle-radius' || draw.phase === 'polygon' || draw.phase === 'line') && (
+                  <div className="shrink-0 px-6 py-4 border-b border-slate-200/70 dark:border-slate-700/50 space-y-3">
+                    <div className="flex items-center gap-3 px-4 py-3 rounded-xl border"
+                      style={{ borderColor: `${GEO_COLOR[draw.type]}40`, background: `${GEO_COLOR[draw.type]}10` }}>
+                      <MousePointer2 className="w-5 h-5 shrink-0" style={{ color: GEO_COLOR[draw.type] }} />
+                      <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        {draw.phase === 'circle-center' && 'Click on the map to place the center point'}
+                        {draw.phase === 'circle-radius' && `Click to set radius${liveRadius ? ` · ${liveRadius.toLocaleString()}m` : ''}`}
+                        {draw.phase === 'polygon' && `${draw.polygonPts.length} point${draw.polygonPts.length !== 1 ? 's' : ''} placed${draw.polygonPts.length >= 3 ? ' · Ready to finish' : ' · Need 3+ points'}`}
+                        {draw.phase === 'line' && `${draw.polygonPts.length} waypoint${draw.polygonPts.length !== 1 ? 's' : ''} placed${draw.polygonPts.length >= 2 ? ' · Ready to finish' : ' · Need 2+ points'}`}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      {(draw.phase === 'polygon' || draw.phase === 'line') && (
+                        <button onClick={undoLastPolygonPt} disabled={draw.polygonPts.length === 0}
+                          className="flex items-center gap-1.5 px-4 py-2 text-sm text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-600 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 transition-colors">
+                          <Undo2 className="w-4 h-4" /> Undo
+                        </button>
+                      )}
+                      {draw.phase === 'polygon' && (
+                        <button onClick={finishPolygon} disabled={draw.polygonPts.length < 3}
+                          className="flex-1 flex items-center justify-center gap-2 py-2 text-sm font-semibold border rounded-xl transition-colors disabled:opacity-40 bg-purple-500/15 border-purple-500/30 text-purple-600 dark:text-purple-400 hover:bg-purple-500/25">
+                          <Check className="w-4 h-4" /> Finish Polygon
+                        </button>
+                      )}
+                      {draw.phase === 'line' && (
+                        <button onClick={finishLine} disabled={draw.polygonPts.length < 2}
+                          className="flex-1 flex items-center justify-center gap-2 py-2 text-sm font-semibold border rounded-xl transition-colors disabled:opacity-40 bg-cyan-500/15 border-cyan-500/30 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/25">
+                          <Check className="w-4 h-4" /> Finish Line
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Confirm phase */}
+                {draw.phase === 'confirm' && (
+                  <div className="shrink-0 px-6 py-5 border-b border-slate-200/70 dark:border-slate-700/50 space-y-4">
+                    <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/50">
+                      <div className="w-3 h-3 rounded-full shrink-0" style={{ background: GEO_COLOR[draw.type] }} />
+                      <p className="flex-1 text-sm text-slate-600 dark:text-slate-300 truncate">
+                        {draw.type === 'CIRCLE' ? `Circle · r=${draw.circleRadius}m` : draw.type === 'LINE' ? `Line · ${draw.polygonPts.length} waypoints` : `Polygon · ${draw.polygonPts.length} points`}
+                      </p>
+                      <button onClick={() => setDraw((d) => ({ ...d, phase: d.type === 'CIRCLE' ? 'circle-center' : d.type === 'POLYGON' ? 'polygon' : 'line', circleCenter: null, circleRadius: null, polygonPts: [], mousePos: null }))}
+                        className="text-sm text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 flex items-center gap-1 transition-colors">
+                        <Undo2 className="w-3.5 h-3.5" /> Redraw
+                      </button>
+                    </div>
+                    <input autoFocus value={draw.name} onChange={(e) => setDraw((d) => ({ ...d, name: e.target.value }))}
+                      onKeyDown={(e) => { if (e.key === 'Enter' && draw.name.trim()) saveGeofence(); if (e.key === 'Escape') cancelDraw(); }}
+                      placeholder="Geofence name…"
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500 placeholder-slate-400" />
+                    {(draw.type === 'LINE' || draw.type === 'CIRCLE') && (
+                      <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-800/60 rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-700/50">
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Buffer Zone</p>
+                          <p className="text-xs text-slate-400">{draw.type === 'LINE' ? 'Corridor width on each side' : 'Extra zone outside radius'}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input type="number" min="0" step="10" value={draw.bufferMeters || ''} onChange={(e) => setDraw((d) => ({ ...d, bufferMeters: Number(e.target.value) || 0 }))} placeholder="0"
+                            className="w-20 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-1.5 text-sm text-right focus:outline-none focus:border-blue-500" />
+                          <span className="text-sm text-slate-500">m</span>
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex gap-3">
+                      <button onClick={cancelDraw}
+                        className="px-5 py-2.5 rounded-xl text-sm text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                        Cancel
+                      </button>
+                      <button onClick={saveGeofence} disabled={geoSaving || !draw.name.trim()}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border transition-colors disabled:opacity-50 ${draw.type === 'CIRCLE' ? 'bg-amber-500/15 border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25' : draw.type === 'POLYGON' ? 'bg-purple-500/15 border-purple-500/30 text-purple-600 dark:text-purple-400 hover:bg-purple-500/25' : 'bg-cyan-500/15 border-cyan-500/30 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/25'}`}>
+                        {geoSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                        {draw.editId != null ? 'Update Geofence' : 'Save Geofence'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Geofence list */}
+                <div className="flex-1 overflow-y-auto min-h-0">
+                  {geoLoading && <div className="flex items-center justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-amber-500" /></div>}
+                  {!geoLoading && geofences.length === 0 && draw.phase === 'idle' && (
+                    <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+                      <Shield className="w-10 h-10 mb-3 opacity-20" />
+                      <p className="text-sm">No geofences yet</p>
+                      <p className="text-xs mt-1 text-center">Click "Add Geofence" to draw one on the map</p>
+                    </div>
+                  )}
+                  <div className="divide-y divide-slate-100 dark:divide-slate-700/30">
+                    {geofences.map((g) => (
+                      <div key={g.id} className="flex items-center gap-3 px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer"
+                        onClick={() => {
+                          const center = geofenceCenter(g);
+                          if (center) {
+                            setCenterTarget(center);
+                            setPinnedMarker({ lat: center[0], lng: center[1], title: g.name, detail: `${g.type}${g.radiusMeters ? ` · ${g.radiusMeters}m radius` : ''}${g.bufferMeters ? ` · buffer ${g.bufferMeters}m` : ''}`, color: GEO_COLOR[g.type] });
+                            setActivePanel(null);
+                          }
+                        }}>
+                        <div className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center" style={{ background: `${GEO_COLOR[g.type]}20`, border: `2px solid ${GEO_COLOR[g.type]}60` }}>
+                          <div className="w-3.5 h-3.5 rounded-full" style={{ background: GEO_COLOR[g.type] }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{g.name}</p>
+                          <p className="text-xs text-slate-400 dark:text-slate-500">
+                            {g.type}{g.type === 'CIRCLE' && g.radiusMeters ? ` · ${g.radiusMeters}m radius` : ''}
+                            {g.bufferMeters ? ` · buffer ${g.bufferMeters}m` : ''}
+                          </p>
+                        </div>
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-semibold shrink-0 ${g.active ? 'bg-green-500/15 text-green-600 dark:text-green-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-500'}`}>
+                          {g.active ? 'Active' : 'Inactive'}
+                        </span>
+                        <button onClick={(e) => { e.stopPropagation(); startDraw(g.type, g); }}
+                          className="p-2.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-slate-700/50 rounded-xl transition-colors">
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); deleteGeofence(g.id); }} disabled={geoDeleting === g.id}
+                          className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-slate-700/50 rounded-xl transition-colors disabled:opacity-40">
+                          {geoDeleting === g.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {geoTotalPages > 1 && (
+                  <div className="shrink-0 flex items-center justify-between px-6 py-3 border-t border-slate-200/70 dark:border-slate-700/50">
+                    <button onClick={() => fetchGeofences(geoPage - 1)} disabled={geoPage === 0 || geoLoading}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 disabled:opacity-40 transition-colors">
+                      <ChevronLeft className="w-4 h-4" /> Prev
+                    </button>
+                    <span className="text-sm text-slate-500">{geoPage + 1} / {geoTotalPages}</span>
+                    <button onClick={() => fetchGeofences(geoPage + 1)} disabled={geoPage >= geoTotalPages - 1 || geoLoading}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 disabled:opacity-40 transition-colors">
+                      Next <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Events panel ─── */}
+            {activePanel === 'events' && (
+              <div className="flex flex-col flex-1 overflow-hidden min-h-0">
+                <div className="shrink-0 flex items-center justify-between px-6 py-3 border-b border-slate-200/70 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-800/40">
+                  <p className="text-sm text-slate-500 dark:text-slate-400">ENTER / EXIT boundary events</p>
+                  <button onClick={() => fetchGeoEvents(0)} disabled={geoEventsLoading}
+                    className="p-2 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                    {geoEventsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto min-h-0">
+                  {geoEventsLoading && <div className="flex items-center justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-blue-500" /></div>}
+                  {!geoEventsLoading && geoEvents.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+                      <Activity className="w-10 h-10 mb-3 opacity-20" />
+                      <p className="text-sm">No events yet</p>
+                      <p className="text-xs mt-1">ENTER / EXIT events appear here as they occur</p>
+                    </div>
+                  )}
+                  <div className="divide-y divide-slate-100 dark:divide-slate-700/30">
+                    {geoEvents.map((ev) => (
+                      <div key={ev.id} className="flex items-start gap-4 px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer"
+                        onClick={() => {
+                          setCenterTarget([ev.latitude, ev.longitude]);
+                          setPinnedMarker({ lat: ev.latitude, lng: ev.longitude, title: `${ev.eventType}: ${ev.geofenceName}`, detail: new Date(ev.eventTime).toLocaleString(), color: ev.eventType === 'ENTER' ? '#22c55e' : '#ef4444' });
+                          setActivePanel(null);
+                        }}>
+                        <span className={`mt-0.5 shrink-0 text-xs font-bold px-2.5 py-1 rounded-lg ${ev.eventType === 'ENTER' ? 'bg-green-500/15 text-green-600 dark:text-green-400' : 'bg-red-500/15 text-red-600 dark:text-red-400'}`}>
+                          {ev.eventType}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{ev.geofenceName}</p>
+                          <p className="text-xs font-mono text-slate-400 dark:text-slate-500 mt-0.5">{ev.latitude.toFixed(6)}, {ev.longitude.toFixed(6)}</p>
+                          <p className="text-xs text-slate-400 mt-1">{new Date(ev.eventTime).toLocaleString()}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {geoEventsTotalPages > 1 && (
+                  <div className="shrink-0 flex items-center justify-between px-6 py-3 border-t border-slate-200/70 dark:border-slate-700/50">
+                    <button onClick={() => fetchGeoEvents(geoEventsPage - 1)} disabled={geoEventsPage === 0 || geoEventsLoading}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 disabled:opacity-40 transition-colors">
+                      <ChevronLeft className="w-4 h-4" /> Prev
+                    </button>
+                    <span className="text-sm text-slate-500">{geoEventsPage + 1} / {geoEventsTotalPages}</span>
+                    <button onClick={() => fetchGeoEvents(geoEventsPage + 1)} disabled={geoEventsPage >= geoEventsTotalPages - 1 || geoEventsLoading}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 disabled:opacity-40 transition-colors">
+                      Next <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Trips panel ─── */}
+            {activePanel === 'trips' && (
+              <div className="flex flex-col flex-1 overflow-hidden min-h-0">
+                <div className="shrink-0 flex items-center justify-between px-6 py-3 border-b border-slate-200/70 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-800/40">
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Detected journeys in the selected range</p>
+                  <button onClick={() => fetchTrips(0)} disabled={tripsLoading}
+                    className="p-2 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                    {tripsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto min-h-0">
+                  {tripsLoading && <div className="flex items-center justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-indigo-500" /></div>}
+                  {!tripsLoading && trips.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+                      <Route className="w-10 h-10 mb-3 opacity-20" />
+                      <p className="text-sm">No trips found</p>
+                      <p className="text-xs mt-1">Search history first to populate trips</p>
+                    </div>
+                  )}
+                  <div className="divide-y divide-slate-100 dark:divide-slate-700/30">
+                    {trips.map((trip) => (
+                      <div key={trip.id}
+                        className={`flex items-center gap-4 px-6 py-4 cursor-pointer transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-900/20 ${selectedTrip?.id === trip.id ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''}`}
+                        onClick={() => {
+                          setSelectedTrip(selectedTrip?.id === trip.id ? null : trip);
+                          if (trip.startLat && trip.startLng) {
+                            setCenterTarget([trip.startLat, trip.startLng]);
+                            setPinnedMarker({ lat: trip.startLat, lng: trip.startLng, title: `Trip — ${new Date(trip.startTime).toLocaleTimeString()} → ${trip.endTime ? new Date(trip.endTime).toLocaleTimeString() : '…'}`, detail: `${trip.totalDistanceMeters >= 1000 ? (trip.totalDistanceMeters / 1000).toFixed(2) + ' km' : Math.round(trip.totalDistanceMeters) + ' m'} · avg ${trip.avgSpeedKmh.toFixed(1)} km/h · max ${trip.maxSpeedKmh.toFixed(0)} km/h`, color: '#6366f1' });
+                          }
+                          setActivePanel(null);
+                        }}>
+                        <div className={`w-3 h-3 rounded-full shrink-0 ${trip.status === 'ACTIVE' ? 'bg-green-400 animate-pulse' : 'bg-slate-300 dark:bg-slate-600'}`} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                            {new Date(trip.startTime).toLocaleTimeString()} → {trip.endTime ? new Date(trip.endTime).toLocaleTimeString() : '…'}
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            {trip.totalDistanceMeters >= 1000 ? `${(trip.totalDistanceMeters / 1000).toFixed(2)} km` : `${Math.round(trip.totalDistanceMeters)} m`}
+                            {' '}· avg {trip.avgSpeedKmh.toFixed(1)} km/h · max {trip.maxSpeedKmh.toFixed(0)} km/h
+                          </p>
+                          <p className="text-xs text-slate-400 mt-0.5">{new Date(trip.startTime).toLocaleDateString()}</p>
+                        </div>
+                        <span className={`text-xs font-bold px-2.5 py-1 rounded-lg shrink-0 ${trip.status === 'ACTIVE' ? 'bg-green-500/15 text-green-600 dark:text-green-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'}`}>
+                          {trip.status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Alerts panel ─── */}
+            {activePanel === 'alerts' && (
+              <div className="flex flex-col flex-1 overflow-hidden min-h-0">
+                <div className="shrink-0 flex items-center justify-between px-6 py-3 border-b border-slate-200/70 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-800/40">
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Speed, braking, and safety events</p>
+                  <button onClick={fetchTrackEvents} disabled={trackEventsLoading}
+                    className="p-2 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                    {trackEventsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto min-h-0">
+                  {trackEventsLoading && <div className="flex items-center justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-orange-500" /></div>}
+                  {!trackEventsLoading && trackEvents.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+                      <AlertTriangle className="w-10 h-10 mb-3 opacity-20" />
+                      <p className="text-sm">No alerts detected</p>
+                      <p className="text-xs mt-1">Overspeeding, braking, and other events appear here</p>
+                    </div>
+                  )}
+                  <div className="divide-y divide-slate-100 dark:divide-slate-700/30">
+                    {trackEvents.map((ev) => {
+                      const colorMap: Record<string, string> = {
+                        OVERSPEEDING: 'bg-red-500/15 text-red-600 dark:text-red-400',
+                        HARSH_BRAKING: 'bg-orange-500/15 text-orange-600 dark:text-orange-400',
+                        SHARP_TURN: 'bg-yellow-500/15 text-yellow-600 dark:text-yellow-400',
+                        DEVICE_OFFLINE: 'bg-slate-500/15 text-slate-600 dark:text-slate-400',
+                        BATTERY_LOW: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
+                        GPS_LOST: 'bg-purple-500/15 text-purple-600 dark:text-purple-400',
+                        SOS: 'bg-rose-500/15 text-rose-600 dark:text-rose-400',
+                      };
+                      const pinColorMap: Record<string, string> = {
+                        OVERSPEEDING: '#ef4444', HARSH_BRAKING: '#f97316', SHARP_TURN: '#eab308',
+                        DEVICE_OFFLINE: '#64748b', BATTERY_LOW: '#f59e0b', GPS_LOST: '#a855f7', SOS: '#f43f5e',
+                      };
+                      return (
+                        <div key={ev.id} className="flex items-start gap-4 px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer"
+                          onClick={() => {
+                            setCenterTarget([ev.latitude, ev.longitude]);
+                            setPinnedMarker({ lat: ev.latitude, lng: ev.longitude, title: ev.eventType.replace(/_/g, ' '), detail: `${ev.speed != null ? ev.speed.toFixed(1) + ' km/h · ' : ''}${new Date(ev.eventTime).toLocaleString()}`, color: pinColorMap[ev.eventType] ?? '#f97316' });
+                            setActivePanel(null);
+                          }}>
+                          <span className={`mt-0.5 shrink-0 text-xs font-bold px-2.5 py-1 rounded-lg whitespace-nowrap ${colorMap[ev.eventType] ?? 'bg-slate-100 text-slate-600'}`}>
+                            {ev.eventType.replace(/_/g, ' ')}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            {ev.speed != null && <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{ev.speed.toFixed(1)} km/h</p>}
+                            <p className="text-xs font-mono text-slate-400 dark:text-slate-500">{ev.latitude.toFixed(6)}, {ev.longitude.toFixed(6)}</p>
+                            <p className="text-xs text-slate-400 mt-1">{new Date(ev.eventTime).toLocaleString()}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ── Tracking config modal ────────────────────────────────────────── */}
       {configModal && (

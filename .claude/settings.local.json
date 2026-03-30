@@ -26,7 +26,8 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" -H \"Host: logicaldevs.com\" http://localhost:5173/src/api/services/mqtt.service.ts)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8083/src/services/mqttClient.ts)",
       "Bash(xargs ls:*)",
-      "Bash(npm list:*)"
+      "Bash(npm list:*)",
+      "Bash(find /Users/Apple/Documents/MDM/mdm-front-end/src -type d -name *track* -o -name *device*)"
     ]
   }
 }
