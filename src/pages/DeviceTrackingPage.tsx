@@ -7,6 +7,7 @@ import {
   Plus, Pencil, Trash2, X, Check, Upload, Undo2, MousePointer2,
   PanelRightClose, PanelRightOpen, Maximize2, Minimize2, Activity,
   Settings, Timer, Gauge, SatelliteDish, Link2, SlidersHorizontal,
+  Play, Pause, SkipBack, AlertTriangle, Route,
 } from 'lucide-react';
 import { MQTT_BROKER_URL, WS } from '@/utils/constants';
 import {
@@ -27,6 +28,9 @@ import {
   type GeofenceEventData,
   type TrackingConfigResponse,
   type TrackingConfigRequest,
+  type Trip,
+  type TrackingEventData,
+  type AnalyticsData,
 } from '@/api/services/tracking.service';
 
 // ── Leaflet icon fix ──────────────────────────────────────────────────────────
@@ -472,6 +476,30 @@ export function DeviceTrackingPage() {
   const [configEditing, setConfigEditing] = useState(false);
   const [configForm, setConfigForm] = useState<TrackingConfigRequest>({ ...BLANK_CONFIG });
 
+  // ── Route Playback (Module 3) ──────────────────────────────────────────────
+  const [playbackActive, setPlaybackActive] = useState(false);
+  const [playbackIdx, setPlaybackIdx]       = useState(0);
+  const [playbackSpeed, setPlaybackSpeed]   = useState(1); // 1x, 2x, 5x
+  const playbackRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const playbackPoint = playbackActive && points.length > 0 ? points[playbackIdx] : null;
+
+  // ── Trips (Module 1) ──────────────────────────────────────────────────────
+  const [trips, setTrips]               = useState<Trip[]>([]);
+  const [tripsLoading, setTripsLoading] = useState(false);
+  const [tripsTotal, setTripsTotal]     = useState(0);
+  const [_tripsPage, setTripsPage]      = useState(0);
+  const [_tripsTotalPages, setTripsTotalPages] = useState(0);
+  const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
+
+  // ── Tracking Events (Module 2) ────────────────────────────────────────────
+  const [trackEvents, setTrackEvents]           = useState<TrackingEventData[]>([]);
+  const [trackEventsLoading, setTrackEventsLoading] = useState(false);
+  const [trackEventsTotal, setTrackEventsTotal] = useState(0);
+
+  // ── Analytics (Module 9) ──────────────────────────────────────────────────
+  const [_analytics, setAnalytics]             = useState<AnalyticsData | null>(null);
+  const [_analyticsLoading, setAnalyticsLoading] = useState(false);
+
   const polyline: [number, number][] = points.map((p) => [p.latitude, p.longitude]);
   const mapCenter: [number, number]  = polyline.length > 0
     ? polyline[Math.floor(polyline.length / 2)] : [33.6844, 73.0479];
@@ -535,6 +563,66 @@ export function DeviceTrackingPage() {
       }
     } catch { /**/ } finally { setLoading(false); setHasLoaded(true); }
   }, [deviceUuid, fromDt, toDt, pageSize]);
+
+  // ── Playback interval ─────────────────────────────────────────────────────
+  useEffect(() => {
+    if (playbackActive && points.length > 0) {
+      const intervalMs = Math.max(50, 300 / playbackSpeed);
+      playbackRef.current = setInterval(() => {
+        setPlaybackIdx((prev) => {
+          const next = prev + 1;
+          if (next >= points.length) {
+            setPlaybackActive(false);
+            return prev;
+          }
+          return next;
+        });
+      }, intervalMs);
+    } else {
+      if (playbackRef.current) clearInterval(playbackRef.current);
+    }
+    return () => { if (playbackRef.current) clearInterval(playbackRef.current); };
+  }, [playbackActive, playbackSpeed, points.length]);
+
+  // ── Fetch trips ───────────────────────────────────────────────────────────
+  const fetchTrips = useCallback(async (pg: number) => {
+    if (!deviceUuid) return;
+    setTripsLoading(true);
+    try {
+      const resp = await trackingService.getTrips(deviceUuid, { from: fromDt, to: toDt, page: pg, size: 10 });
+      if (resp.success && resp.data) {
+        setTrips(resp.data.content);
+        setTripsTotal(resp.data.totalElements);
+        setTripsTotalPages(resp.data.totalPages);
+        setTripsPage(pg);
+      }
+    } catch { /**/ } finally { setTripsLoading(false); }
+  }, [deviceUuid, fromDt, toDt]);
+
+  // ── Fetch tracking events ─────────────────────────────────────────────────
+  const fetchTrackEvents = useCallback(async () => {
+    if (!deviceUuid) return;
+    setTrackEventsLoading(true);
+    try {
+      const resp = await trackingService.getTrackingEvents(deviceUuid, { from: fromDt, to: toDt, size: 50 });
+      if (resp.success && resp.data) {
+        setTrackEvents(resp.data.content);
+        setTrackEventsTotal(resp.data.totalElements);
+      }
+    } catch { /**/ } finally { setTrackEventsLoading(false); }
+  }, [deviceUuid, fromDt, toDt]);
+
+  // ── Fetch analytics ───────────────────────────────────────────────────────
+  // fetchAnalytics available for future Analytics tab
+  useEffect(() => {
+    if (!deviceUuid) return;
+    setAnalyticsLoading(true);
+    trackingService.getAnalytics(deviceUuid, { from: fromDt, to: toDt })
+      .then((resp) => { if (resp.success && resp.data) setAnalytics(resp.data); })
+      .catch(() => {})
+      .finally(() => setAnalyticsLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // load once on mount
 
   // ── Fetch geofences ───────────────────────────────────────────────────────
   const fetchGeofences = useCallback(async (pg = 0) => {
@@ -869,6 +957,45 @@ export function DeviceTrackingPage() {
           <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
         </div>
       )}
+      {/* Route Playback floating controls (Module 3) */}
+      {hasLoaded && points.length > 1 && !isDrawingActive && (
+        <div className="pointer-events-auto absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-2 rounded-2xl border border-white/70 bg-white/96 px-4 py-2.5 shadow-xl backdrop-blur-md dark:border-slate-700/60 dark:bg-slate-950/94">
+          <button
+            onClick={() => { setPlaybackIdx(0); }}
+            title="Reset"
+            className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+          >
+            <SkipBack className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setPlaybackActive((v) => !v)}
+            title={playbackActive ? 'Pause' : 'Play'}
+            className="flex items-center justify-center w-9 h-9 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 transition-colors shadow-sm"
+          >
+            {playbackActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+          </button>
+          <div className="flex items-center gap-1">
+            {[1, 2, 5].map((s) => (
+              <button key={s} onClick={() => setPlaybackSpeed(s)}
+                className={`text-xs font-bold px-2 py-1 rounded-lg transition-colors ${playbackSpeed === s ? 'bg-indigo-500 text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700'}`}>
+                {s}×
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-1.5 ml-1">
+            <div className="w-24 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-indigo-500 transition-all"
+                style={{ width: `${points.length > 1 ? (playbackIdx / (points.length - 1)) * 100 : 0}%` }}
+              />
+            </div>
+            <span className="text-[10px] text-slate-400 font-mono">
+              {playbackIdx + 1}/{points.length}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Mobile: floating draw instruction bar */}
       {!['idle', 'type-select', 'confirm'].includes(draw.phase) && (
         <div className="md:hidden pointer-events-auto absolute top-4 left-4 right-4 z-[1000] flex items-center gap-3 rounded-2xl border border-white/70 bg-white/96 px-4 py-3 shadow-xl backdrop-blur-md dark:border-slate-700/60 dark:bg-slate-950/94">
@@ -931,6 +1058,36 @@ export function DeviceTrackingPage() {
             icon={bearingIcon(p.bearing ?? 0, speedColor(p.speed ?? 0))}
             zIndexOffset={-100} />
         ))}
+        {/* Selected trip markers (Module 1) */}
+        {selectedTrip && selectedTrip.startLat && (
+          <Marker position={[selectedTrip.startLat, selectedTrip.startLng!]}
+            icon={makePin('#6366f1')}>
+            <Popup autoPan={false}><div className="text-xs"><b>Trip Start</b><br />{new Date(selectedTrip.startTime).toLocaleString()}</div></Popup>
+          </Marker>
+        )}
+        {selectedTrip && selectedTrip.endLat && (
+          <Marker position={[selectedTrip.endLat, selectedTrip.endLng!]}
+            icon={makePin('#a855f7')}>
+            <Popup autoPan={false}><div className="text-xs"><b>Trip End</b><br />{selectedTrip.endTime ? new Date(selectedTrip.endTime).toLocaleString() : '—'}<br />{selectedTrip.totalDistanceMeters >= 1000 ? `${(selectedTrip.totalDistanceMeters / 1000).toFixed(2)} km` : `${Math.round(selectedTrip.totalDistanceMeters)} m`}</div></Popup>
+          </Marker>
+        )}
+
+        {/* Route Playback marker (Module 3) */}
+        {playbackPoint && (
+          <Marker
+            position={[playbackPoint.latitude, playbackPoint.longitude]}
+            icon={new L.DivIcon({
+              className: '',
+              html: `<div style="width:18px;height:18px;border-radius:50%;background:#6366f1;border:3px solid white;box-shadow:0 0 0 3px #6366f180;"></div>`,
+              iconSize: [18, 18], iconAnchor: [9, 9],
+            })}
+            zIndexOffset={1000}
+          >
+            <Popup autoPan={false} closeButton={false}>
+              <PointPopup point={playbackPoint} color="#6366f1" />
+            </Popup>
+          </Marker>
+        )}
         {polyline.length > 0 && (
           <Marker position={polyline[0]} icon={startPin}>
             <Popup minWidth={220} maxWidth={280} autoPan={false}><PointPopup point={points[0]} color="#22c55e" label="START" /></Popup>
@@ -1615,6 +1772,90 @@ export function DeviceTrackingPage() {
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* ── Section: Trips (Module 1) ────────────────────────────── */}
+              <div className="shrink-0 border-t border-gray-200 dark:border-slate-700/50">
+                <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-slate-800/40">
+                  <div className="flex items-center gap-2">
+                    <Route className="w-3.5 h-3.5 text-indigo-500" />
+                    <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Trips</span>
+                    {tripsTotal > 0 && <span className="text-xs bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full font-medium">{tripsTotal}</span>}
+                  </div>
+                  <button onClick={() => fetchTrips(0)} disabled={tripsLoading}
+                    className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700/50 transition-colors">
+                    {tripsLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+                <div className="max-h-40 overflow-y-auto divide-y divide-gray-100 dark:divide-slate-700/30">
+                  {!tripsLoading && trips.length === 0 && (
+                    <p className="text-xs text-gray-400 dark:text-slate-500 text-center py-4">No trips — search history first</p>
+                  )}
+                  {trips.map((trip) => (
+                    <div key={trip.id}
+                      className={`flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors ${selectedTrip?.id === trip.id ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''}`}
+                      onClick={() => setSelectedTrip(selectedTrip?.id === trip.id ? null : trip)}
+                    >
+                      <div className={`w-2 h-2 rounded-full shrink-0 ${trip.status === 'ACTIVE' ? 'bg-green-400 animate-pulse' : 'bg-slate-300 dark:bg-slate-600'}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-gray-800 dark:text-slate-200 truncate">
+                          {new Date(trip.startTime).toLocaleTimeString()} → {trip.endTime ? new Date(trip.endTime).toLocaleTimeString() : '…'}
+                        </p>
+                        <p className="text-[10px] text-gray-400 dark:text-slate-500">
+                          {trip.totalDistanceMeters >= 1000 ? `${(trip.totalDistanceMeters / 1000).toFixed(2)} km` : `${Math.round(trip.totalDistanceMeters)} m`}
+                          {' '}· {trip.avgSpeedKmh.toFixed(1)} km/h avg · max {trip.maxSpeedKmh.toFixed(0)} km/h
+                        </p>
+                      </div>
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${trip.status === 'ACTIVE' ? 'bg-green-500/15 text-green-600' : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400'}`}>
+                        {trip.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* ── Section: Tracking Alerts (Module 2) ──────────────────── */}
+              <div className="shrink-0 border-t border-gray-200 dark:border-slate-700/50">
+                <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-slate-800/40">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-3.5 h-3.5 text-orange-500" />
+                    <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Alerts</span>
+                    {trackEventsTotal > 0 && <span className="text-xs bg-orange-500/15 text-orange-600 dark:text-orange-400 px-2 py-0.5 rounded-full font-medium">{trackEventsTotal}</span>}
+                  </div>
+                  <button onClick={fetchTrackEvents} disabled={trackEventsLoading}
+                    className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700/50 transition-colors">
+                    {trackEventsLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+                <div className="max-h-40 overflow-y-auto divide-y divide-gray-100 dark:divide-slate-700/30">
+                  {!trackEventsLoading && trackEvents.length === 0 && (
+                    <p className="text-xs text-gray-400 dark:text-slate-500 text-center py-4">No alerts detected</p>
+                  )}
+                  {trackEvents.map((ev) => {
+                    const colorMap: Record<string, string> = {
+                      OVERSPEEDING: 'bg-red-500/15 text-red-600 dark:text-red-400',
+                      HARSH_BRAKING: 'bg-orange-500/15 text-orange-600 dark:text-orange-400',
+                      SHARP_TURN: 'bg-yellow-500/15 text-yellow-600 dark:text-yellow-400',
+                      DEVICE_OFFLINE: 'bg-slate-500/15 text-slate-600 dark:text-slate-400',
+                      BATTERY_LOW: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
+                      GPS_LOST: 'bg-purple-500/15 text-purple-600 dark:text-purple-400',
+                      SOS: 'bg-rose-500/15 text-rose-600 dark:text-rose-400',
+                    };
+                    return (
+                      <div key={ev.id} className="flex items-start gap-2.5 px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-700/20">
+                        <span className={`mt-0.5 shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded ${colorMap[ev.eventType] ?? 'bg-gray-200 text-gray-600'}`}>
+                          {ev.eventType.replace('_', ' ')}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[10px] text-gray-400 dark:text-slate-500 font-mono">
+                            {ev.speed != null ? `${ev.speed.toFixed(1)} km/h · ` : ''}{ev.latitude.toFixed(4)}, {ev.longitude.toFixed(4)}
+                          </p>
+                          <p className="text-[10px] text-gray-400 dark:text-slate-500">{new Date(ev.eventTime).toLocaleString()}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
             </div>
