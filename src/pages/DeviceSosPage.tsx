@@ -163,25 +163,38 @@ export function DeviceSosPage() {
   // Address lookup (keyed by event id)
   const [addresses, setAddresses]           = useState<Record<number, string>>({});
   const [addressLoading, setAddressLoading] = useState<Record<number, boolean>>({});
+  // Tracks which IDs have been fetched or are in-flight (avoids stale-closure double-fetch)
+  const addressFetchedRef = useRef<Set<number>>(new Set());
 
-  const handleShowAddress = useCallback(async (
-    e: ReactMouseEvent<HTMLButtonElement>,
-    evId: number,
-    lat: number,
-    lng: number,
-  ) => {
-    e.stopPropagation();
-    if (addresses[evId] || addressLoading[evId]) return;
+  // Marker refs — used to programmatically open/close popups
+  const markerRefs = useRef<Map<number, L.Marker>>(new Map());
+
+  /** Fetch address for a given event id; no-ops if already fetched/in-progress */
+  const fetchAddress = useCallback(async (evId: number, lat: number, lng: number) => {
+    if (addressFetchedRef.current.has(evId)) return;
+    addressFetchedRef.current.add(evId);
     setAddressLoading((prev) => ({ ...prev, [evId]: true }));
     try {
       const addr = await reverseGeocode(lat, lng);
       setAddresses((prev) => ({ ...prev, [evId]: addr }));
     } catch {
       setAddresses((prev) => ({ ...prev, [evId]: 'Could not fetch address' }));
+      addressFetchedRef.current.delete(evId); // allow retry on error
     } finally {
       setAddressLoading((prev) => ({ ...prev, [evId]: false }));
     }
-  }, [addresses, addressLoading]);
+  }, []);
+
+  /** "Show address" button click — stops propagation so the list item isn't re-selected */
+  const handleShowAddress = useCallback((
+    e: ReactMouseEvent<HTMLButtonElement>,
+    evId: number,
+    lat: number,
+    lng: number,
+  ) => {
+    e.stopPropagation();
+    fetchAddress(evId, lat, lng);
+  }, [fetchAddress]);
 
   const fetchEvents = useCallback(async () => {
     if (!device?.deviceUuid) return;
@@ -209,12 +222,27 @@ export function DeviceSosPage() {
 
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
 
-  /** Select an event: fly the map, close the mobile list drawer */
-  const handleSelect = (ev: TrackingEventData) => {
+  /**
+   * Select an event:
+   *  - fly the map to it
+   *  - open its marker popup (close all others)
+   *  - auto-fetch address
+   *  - close mobile list drawer
+   */
+  const handleSelect = useCallback((ev: TrackingEventData) => {
     setSelectedId(ev.id);
     setFlyTrigger((t) => t + 1);
-    setListOpen(false); // close drawer on mobile
-  };
+    setListOpen(false);
+
+    // Open this marker's popup, close every other
+    markerRefs.current.forEach((marker, id) => {
+      if (id === ev.id) marker.openPopup();
+      else marker.closePopup();
+    });
+
+    // Auto-fetch address when an item is selected
+    fetchAddress(ev.id, ev.latitude, ev.longitude);
+  }, [fetchAddress]);
 
   const defaultCenter: [number, number] = selectedEvent
     ? [selectedEvent.latitude, selectedEvent.longitude]
@@ -260,32 +288,36 @@ export function DeviceSosPage() {
                 key={ev.id}
                 type="button"
                 onClick={() => handleSelect(ev)}
-                className={`w-full text-left px-4 py-4 border-b transition-colors active:bg-muted/80 ${
+                className={`w-full text-left px-4 py-3.5 border-b transition-all duration-150 ${
                   isSelected
-                    ? 'bg-red-50 dark:bg-red-950/20 border-l-[3px] border-l-red-500 pl-[13px]'
-                    : 'hover:bg-muted/50'
+                    ? 'bg-red-600 text-white border-l-[3px] border-l-red-800 pl-[13px] shadow-sm'
+                    : 'hover:bg-red-50/60 dark:hover:bg-red-950/20'
                 }`}
               >
+                {/* Row 1: badge + date + index */}
                 <div className="flex items-center gap-2 mb-1.5">
-                  <span className="inline-flex items-center gap-1 bg-red-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full flex-shrink-0">
+                  <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${
+                    isSelected ? 'bg-white/20 text-white' : 'bg-red-600 text-white'
+                  }`}>
                     <Siren className="h-2.5 w-2.5" /> SOS
                   </span>
-                  <span className="text-sm font-semibold text-foreground flex-1 min-w-0 truncate">
+                  <span className={`text-sm font-semibold flex-1 min-w-0 truncate ${isSelected ? 'text-white' : 'text-foreground'}`}>
                     {fmtDateShort(ev.eventTime)}
                   </span>
-                  <span className="text-[11px] text-muted-foreground flex-shrink-0">
+                  <span className={`text-[11px] flex-shrink-0 ${isSelected ? 'text-red-100' : 'text-muted-foreground'}`}>
                     #{(page * PAGE_SIZE) + idx + 1}
                   </span>
                 </div>
 
+                {/* Row 2: coordinates + address */}
                 <div className="flex items-start gap-1.5 mb-2">
-                  <MapPin className="h-3.5 w-3.5 text-red-500 flex-shrink-0 mt-0.5" />
+                  <MapPin className={`h-3.5 w-3.5 flex-shrink-0 mt-0.5 ${isSelected ? 'text-red-200' : 'text-red-500'}`} />
                   <div className="flex-1 min-w-0">
-                    <span className="text-xs font-mono text-muted-foreground">
+                    <span className={`text-xs font-mono ${isSelected ? 'text-red-100' : 'text-muted-foreground'}`}>
                       {ev.latitude.toFixed(5)}, {ev.longitude.toFixed(5)}
                     </span>
                     {addresses[ev.id] ? (
-                      <p className="text-[11px] text-muted-foreground mt-0.5 leading-tight break-words">
+                      <p className={`text-[11px] mt-0.5 leading-tight break-words ${isSelected ? 'text-red-100' : 'text-muted-foreground'}`}>
                         {addresses[ev.id]}
                       </p>
                     ) : (
@@ -293,7 +325,9 @@ export function DeviceSosPage() {
                         type="button"
                         onClick={(e) => handleShowAddress(e, ev.id, ev.latitude, ev.longitude)}
                         disabled={addressLoading[ev.id]}
-                        className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-700 disabled:opacity-60 transition-colors"
+                        className={`mt-0.5 inline-flex items-center gap-1 text-[11px] disabled:opacity-60 transition-colors ${
+                          isSelected ? 'text-red-100 hover:text-white' : 'text-blue-600 hover:text-blue-700'
+                        }`}
                       >
                         {addressLoading[ev.id]
                           ? <><Loader2 className="h-2.5 w-2.5 animate-spin" />Fetching…</>
@@ -304,14 +338,19 @@ export function DeviceSosPage() {
                   </div>
                 </div>
 
+                {/* Row 3: battery + network badges */}
                 <div className="flex items-center gap-2 flex-wrap">
                   {meta.battery != null && (
-                    <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-muted ${batteryColor(meta.battery)}`}>
+                    <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${
+                      isSelected ? 'bg-white/20 text-white' : `bg-muted ${batteryColor(meta.battery)}`
+                    }`}>
                       <BatteryMedium className="h-3 w-3" />{meta.battery}%
                     </span>
                   )}
                   {meta.network && (
-                    <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                    <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${
+                      isSelected ? 'bg-white/20 text-white' : 'bg-muted text-muted-foreground'
+                    }`}>
                       <NetworkIcon network={meta.network} />{meta.network}
                     </span>
                   )}
@@ -482,9 +521,13 @@ export function DeviceSosPage() {
                   key={ev.id}
                   position={[ev.latitude, ev.longitude]}
                   icon={isSelected ? SELECTED_PIN : SOS_PIN}
+                  ref={(marker) => {
+                    if (marker) markerRefs.current.set(ev.id, marker);
+                    else markerRefs.current.delete(ev.id);
+                  }}
                   eventHandlers={{ click: () => handleSelect(ev) }}
                 >
-                  <Popup minWidth={210} maxWidth={230}>
+                  <Popup minWidth={220} maxWidth={260}>
                     <div style={{ fontFamily: 'inherit' }}>
                       <div style={{
                         display: 'inline-flex', alignItems: 'center', gap: 5,
@@ -495,9 +538,21 @@ export function DeviceSosPage() {
                       <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
                         {fmtDate(ev.eventTime)}
                       </p>
-                      <p style={{ fontSize: 11, color: '#64748b', fontFamily: 'monospace', marginBottom: 6 }}>
+                      <p style={{ fontSize: 11, color: '#64748b', fontFamily: 'monospace', marginBottom: 4 }}>
                         {ev.latitude.toFixed(6)}, {ev.longitude.toFixed(6)}
                       </p>
+                      {/* Address row in popup */}
+                      {addressLoading[ev.id] && (
+                        <p style={{ fontSize: 10, color: '#94a3b8', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <span style={{ display: 'inline-block', width: 10, height: 10, border: '2px solid #dc2626', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+                          Fetching address…
+                        </p>
+                      )}
+                      {addresses[ev.id] && (
+                        <p style={{ fontSize: 10, color: '#475569', marginBottom: 6, lineHeight: 1.4 }}>
+                          📍 {addresses[ev.id]}
+                        </p>
+                      )}
                       <div style={{ display: 'flex', gap: 12, fontSize: 11, color: '#475569', marginBottom: 10 }}>
                         {meta.battery != null && <span>🔋 {meta.battery}%</span>}
                         {meta.network  && <span>📶 {meta.network}</span>}
@@ -580,6 +635,21 @@ export function DeviceSosPage() {
                     </div>
                   )}
                 </div>
+                {/* Address in bottom card */}
+                {(addresses[selectedEvent.id] || addressLoading[selectedEvent.id]) && (
+                  <div className="mt-2 pt-2 border-t border-border/50">
+                    {addressLoading[selectedEvent.id] ? (
+                      <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                        <Loader2 className="h-3 w-3 animate-spin" /> Fetching address…
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-muted-foreground leading-tight">
+                        <MapPin className="h-3 w-3 inline mr-1 text-red-500" />
+                        {addresses[selectedEvent.id]}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })()}
