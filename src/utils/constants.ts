@@ -26,6 +26,7 @@ export const ROUTES = {
   DEVICE_AUDIO: '/device/:deviceId/audio',
   DEVICE_DATA:     '/device/:deviceId/data',
   DEVICE_TRACKING: '/device/:deviceId/tracking',
+  ALL_DEVICES_MAP: '/devices/track-all',
 } as const;
 
 export const ERROR_MESSAGES = {

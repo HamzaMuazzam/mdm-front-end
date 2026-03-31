@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, Eye, BarChart3, MoreVertical, Power, RotateCcw, Siren, Mic, Database } from 'lucide-react';
+import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, Eye, BarChart3, MoreVertical, Power, RotateCcw, Siren, Mic, Database, Map } from 'lucide-react';
 import QRCode from 'qrcode';
 import type { CreateDeviceRequest, UpdateDeviceRequest, Device, UpdateDeviceConfigurationRequest } from '@/types/device.types';
 import { ROUTES } from '@/utils/constants';
@@ -490,6 +490,16 @@ export function DeviceManagement() {
             <QrCode className="h-4 w-4 mr-2" />
             QR View
           </Button>
+          {hasPermission('tracking:history') && devices.length > 0 && (
+            <Button
+              variant="outline"
+              onClick={() => window.open('/devices/track-all', '_blank')}
+              className="flex-1 sm:flex-none border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300"
+            >
+              <Map className="h-4 w-4 mr-2" />
+              Track All
+            </Button>
+          )}
           {hasPermission('devices:create') && (
             <Button onClick={() => setIsModalOpen(true)} className="flex-1 sm:flex-none bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white border-0">
               + Add Device
