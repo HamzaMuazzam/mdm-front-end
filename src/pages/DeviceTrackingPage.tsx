@@ -523,8 +523,7 @@ export function DeviceTrackingPage() {
   const [uploading, setUploading]     = useState(false);
   const [uploadMsg, setUploadMsg]     = useState<{ ok: boolean; text: string } | null>(null);
 
-  // Mobile bottom nav
-  const [mobileTab, setMobileTab] = useState<'map' | 'history' | 'geofences' | 'events'>('map');
+  // Mobile bottom nav — unified with activePanel (null = map view)
 
   // Tracking config modal
   const [configModal, setConfigModal]     = useState(false);
@@ -784,11 +783,11 @@ export function DeviceTrackingPage() {
 
   useEffect(() => { fetchHistory(0); setPage(0); /* eslint-disable-next-line */ }, []);
   useEffect(() => { fetchGeofences(); fetchGeoTypes(); fetchGeoEvents(); }, [fetchGeofences, fetchGeoTypes, fetchGeoEvents]);
-  // Mobile: auto-switch tabs during draw workflow so the map is visible while drawing
+  // Mobile: auto-switch panel during draw workflow so the map is visible while drawing
   useEffect(() => {
     if (window.innerWidth >= 768) return;
-    if (draw.phase === 'confirm') setMobileTab('geofences');
-    else if (!['idle', 'type-select'].includes(draw.phase)) setMobileTab('map');
+    if (draw.phase === 'confirm') setActivePanel('geofences');
+    else if (!['idle', 'type-select'].includes(draw.phase)) setActivePanel(null);
   }, [draw.phase]);
 
   // ── Drawing map callbacks (stable refs to avoid MapContainer re-render) ───
@@ -1306,7 +1305,7 @@ export function DeviceTrackingPage() {
     <div className="flex h-screen flex-col overflow-hidden bg-[linear-gradient(180deg,#f8fbff_0%,#eef4ff_52%,#e9f1fb_100%)] dark:bg-[linear-gradient(180deg,#020617_0%,#0f172a_48%,#111827_100%)]">
 
       {/* ── Header ────────────────────────────────────────────────────────── */}
-      <div className="z-50 shrink-0 border-b border-slate-200/70 bg-white/80 px-5 py-4 backdrop-blur-xl dark:border-slate-700/50 dark:bg-slate-950/72">
+      <div className="z-50 shrink-0 border-b border-slate-200/70 bg-white/80 px-4 py-3 md:px-5 md:py-4 backdrop-blur-xl dark:border-slate-700/50 dark:bg-slate-950/72">
         <div className="flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="rounded-2xl border border-white/70 bg-white/80 p-2.5 text-slate-500 shadow-sm transition-colors hover:bg-white hover:text-slate-900 dark:border-slate-700/60 dark:bg-slate-900/70 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-100">
             <ArrowLeft className="w-5 h-5" />
@@ -1319,7 +1318,7 @@ export function DeviceTrackingPage() {
               <p className="truncate text-sm font-semibold text-slate-950 dark:text-slate-100">{device?.deviceName ?? deviceUuid ?? deviceId}</p>
               <span className="rounded-full border border-sky-500/20 bg-sky-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-sky-700 dark:text-sky-300">Tracking</span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Live route intelligence, geofence tooling, and export-grade location history</p>
+            <p className="hidden md:block text-xs text-slate-500 dark:text-slate-400">Live route intelligence, geofence tooling, and export-grade location history</p>
           </div>
           {/* Config button */}
           <button onClick={openConfig} title="Tracking configuration"
@@ -1403,7 +1402,8 @@ export function DeviceTrackingPage() {
       </div>
 
       {/* ── Body ──────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col md:flex-row min-h-0 flex-1 md:gap-4 overflow-hidden md:px-4 md:pt-3 md:pb-4">
+      {/* pb-[60px] on mobile reserves space for fixed bottom nav bar */}
+      <div className="flex flex-col md:flex-row min-h-0 flex-1 md:gap-4 overflow-hidden md:px-4 md:pt-3 md:pb-4 pb-[60px] md:pb-0">
 
         {/* ── Left: Map (top) + Table (bottom) ─────────────────────────── */}
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden md:gap-4">
@@ -1966,322 +1966,58 @@ export function DeviceTrackingPage() {
           )}
         </div>
 
-        {/* ══════════════════════════════════════════════════════════════════
-            MOBILE BOTTOM SHEET  (md:hidden)
-            Slides up from bottom when a non-map tab is active.
-            Active drawing phases auto-switch to 'map' via useEffect so the
-            map is always fully visible while the user draws.
-        ══════════════════════════════════════════════════════════════════ */}
-        {(() => {
-          const activeDrawing = ['circle-center', 'circle-radius', 'polygon', 'line'].includes(draw.phase);
-          const sheetOpen     = mobileTab !== 'map' && !activeDrawing;
-          return (
-            <div className={`md:hidden flex flex-col bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-700/60 rounded-t-3xl shadow-[0_-8px_32px_rgba(15,23,42,0.14)] overflow-hidden transition-all duration-300 ease-out ${sheetOpen ? 'flex-[0.58]' : 'h-0'}`}>
-
-              {/* Drag handle */}
-              <div className="shrink-0 flex justify-center pt-3 pb-0.5">
-                <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-slate-600" />
-              </div>
-
-              {/* ── History tab ─────────────────────────────────────────── */}
-              {mobileTab === 'history' && (
-                <div className="flex flex-col flex-1 overflow-hidden min-h-0">
-                  <div className="shrink-0 px-4 pt-2 pb-3 space-y-2 border-b border-gray-100 dark:border-slate-700/40">
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <p className="text-[10px] font-semibold text-gray-400 mb-1 uppercase tracking-wide">From</p>
-                        <input type="datetime-local" step="1" value={fromDt} onChange={(e) => setFromDt(e.target.value)}
-                          className="w-full bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl px-2.5 py-2 text-[11px] text-gray-800 dark:text-slate-200 focus:outline-none focus:border-blue-500" />
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-semibold text-gray-400 mb-1 uppercase tracking-wide">To</p>
-                        <input type="datetime-local" step="1" value={toDt} onChange={(e) => setToDt(e.target.value)}
-                          className="w-full bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl px-2.5 py-2 text-[11px] text-gray-800 dark:text-slate-200 focus:outline-none focus:border-blue-500" />
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <button onClick={() => { setPage(0); fetchHistory(0); }} disabled={loading}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-blue-600/15 border border-blue-500/30 text-blue-600 dark:text-blue-400 rounded-xl text-xs font-semibold disabled:opacity-50">
-                        {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />} Search
-                      </button>
-                      <button onClick={exportAllToExcel} disabled={loading || !hasLoaded || totalElements === 0}
-                        className="flex items-center gap-1.5 px-4 py-2.5 bg-green-600/15 border border-green-500/30 text-green-600 dark:text-green-400 rounded-xl text-xs font-semibold disabled:opacity-50">
-                        <Download className="w-3.5 h-3.5" />
-                      </button>
-                      <button onClick={() => { setUploadModal(true); setUploadMsg(null); setUploadJson(''); }}
-                        className="flex items-center gap-1.5 px-3 py-2.5 bg-gray-100 dark:bg-slate-700/50 border border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 rounded-xl text-xs font-semibold">
-                        <Upload className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                    {hasLoaded && totalElements > 0 && (
-                      <p className="text-[10px] text-gray-400 dark:text-slate-500">{totalElements.toLocaleString()} points · page {page + 1}/{totalPages || 1}</p>
-                    )}
-                  </div>
-                  <div className="flex-1 overflow-y-auto min-h-0">
-                    {loading && <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-blue-400" /></div>}
-                    {!loading && hasLoaded && points.length === 0 && (
-                      <div className="flex flex-col items-center justify-center py-10 text-gray-400 dark:text-slate-500">
-                        <MapPin className="w-8 h-8 mb-2 opacity-25" />
-                        <p className="text-sm">No data for selected range</p>
-                      </div>
-                    )}
-                    <div className="divide-y divide-gray-100 dark:divide-slate-700/30">
-                      {points.map((p) => {
-                        const color = getPointColor(p.reason);
-                        return (
-                          <div key={p.id} className="flex items-start gap-3 px-4 py-3 active:bg-gray-50 dark:active:bg-slate-800/40 cursor-pointer"
-                            onClick={() => { setCenterTarget([p.latitude, p.longitude]); setMobileTab('map'); }}>
-                            <div className="w-2.5 h-2.5 rounded-full mt-1 shrink-0" style={{ background: color }} />
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-2">
-                                <p className="text-xs font-semibold text-gray-800 dark:text-slate-200 truncate">{p.reason || 'Location'}</p>
-                                <span className="text-[10px] text-gray-400 shrink-0">{p.speed != null ? `${p.speed.toFixed(0)} km/h` : ''}</span>
-                              </div>
-                              <p className="text-[10px] font-mono text-gray-400 dark:text-slate-500">{p.latitude.toFixed(5)}, {p.longitude.toFixed(5)}</p>
-                              <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5">{p.receivedAt ? new Date(p.receivedAt).toLocaleString() : '-'}</p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  {totalPages > 1 && (
-                    <div className="shrink-0 flex items-center justify-between px-4 py-2 border-t border-gray-100 dark:border-slate-700/40 bg-gray-50/60 dark:bg-slate-900/60">
-                      <button onClick={() => { setPage(page - 1); fetchHistory(page - 1); }} disabled={page === 0 || loading}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold text-gray-600 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 disabled:opacity-40">
-                        <ChevronLeft className="w-3.5 h-3.5" /> Prev
-                      </button>
-                      <span className="text-xs text-gray-500">{page + 1} / {totalPages}</span>
-                      <button onClick={() => { setPage(page + 1); fetchHistory(page + 1); }} disabled={page >= totalPages - 1 || loading}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold text-gray-600 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 disabled:opacity-40">
-                        Next <ChevronRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* ── Geofences tab ────────────────────────────────────────── */}
-              {mobileTab === 'geofences' && (
-                <div className="flex flex-col flex-1 overflow-hidden min-h-0">
-                  <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-slate-700/40">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-bold text-gray-800 dark:text-slate-100">Geofences</p>
-                      {geoTotal > 0 && <span className="text-xs bg-amber-500/15 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full font-semibold">{geoTotal}</span>}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {draw.phase === 'idle' && (
-                        <button onClick={() => setDraw((d) => ({ ...d, phase: 'type-select' }))}
-                          className="flex items-center gap-1 px-3 py-1.5 bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 rounded-xl text-xs font-semibold">
-                          <Plus className="w-3.5 h-3.5" /> Add
-                        </button>
-                      )}
-                      {draw.phase !== 'idle' && (
-                        <button onClick={cancelDraw}
-                          className="flex items-center gap-1 px-3 py-1.5 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl text-xs font-semibold">
-                          <X className="w-3.5 h-3.5" /> Cancel
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  {draw.phase === 'type-select' && (
-                    <div className="shrink-0 px-4 py-4 border-b border-gray-100 dark:border-slate-700/40 space-y-3">
-                      <p className="text-xs text-gray-500 dark:text-slate-400">Select a shape to draw on the map</p>
-                      <div className="grid grid-cols-3 gap-2">
-                        <button onClick={() => startDraw('CIRCLE')} className="flex flex-col items-center gap-1.5 py-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-amber-500 active:scale-95 transition-all">
-                          <div className="w-8 h-8 rounded-full border-2 border-amber-500" />
-                          <span className="text-xs font-semibold">Circle</span>
-                        </button>
-                        <button onClick={() => startDraw('POLYGON')} className="flex flex-col items-center gap-1.5 py-4 bg-purple-500/10 border border-purple-500/30 rounded-2xl text-purple-500 active:scale-95 transition-all">
-                          <svg width="32" height="32" viewBox="0 0 32 32"><polygon points="16,2 30,22 24,30 8,30 2,22" fill="none" stroke="#a855f7" strokeWidth="2.5"/></svg>
-                          <span className="text-xs font-semibold">Polygon</span>
-                        </button>
-                        <button onClick={() => startDraw('LINE')} className="flex flex-col items-center gap-1.5 py-4 bg-cyan-500/10 border border-cyan-500/30 rounded-2xl text-cyan-500 active:scale-95 transition-all">
-                          <svg width="32" height="32" viewBox="0 0 32 32"><path d="M4 26 L14 10 L24 18 L30 6" fill="none" stroke="#06b6d4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M4 26 L14 10 L24 18 L30 6" fill="none" stroke="#06b6d4" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" opacity="0.18"/></svg>
-                          <span className="text-xs font-semibold">Line</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                  {draw.phase === 'confirm' && (
-                    <div className="shrink-0 px-4 py-4 border-b border-gray-100 dark:border-slate-700/40 space-y-3">
-                      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700/50">
-                        <div className="w-3 h-3 rounded-full shrink-0" style={{ background: GEO_COLOR[draw.type] }} />
-                        <p className="flex-1 text-xs text-gray-600 dark:text-slate-300 truncate">
-                          {draw.type === 'CIRCLE' ? `Circle · r=${draw.circleRadius}m` : draw.type === 'LINE' ? `Line · ${draw.polygonPts.length} waypoints` : `Polygon · ${draw.polygonPts.length} pts`}
-                        </p>
-                        <button onClick={() => setDraw((d) => ({ ...d, phase: d.type === 'CIRCLE' ? 'circle-center' : d.type === 'POLYGON' ? 'polygon' : 'line', circleCenter: null, circleRadius: null, polygonPts: [], mousePos: null }))}
-                          className="text-gray-400 hover:text-gray-700 transition-colors"><Undo2 className="w-3.5 h-3.5" /></button>
-                      </div>
-                      <input autoFocus value={draw.name} onChange={(e) => setDraw((d) => ({ ...d, name: e.target.value }))}
-                        onKeyDown={(e) => { if (e.key === 'Enter' && draw.name.trim()) saveGeofence(); }}
-                        placeholder="Geofence name…"
-                        className="w-full bg-gray-100 dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-2xl px-4 py-3.5 text-sm text-gray-800 dark:text-slate-200 focus:outline-none focus:border-blue-500 placeholder-gray-400" />
-                      {(draw.type === 'LINE' || draw.type === 'CIRCLE') && (
-                        <div className="flex items-center gap-3 bg-gray-50 dark:bg-slate-800/60 rounded-2xl px-4 py-3 border border-gray-200 dark:border-slate-700/50">
-                          <div className="flex-1">
-                            <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">Buffer</p>
-                            <p className="text-[10px] text-gray-400">{draw.type === 'LINE' ? 'Corridor width' : 'Extra zone'}</p>
-                          </div>
-                          <input type="number" min="0" step="10" value={draw.bufferMeters || ''} onChange={(e) => setDraw((d) => ({ ...d, bufferMeters: Number(e.target.value) || 0 }))} placeholder="0"
-                            className="w-16 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-xl px-2 py-2 text-sm text-right focus:outline-none focus:border-blue-500" />
-                          <span className="text-xs text-gray-500">m</span>
-                        </div>
-                      )}
-                      <div className="flex gap-2">
-                        <button onClick={cancelDraw} className="px-4 py-3 rounded-2xl text-sm text-gray-500 bg-gray-100 dark:bg-slate-800">Cancel</button>
-                        <button onClick={saveGeofence} disabled={geoSaving || !draw.name.trim()}
-                          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold disabled:opacity-50 ${draw.type === 'CIRCLE' ? 'bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400' : draw.type === 'POLYGON' ? 'bg-purple-500/15 border border-purple-500/30 text-purple-600 dark:text-purple-400' : 'bg-cyan-500/15 border border-cyan-500/30 text-cyan-600 dark:text-cyan-400'}`}>
-                          {geoSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                          {draw.editId != null ? 'Update' : 'Save'}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                  <div className="flex-1 overflow-y-auto min-h-0">
-                    {geoLoading && <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-amber-500" /></div>}
-                    {!geoLoading && geofences.length === 0 && draw.phase === 'idle' && (
-                      <div className="flex flex-col items-center justify-center py-10 text-gray-400 dark:text-slate-500">
-                        <Shield className="w-8 h-8 mb-2 opacity-25" />
-                        <p className="text-sm">No geofences yet</p>
-                        <p className="text-xs mt-1">Tap Add to draw one on the map</p>
-                      </div>
-                    )}
-                    <div className="divide-y divide-gray-100 dark:divide-slate-700/30">
-                      {geofences.map((g) => (
-                        <div key={g.id} className="flex items-center gap-3 px-4 py-3.5">
-                          <div className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center" style={{ background: `${GEO_COLOR[g.type]}20`, border: `2px solid ${GEO_COLOR[g.type]}60` }}>
-                            <div className="w-3 h-3 rounded-full" style={{ background: GEO_COLOR[g.type] }} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-gray-800 dark:text-slate-200 truncate">{g.name}</p>
-                            <p className="text-xs text-gray-400 dark:text-slate-500">
-                              {g.type}{g.type === 'CIRCLE' && g.radiusMeters ? ` · ${g.radiusMeters}m` : ''}
-                              {g.bufferMeters ? ` · buf ${g.bufferMeters}m` : ''}
-                            </p>
-                          </div>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0 ${g.active ? 'bg-green-500/15 text-green-600 dark:text-green-400' : 'bg-gray-100 dark:bg-slate-700 text-gray-500'}`}>
-                            {g.active ? 'Active' : 'Off'}
-                          </span>
-                          <button onClick={() => { startDraw(g.type, g); }}
-                            className="p-2.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-slate-700/50 rounded-xl transition-colors">
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                          <button onClick={() => deleteGeofence(g.id)} disabled={geoDeleting === g.id}
-                            className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-slate-700/50 rounded-xl transition-colors disabled:opacity-40">
-                            {geoDeleting === g.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  {geoTotalPages > 1 && (
-                    <div className="shrink-0 flex items-center justify-between px-4 py-2.5 border-t border-gray-100 dark:border-slate-700/40 bg-gray-50/60 dark:bg-slate-900/60">
-                      <button onClick={() => fetchGeofences(geoPage - 1)} disabled={geoPage === 0 || geoLoading}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold text-gray-600 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 disabled:opacity-40">
-                        <ChevronLeft className="w-3.5 h-3.5" /> Prev
-                      </button>
-                      <span className="text-xs text-gray-500">{geoPage + 1} / {geoTotalPages}</span>
-                      <button onClick={() => fetchGeofences(geoPage + 1)} disabled={geoPage >= geoTotalPages - 1 || geoLoading}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold text-gray-600 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 disabled:opacity-40">
-                        Next <ChevronRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* ── Events tab ───────────────────────────────────────────── */}
-              {mobileTab === 'events' && (
-                <div className="flex flex-col flex-1 overflow-hidden min-h-0">
-                  <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-slate-700/40">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-bold text-gray-800 dark:text-slate-100">Geofence Events</p>
-                      {geoEventsTotal > 0 && <span className="text-xs bg-blue-500/15 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full font-semibold">{geoEventsTotal}</span>}
-                    </div>
-                    <button onClick={() => fetchGeoEvents(0)} disabled={geoEventsLoading}
-                      className="p-2 rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700/50 transition-colors">
-                      {geoEventsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                    </button>
-                  </div>
-                  <div className="flex-1 overflow-y-auto min-h-0">
-                    {geoEventsLoading && <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-blue-400" /></div>}
-                    {!geoEventsLoading && geoEvents.length === 0 && (
-                      <div className="flex flex-col items-center justify-center py-10 text-gray-400 dark:text-slate-500">
-                        <Activity className="w-8 h-8 mb-2 opacity-25" />
-                        <p className="text-sm">No events yet</p>
-                        <p className="text-xs mt-1">ENTER / EXIT events appear here</p>
-                      </div>
-                    )}
-                    <div className="divide-y divide-gray-100 dark:divide-slate-700/30">
-                      {geoEvents.map((ev) => (
-                        <div key={ev.id} className="flex items-start gap-3 px-4 py-4">
-                          <span className={`mt-0.5 shrink-0 text-xs font-bold px-2.5 py-1 rounded-full ${ev.eventType === 'ENTER' ? 'bg-green-500/15 text-green-600 dark:text-green-400' : 'bg-red-500/15 text-red-600 dark:text-red-400'}`}>
-                            {ev.eventType}
-                          </span>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-gray-800 dark:text-slate-200 truncate">{ev.geofenceName}</p>
-                            <p className="text-xs font-mono text-gray-400 dark:text-slate-500">{ev.latitude.toFixed(5)}, {ev.longitude.toFixed(5)}</p>
-                            <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">{new Date(ev.eventTime).toLocaleString()}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  {geoEventsTotalPages > 1 && (
-                    <div className="shrink-0 flex items-center justify-between px-4 py-2.5 border-t border-gray-100 dark:border-slate-700/40 bg-gray-50/60 dark:bg-slate-900/60">
-                      <button onClick={() => fetchGeoEvents(geoEventsPage - 1)} disabled={geoEventsPage === 0 || geoEventsLoading}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold text-gray-600 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 disabled:opacity-40">
-                        <ChevronLeft className="w-3.5 h-3.5" /> Prev
-                      </button>
-                      <span className="text-xs text-gray-500">{geoEventsPage + 1} / {geoEventsTotalPages}</span>
-                      <button onClick={() => fetchGeoEvents(geoEventsPage + 1)} disabled={geoEventsPage >= geoEventsTotalPages - 1 || geoEventsLoading}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold text-gray-600 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 disabled:opacity-40">
-                        Next <ChevronRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })()}
-
-        {/* ══════════════════════════════════════════════════════════════════
-            MOBILE BOTTOM NAV BAR  (md:hidden)
-        ══════════════════════════════════════════════════════════════════ */}
-        <div className="md:hidden shrink-0 relative flex items-stretch border-t border-gray-200/80 dark:border-slate-700/60 bg-white/97 dark:bg-slate-950/97 backdrop-blur-xl">
-          {([
-            { id: 'map'       as const, Icon: MapPin,   label: 'Map'       },
-            { id: 'history'   as const, Icon: Sheet,    label: 'History'   },
-            { id: 'geofences' as const, Icon: Shield,   label: 'Fences'    },
-            { id: 'events'    as const, Icon: Activity, label: 'Events'    },
-          ]).map(({ id, Icon, label }) => (
-            <button key={id} onClick={() => setMobileTab(id)}
-              className={`flex flex-1 flex-col items-center justify-center gap-0.5 py-3 relative transition-colors ${mobileTab === id ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-slate-500'}`}>
-              {mobileTab === id && (
-                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-blue-600 dark:bg-blue-400" />
-              )}
-              <Icon className={`w-5 h-5 transition-transform duration-150 ${mobileTab === id ? 'scale-110' : ''}`} />
-              <span className={`text-[10px] font-semibold tracking-wide ${mobileTab === id ? 'text-blue-600 dark:text-blue-400' : ''}`}>{label}</span>
-            </button>
-          ))}
-        </div>
 
       </div>
 
-      {/* ── Full-screen panel overlay (desktop top-bar sections) ─────────── */}
+      {/* ══════════════════════════════════════════════════════════════════
+          MOBILE BOTTOM NAV BAR  (md:hidden) — fixed, always visible
+      ══════════════════════════════════════════════════════════════════ */}
+      <div className="md:hidden fixed bottom-0 inset-x-0 z-[200] shrink-0 flex items-stretch border-t border-gray-200/80 dark:border-slate-700/60 bg-white dark:bg-slate-950 shadow-[0_-4px_20px_rgba(0,0,0,0.10)]" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        {([
+          { id: null            , Icon: MapPin,       label: 'Map',     badge: null          },
+          { id: 'history'       , Icon: Sheet,        label: 'History', badge: hasLoaded && totalElements > 0 ? totalElements : null },
+          { id: 'geofences'     , Icon: Shield,       label: 'Fences',  badge: geoTotal > 0 ? geoTotal : null },
+          { id: 'events'        , Icon: Activity,     label: 'Events',  badge: geoEventsTotal > 0 ? geoEventsTotal : null },
+          { id: 'trips'         , Icon: Route,        label: 'Trips',   badge: tripsTotal > 0 ? tripsTotal : null },
+          { id: 'alerts'        , Icon: AlertTriangle,label: 'Alerts',  badge: trackEventsTotal > 0 ? trackEventsTotal : null },
+        ] as { id: typeof activePanel; Icon: React.ComponentType<{className?: string}>; label: string; badge: number | null }[]).map(({ id, Icon, label, badge }) => {
+          const isActive = activePanel === id;
+          return (
+            <button key={label} onClick={() => setActivePanel(id)}
+              className={`flex flex-1 flex-col items-center justify-center gap-0.5 py-2.5 relative transition-colors min-w-0 ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-slate-500'}`}>
+              {isActive && <span className="absolute top-0 inset-x-0 h-0.5 rounded-full bg-blue-600 dark:bg-blue-400" />}
+              <div className="relative">
+                <Icon className={`w-5 h-5 transition-transform duration-150 ${isActive ? 'scale-110' : ''}`} />
+                {badge != null && (
+                  <span className="absolute -top-1.5 -right-2 min-w-[14px] h-[14px] flex items-center justify-center bg-blue-500 text-white text-[8px] font-bold rounded-full px-0.5">
+                    {badge > 99 ? '99+' : badge}
+                  </span>
+                )}
+              </div>
+              <span className={`text-[9px] font-semibold tracking-wide truncate w-full text-center px-0.5 ${isActive ? 'text-blue-600 dark:text-blue-400' : ''}`}>{label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Universal panel overlay (desktop: right slide-in · mobile: native bottom sheet) ── */}
       {activePanel && (
-        <div className="max-md:hidden fixed inset-0 z-[9999] flex" onClick={() => setActivePanel(null)}>
-          {/* Backdrop */}
-          <div className="flex-1 bg-black/30 backdrop-blur-sm" />
-          {/* Panel */}
+        <div className="fixed inset-0 z-[9999] flex md:flex-row flex-col-reverse" onClick={() => setActivePanel(null)}>
+          {/* Backdrop — full on mobile (bottom sheet), partial on desktop */}
+          <div className="flex-1 bg-black/50 md:bg-black/30 backdrop-blur-sm md:backdrop-blur-sm" />
+          {/* Panel — native bottom sheet on mobile, right-side drawer on desktop */}
           <div
-            className="w-full max-w-2xl flex flex-col bg-white dark:bg-slate-900 shadow-[0_0_80px_rgba(15,23,42,0.25)] border-l border-slate-200/70 dark:border-slate-700/60 animate-in slide-in-from-right-8 duration-200"
+            className="w-full md:max-w-2xl flex flex-col bg-white dark:bg-slate-900 shadow-[0_-8px_60px_rgba(15,23,42,0.22)] md:shadow-[0_0_80px_rgba(15,23,42,0.25)] rounded-t-[28px] md:rounded-none md:border-l border-slate-200/70 dark:border-slate-700/60 animate-in md:slide-in-from-right-8 slide-in-from-bottom-8 duration-300 max-h-[88vh] md:max-h-full"
+            style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Drag handle — mobile only */}
+            <div className="md:hidden flex justify-center pt-3 pb-1 shrink-0">
+              <div className="w-10 h-1 rounded-full bg-slate-200 dark:bg-slate-700" />
+            </div>
+
             {/* ── Panel header ─── */}
-            <div className="shrink-0 flex items-center gap-3 px-6 py-4 border-b border-slate-200/70 dark:border-slate-700/50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md">
+            <div className="shrink-0 flex items-center gap-3 px-5 md:px-6 py-3.5 md:py-4 border-b border-slate-200/70 dark:border-slate-700/50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md">
               {activePanel === 'history' && <><Sheet className="w-5 h-5 text-blue-500" /><h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex-1">History Filters</h2></>}
               {activePanel === 'geofences' && <><Shield className="w-5 h-5 text-amber-500" /><h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex-1">Geofences</h2>{geoTotal > 0 && <span className="text-xs bg-amber-500/15 text-amber-600 dark:text-amber-400 px-2.5 py-0.5 rounded-full font-semibold">{geoTotal}</span>}</>}
               {activePanel === 'events' && <><Activity className="w-5 h-5 text-blue-500" /><h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex-1">Geofence Events</h2>{geoEventsTotal > 0 && <span className="text-xs bg-blue-500/15 text-blue-600 dark:text-blue-400 px-2.5 py-0.5 rounded-full font-semibold">{geoEventsTotal}</span>}</>}
@@ -2732,6 +2468,28 @@ export function DeviceTrackingPage() {
                 </div>
               </div>
             )}
+
+            {/* ── Mobile in-overlay bottom nav (switch sections without closing) ── */}
+            <div className="md:hidden shrink-0 flex items-stretch border-t border-gray-200/80 dark:border-slate-700/60 bg-white dark:bg-slate-950">
+              {([
+                { id: null        , Icon: MapPin,        label: 'Map'     },
+                { id: 'history'   , Icon: Sheet,         label: 'History' },
+                { id: 'geofences' , Icon: Shield,        label: 'Fences'  },
+                { id: 'events'    , Icon: Activity,      label: 'Events'  },
+                { id: 'trips'     , Icon: Route,         label: 'Trips'   },
+                { id: 'alerts'    , Icon: AlertTriangle, label: 'Alerts'  },
+              ] as { id: typeof activePanel; Icon: React.ComponentType<{className?: string}>; label: string }[]).map(({ id, Icon, label }) => {
+                const isActive = activePanel === id;
+                return (
+                  <button key={label} onClick={() => setActivePanel(id)}
+                    className={`flex flex-1 flex-col items-center justify-center gap-0.5 py-2.5 relative min-w-0 transition-colors ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-slate-500'}`}>
+                    {isActive && <span className="absolute top-0 inset-x-0 h-0.5 rounded-full bg-blue-600 dark:bg-blue-400" />}
+                    <Icon className={`w-4.5 h-4.5 transition-transform duration-150 ${isActive ? 'scale-110' : ''}`} />
+                    <span className={`text-[9px] font-semibold truncate w-full text-center px-0.5 ${isActive ? 'text-blue-600 dark:text-blue-400' : ''}`}>{label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}

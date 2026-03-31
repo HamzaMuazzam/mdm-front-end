@@ -526,9 +526,9 @@ export function DeviceManagement() {
           const alertsEnabled = alertStatusByDevice[device.id];
           const alertsLoading = alertStatusLoading[device.id];
           const alertsLabel = alertsEnabled === undefined ? 'Alerts' : alertsEnabled ? 'Alerts Enabled' : 'Alerts Disabled';
-          const alertsMenuClass = alertsEnabled === true
+          const alertsMenuClass = alertsEnabled
             ? 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
-            : alertsEnabled === false
+            : !alertsEnabled
             ? 'text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20'
             : 'text-foreground hover:bg-muted';
           // Left border: green if active+online, amber if active+offline/unknown, red if inactive
@@ -816,9 +816,9 @@ export function DeviceManagement() {
                   const alertsEnabled = alertStatusByDevice[device.id];
                   const alertsLoading = alertStatusLoading[device.id];
                   const alertsLabel = alertsEnabled === undefined ? 'Alerts' : alertsEnabled ? 'Alerts Enabled' : 'Alerts Disabled';
-                  const alertsMenuClass = alertsEnabled === true
+                  const alertsMenuClass = alertsEnabled
                     ? 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
-                    : alertsEnabled === false
+                    : !alertsEnabled
                     ? 'text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20'
                     : 'text-foreground hover:bg-muted';
                   return (

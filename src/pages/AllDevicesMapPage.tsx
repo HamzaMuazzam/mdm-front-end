@@ -13,7 +13,6 @@ import {
   ChevronDown,
   ChevronUp,
   Clock3,
-  Crosshair,
   Gauge,
   Layers3,
   Loader2,
@@ -178,20 +177,6 @@ function formatCoords(point: HistoryPoint): string {
   return `${point.latitude.toFixed(5)}, ${point.longitude.toFixed(5)}`;
 }
 
-function focusMapOnLocations(map: L.Map, items: DeviceLocation[]) {
-  const valid = items.filter((item) => item.point);
-  if (valid.length === 0) return;
-
-  if (valid.length === 1) {
-    map.flyTo([valid[0].point!.latitude, valid[0].point!.longitude], 16, { duration: 1.2 });
-    return;
-  }
-
-  const bounds = L.latLngBounds(
-    valid.map((item) => [item.point!.latitude, item.point!.longitude] as [number, number])
-  );
-  map.flyToBounds(bounds, { padding: [64, 64], duration: 1.2, maxZoom: 14 });
-}
 
 export function AllDevicesMapPage() {
   useDeviceStatusMqtt();
@@ -359,55 +344,7 @@ export function AllDevicesMapPage() {
     () => devices.filter((device) => deviceStatuses[device.deviceUuid] === 'online').length,
     [deviceStatuses, devices]
   );
-  const offlineCount = devices.length - onlineCount;
-  const coveragePercent = devices.length > 0 ? Math.round((located.length / devices.length) * 100) : 0;
-  const locationIssueCount = useMemo(
-    () => locations.filter((location) => location.error).length,
-    [locations]
-  );
   const visibleResultCount = filteredLocated.length + filteredNoLocation.length;
-  const selectedLocation = useMemo(
-    () => located.find((location) => location.device.deviceUuid === selectedUuid) ?? null,
-    [located, selectedUuid]
-  );
-
-  const focusTargets = q && filteredLocated.length > 0 ? filteredLocated : located;
-  const canFocusTargets = focusTargets.length > 0 && !!mapRef.current;
-
-  const summaryCards = [
-    {
-      label: 'Mapped devices',
-      value: located.length,
-      supporting: `${coveragePercent}% coverage`,
-      icon: MapPin,
-      accentClassName: 'from-cyan-500/30 via-sky-500/15 to-white/5',
-      iconClassName: 'bg-cyan-400/15 text-cyan-200',
-    },
-    {
-      label: 'Live online',
-      value: onlineCount,
-      supporting: `${offlineCount} offline`,
-      icon: Wifi,
-      accentClassName: 'from-emerald-500/30 via-emerald-400/15 to-white/5',
-      iconClassName: 'bg-emerald-400/15 text-emerald-200',
-    },
-    {
-      label: 'Waiting for GPS',
-      value: noLocation.length,
-      supporting: locationIssueCount > 0 ? `${locationIssueCount} fetch issue(s)` : 'No coordinates yet',
-      icon: WifiOff,
-      accentClassName: 'from-amber-500/30 via-orange-400/15 to-white/5',
-      iconClassName: 'bg-amber-400/15 text-amber-100',
-    },
-    {
-      label: q ? 'Search results' : 'Fleet health',
-      value: q ? visibleResultCount : devices.length,
-      supporting: q ? 'Matching devices in feed' : `${devices.length - locationIssueCount} synced cleanly`,
-      icon: q ? Layers3 : ShieldAlert,
-      accentClassName: 'from-violet-500/25 via-fuchsia-400/15 to-white/5',
-      iconClassName: 'bg-violet-400/15 text-violet-100',
-    },
-  ];
 
   const panelFilters = [
     { key: 'all' as const, label: 'All', count: visibleResultCount },
@@ -423,11 +360,31 @@ export function AllDevicesMapPage() {
     <>
       <div
         className={cn(
-          'border-b border-white/10 bg-slate-950/75 px-4 pb-4 pt-4 backdrop-blur-xl',
-          isMobile && 'px-5'
+          'border-b border-white/10 bg-slate-950',
+          isMobile ? 'px-4 pb-4 pt-2' : 'px-4 pb-4 pt-4'
         )}
       >
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <MapPin className="h-3.5 w-3.5 shrink-0 text-cyan-300" />
+            <p className="truncate text-[0.76rem] text-slate-300">
+              {loading
+                ? 'Loading...'
+                : `${located.length} mapped · ${onlineCount} online · ${noLocation.length} waiting`}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={loading}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-[14px] border border-white/10 bg-white/5 px-3 h-8 text-[0.72rem] font-medium text-white transition-colors hover:bg-white/10 disabled:opacity-60"
+          >
+            <RefreshCw className={cn('h-3 w-3', loading && 'animate-spin')} />
+            Refresh
+          </button>
+        </div>
+
+        <div className="mt-3 flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[0.7rem] font-medium uppercase tracking-[0.28em] text-sky-200/70">
               Device Feed
@@ -446,42 +403,42 @@ export function AllDevicesMapPage() {
           </div>
         </div>
 
-        <div className="relative mt-4">
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <div className="relative mt-3">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             placeholder="Search by name, model, or phone"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            className="h-12 w-full rounded-2xl border border-white/10 bg-white/5 pl-11 pr-11 text-sm text-white outline-none ring-0 placeholder:text-slate-400 focus:border-sky-400/70 focus:bg-white/[0.08]"
+            className="h-10 w-full rounded-[18px] border border-white/10 bg-white/5 pl-10 pr-10 text-[0.82rem] text-white outline-none ring-0 placeholder:text-slate-400 focus:border-sky-400/70 focus:bg-white/[0.08]"
           />
           {search && (
             <button
               type="button"
               onClick={() => setSearch('')}
-              className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white"
+              className="absolute right-2.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white"
               aria-label="Clear search"
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="h-3 w-3" />
             </button>
           )}
         </div>
 
-        <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none]">
           {panelFilters.map((filter) => (
             <button
               key={filter.key}
               type="button"
               onClick={() => setPanelView(filter.key)}
               className={cn(
-                'inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-medium transition-all duration-200',
+                'inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[0.72rem] font-medium transition-all duration-200',
                 panelView === filter.key
                   ? 'border-sky-300/40 bg-sky-400/15 text-white shadow-[0_16px_30px_rgba(56,189,248,0.15)]'
                   : 'border-white/10 bg-white/5 text-slate-300 hover:border-white/15 hover:bg-white/[0.08] hover:text-white'
               )}
             >
               <span>{filter.label}</span>
-              <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[0.68rem] text-slate-100">
+              <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[0.62rem] text-slate-100">
                 {filter.count}
               </span>
             </button>
@@ -489,7 +446,7 @@ export function AllDevicesMapPage() {
         </div>
       </div>
 
-      <div className={cn('flex-1 overflow-y-auto px-4 pb-8 pt-4', isMobile && 'px-5')}>
+      <div className={cn('flex-1 overflow-y-auto bg-slate-950 px-4 pb-8 pt-4', isMobile && 'px-4 pb-10 pt-3')}>
         {devices.length === 0 && !devicesLoading && (
           <div className="flex h-full min-h-[16rem] flex-col items-center justify-center rounded-[28px] border border-dashed border-white/10 bg-white/[0.03] px-6 text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 text-slate-300">
@@ -514,15 +471,17 @@ export function AllDevicesMapPage() {
           </div>
         )}
 
-        <div className="space-y-5">
+        <div className={cn('space-y-4', isMobile ? 'space-y-3.5' : 'space-y-4')}>
           {showLocatedSection && filteredLocated.length > 0 && (
-            <section className="space-y-3">
+            <section className={cn(isMobile ? 'space-y-2' : 'space-y-2.5')}>
               {panelView === 'all' && (
                 <div className="flex items-center justify-between px-1">
-                  <p className="text-xs font-medium uppercase tracking-[0.24em] text-sky-200/70">
+                  <p className={cn('font-medium uppercase tracking-[0.22em] text-sky-200/70', isMobile ? 'text-[0.64rem]' : 'text-[0.68rem]')}>
                     Tracked Devices
                   </p>
-                  <p className="text-xs text-slate-400">{filteredLocated.length} with map data</p>
+                  <p className={cn('text-slate-400', isMobile ? 'text-[0.64rem]' : 'text-[0.68rem]')}>
+                    {filteredLocated.length} with map data
+                  </p>
                 </div>
               )}
 
@@ -538,53 +497,60 @@ export function AllDevicesMapPage() {
                   <div
                     key={device.deviceUuid}
                     className={cn(
-                      'rounded-[24px] border p-3.5 text-left transition-all duration-300',
+                      'border text-left transition-all duration-300',
+                      isMobile ? 'rounded-[18px] p-2.5' : 'rounded-[20px] p-3',
                       isSelected
-                        ? 'border-sky-300/35 bg-sky-400/12 shadow-[0_20px_48px_rgba(56,189,248,0.14)]'
+                        ? 'border-sky-300/35 bg-sky-400/12 shadow-[0_18px_40px_rgba(56,189,248,0.12)]'
                         : 'border-white/10 bg-white/[0.04] hover:border-white/15 hover:bg-white/[0.06]'
                     )}
                   >
-                    <div className="flex items-start gap-2.5">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[18px] border border-white/10 bg-white/5 text-[0.78rem] font-semibold text-white shadow-inner shadow-white/5">
+                    <div className={cn('flex items-start', isMobile ? 'gap-2' : 'gap-2.5')}>
+                      <div
+                        className={cn(
+                          'flex shrink-0 items-center justify-center border border-white/10 bg-white/5 font-semibold text-white shadow-inner shadow-white/5',
+                          isMobile ? 'h-8 w-8 rounded-[14px] text-[0.66rem]' : 'h-9 w-9 rounded-[16px] text-[0.72rem]'
+                        )}
+                      >
                         {initials}
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-2.5">
+                        <div className={cn('flex items-start justify-between', isMobile ? 'gap-2' : 'gap-2.5')}>
                           <div className="min-w-0">
-                            <p className="truncate text-[0.84rem] font-semibold text-white sm:text-[0.9rem]">
+                            <p className={cn('truncate font-semibold text-white', isMobile ? 'text-[0.74rem]' : 'text-[0.8rem]')}>
                               {getDeviceLabel(device)}
                             </p>
-                            <p className="mt-0.5 truncate text-[0.72rem] text-slate-400">
+                            <p className={cn('mt-0.5 truncate text-slate-400', isMobile ? 'text-[0.62rem]' : 'text-[0.68rem]')}>
                               {getDeviceSubtitle(device)}
                             </p>
                           </div>
 
                           <span
                             className={cn(
-                              'inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[0.64rem] font-medium',
+                              'inline-flex shrink-0 items-center gap-1 rounded-full border font-medium',
+                              isMobile ? 'px-1.5 py-0.5 text-[0.54rem]' : 'px-1.5 py-0.5 text-[0.58rem]',
                               isOnline
                                 ? 'border-emerald-300/25 bg-emerald-400/12 text-emerald-100'
                                 : 'border-slate-300/15 bg-slate-200/10 text-slate-200'
                             )}
                           >
-                            {isOnline ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
+                            {isOnline ? <Wifi className="h-2.5 w-2.5" /> : <WifiOff className="h-2.5 w-2.5" />}
                             {isOnline ? 'Online' : 'Offline'}
                           </span>
                         </div>
 
-                        <div className="mt-2.5 flex flex-wrap gap-1.5">
-                          <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-slate-950/70 px-2 py-0.5 text-[0.64rem] text-slate-200">
-                            <Gauge className="h-3 w-3 text-cyan-200" />
+                        <div className={cn('mt-2 flex flex-wrap', isMobile ? 'gap-1' : 'gap-1.5')}>
+                          <span className={cn('inline-flex items-center gap-1 rounded-full border border-white/10 bg-slate-950/70 text-slate-200', isMobile ? 'px-1.5 py-0.5 text-[0.54rem]' : 'px-1.5 py-0.5 text-[0.58rem]')}>
+                            <Gauge className="h-2.5 w-2.5 text-cyan-200" />
                             {formatSpeed(point!.speed)}
                           </span>
-                          <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-slate-950/70 px-2 py-0.5 text-[0.64rem] text-slate-200">
-                            <Clock3 className="h-3 w-3 text-slate-300" />
+                          <span className={cn('inline-flex items-center gap-1 rounded-full border border-white/10 bg-slate-950/70 text-slate-200', isMobile ? 'px-1.5 py-0.5 text-[0.54rem]' : 'px-1.5 py-0.5 text-[0.58rem]')}>
+                            <Clock3 className="h-2.5 w-2.5 text-slate-300" />
                             {formatTimeAgo(point!.receivedAt)}
                           </span>
                           {device.batteryCharge !== undefined && device.batteryCharge !== null && (
-                            <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-slate-950/70 px-2 py-0.5 text-[0.64rem] text-slate-200">
-                              <BatteryMedium className="h-3 w-3 text-emerald-200" />
+                            <span className={cn('inline-flex items-center gap-1 rounded-full border border-white/10 bg-slate-950/70 text-slate-200', isMobile ? 'px-1.5 py-0.5 text-[0.54rem]' : 'px-1.5 py-0.5 text-[0.58rem]')}>
+                              <BatteryMedium className="h-2.5 w-2.5 text-emerald-200" />
                               {device.batteryCharge}%
                             </span>
                           )}
@@ -592,29 +558,31 @@ export function AllDevicesMapPage() {
                       </div>
                     </div>
 
-                    <div className="mt-3 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-                      <div className="rounded-[18px] border border-white/8 bg-slate-950/70 p-2.5">
-                        <p className="text-[0.62rem] uppercase tracking-[0.16em] text-slate-500">
+                    <div className={cn('mt-2.5 grid grid-cols-1 gap-1.5 sm:grid-cols-2', isMobile && 'sm:grid-cols-1')}>
+                      <div className={cn('rounded-[14px] border border-white/8 bg-slate-950/70', isMobile ? 'p-2' : 'p-2.5')}>
+                        <p className={cn('uppercase tracking-[0.14em] text-slate-500', isMobile ? 'text-[0.5rem]' : 'text-[0.54rem]')}>
                           Coordinates
                         </p>
-                        <p className="mt-1 text-[0.82rem] font-medium text-slate-100">
+                        <p className={cn('mt-1 font-medium text-slate-100', isMobile ? 'text-[0.68rem]' : 'text-[0.72rem]')}>
                           {formatCoords(point!)}
                         </p>
                       </div>
 
-                      <div className="rounded-[18px] border border-white/8 bg-slate-950/70 p-2.5">
-                        <p className="text-[0.62rem] uppercase tracking-[0.16em] text-slate-500">
+                      <div className={cn('rounded-[14px] border border-white/8 bg-slate-950/70', isMobile ? 'p-2' : 'p-2.5')}>
+                        <p className={cn('uppercase tracking-[0.14em] text-slate-500', isMobile ? 'text-[0.5rem]' : 'text-[0.54rem]')}>
                           Last sync
                         </p>
-                        <p className="mt-1 text-[0.82rem] font-medium text-slate-100">
+                        <p className={cn('mt-1 font-medium text-slate-100', isMobile ? 'text-[0.68rem]' : 'text-[0.72rem]')}>
                           {formatTimestamp(point!.receivedAt)}
                         </p>
                       </div>
                     </div>
 
-                    <div className="mt-2.5 rounded-[18px] border border-white/8 bg-white/[0.03] px-2.5 py-2">
+                    <div className={cn('mt-2 rounded-[14px] border border-white/8 bg-white/[0.03]', isMobile ? 'px-2 py-1.5' : 'px-2.5 py-2')}>
                       {address ? (
-                        <p className="text-[0.72rem] leading-4 text-slate-300">{address}</p>
+                        <p className={cn('text-slate-300', isMobile ? 'text-[0.58rem] leading-4' : 'text-[0.62rem] leading-4')}>
+                          {address}
+                        </p>
                       ) : (
                         <button
                           type="button"
@@ -622,33 +590,33 @@ export function AllDevicesMapPage() {
                             handleShowAddress(event, device.deviceUuid, point!.latitude, point!.longitude)
                           }
                           disabled={pendingAddress}
-                          className="inline-flex items-center gap-1.5 text-[0.72rem] font-medium text-sky-200 transition-colors hover:text-white disabled:opacity-60"
+                          className={cn('inline-flex items-center font-medium text-sky-200 transition-colors hover:text-white disabled:opacity-60', isMobile ? 'gap-1 text-[0.58rem]' : 'gap-1 text-[0.62rem]')}
                         >
                           {pendingAddress ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
+                            <Loader2 className="h-2.5 w-2.5 animate-spin" />
                           ) : (
-                            <Navigation className="h-3 w-3" />
+                            <Navigation className="h-2.5 w-2.5" />
                           )}
                           {pendingAddress ? 'Fetching address...' : 'Show exact address'}
                         </button>
                       )}
                     </div>
 
-                    <div className="mt-2.5 flex flex-col gap-1.5 sm:flex-row">
+                    <div className={cn('mt-2 grid gap-1.5', isMobile ? 'grid-cols-2' : 'grid-cols-2')}>
                       <button
                         type="button"
                         onClick={() => handleDeviceFocus(location, isMobile)}
-                        className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-[18px] bg-white px-3.5 py-2.5 text-[0.8rem] font-medium text-slate-950 transition-transform duration-200 hover:-translate-y-0.5"
+                        className={cn('inline-flex items-center justify-center rounded-[14px] bg-white font-medium text-slate-950 transition-transform duration-200 hover:-translate-y-0.5', isMobile ? 'gap-1 px-2 py-2 text-[0.62rem]' : 'gap-1 px-2.5 py-2 text-[0.68rem]')}
                       >
-                        <LocateFixed className="h-3.5 w-3.5" />
+                        <LocateFixed className="h-3 w-3" />
                         Center on map
                       </button>
                       <button
                         type="button"
                         onClick={() => handleOpenTracking(device.id)}
-                        className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-[18px] border border-white/10 bg-white/5 px-3.5 py-2.5 text-[0.8rem] font-medium text-white transition-colors hover:bg-white/10"
+                        className={cn('inline-flex items-center justify-center rounded-[14px] border border-white/10 bg-white/5 font-medium text-white transition-colors hover:bg-white/10', isMobile ? 'gap-1 px-2 py-2 text-[0.62rem]' : 'gap-1 px-2.5 py-2 text-[0.68rem]')}
                       >
-                        <ArrowUpRight className="h-3.5 w-3.5" />
+                        <ArrowUpRight className="h-3 w-3" />
                         Open tracking
                       </button>
                     </div>
@@ -745,110 +713,32 @@ export function AllDevicesMapPage() {
         <div className="absolute bottom-[-12%] left-[20%] h-96 w-96 rounded-full bg-emerald-500/12 blur-[150px]" />
       </div>
 
-      <div className="relative flex h-[100dvh] flex-col p-3 sm:p-4 lg:p-5">
-        <div className="grid flex-1 min-h-0 gap-3 lg:grid-cols-[minmax(0,1fr)_24rem] xl:grid-cols-[minmax(0,1fr)_26rem]">
-          <section className="relative min-h-0 overflow-hidden rounded-[34px] border border-white/10 bg-slate-900/85 shadow-[0_32px_120px_rgba(15,23,42,0.45)] ring-1 ring-white/5">
-            <div className="pointer-events-none absolute inset-x-0 top-0 z-[700] p-2 sm:p-2.5">
-              <div className="pointer-events-auto rounded-[20px] border border-white/12 bg-slate-950/55 p-2.5 backdrop-blur-2xl shadow-[0_18px_48px_rgba(2,6,23,0.32)] sm:p-3">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="flex min-w-0 flex-1 items-start gap-2">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[14px] bg-gradient-to-br from-cyan-400 to-sky-500 text-slate-950 shadow-[0_10px_20px_rgba(56,189,248,0.28)]">
-                      <MapPin className="h-[15px] w-[15px]" />
-                    </div>
+      <div className="relative flex h-[100dvh] flex-col p-0 lg:p-5">
+        <div className="grid flex-1 min-h-0 gap-0 lg:gap-3 lg:grid-cols-[minmax(0,1fr)_24rem] xl:grid-cols-[minmax(0,1fr)_26rem]">
+          <section className="relative min-h-0 overflow-hidden bg-slate-900/85 lg:rounded-[34px] lg:border lg:border-white/10 lg:shadow-[0_32px_120px_rgba(15,23,42,0.45)] lg:ring-1 lg:ring-white/5">
+            <div
+              className="pointer-events-none absolute inset-x-0 top-0 z-[710] flex items-center justify-between px-3 lg:hidden"
+              style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.85rem)' }}
+            >
+              <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/72 px-3 py-1.5 text-[0.7rem] font-medium text-white shadow-[0_14px_28px_rgba(2,6,23,0.28)] backdrop-blur-xl">
+                <MapPin className="h-3.5 w-3.5 text-cyan-200" />
+                Live map
+              </div>
 
-                    <div className="min-w-0">
-                      <p className="text-[0.54rem] font-medium uppercase tracking-[0.24em] text-cyan-100/70">
-                        Live Fleet Atlas
-                      </p>
-                      <h1 className="mt-0.5 text-[0.78rem] font-semibold tracking-tight text-white sm:text-[0.96rem]">
-                        Track every device in one premium map view
-                      </h1>
-                      <p className="mt-1 max-w-xl text-[0.64rem] text-slate-300/85 sm:text-[0.68rem]">
-                        {loading
-                          ? 'Pulling the latest coordinates and connection state from your fleet.'
-                          : `${located.length} mapped, ${onlineCount} online, and ${noLocation.length} device${noLocation.length === 1 ? '' : 's'} still waiting for first GPS sync.`}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="pointer-events-auto flex shrink-0 items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => mapRef.current && focusMapOnLocations(mapRef.current, focusTargets)}
-                      disabled={!canFocusTargets}
-                      className="inline-flex h-8 items-center gap-1 rounded-[14px] border border-white/10 bg-white/5 px-2.5 text-[0.68rem] font-medium text-white transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <LocateFixed className="h-3 w-3" />
-                      <span className="hidden sm:inline">{q ? 'Focus results' : 'Fit fleet'}</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleRefresh}
-                      disabled={loading}
-                      className="inline-flex h-8 items-center gap-1 rounded-[14px] bg-white px-2.5 text-[0.68rem] font-medium text-slate-950 transition-transform duration-200 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      <RefreshCw className={cn('h-3 w-3', loading && 'animate-spin')} />
-                      <span className="hidden sm:inline">Refresh</span>
-                    </button>
-                  </div>
+              <div className="pointer-events-auto flex items-center gap-2">
+                <div className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-slate-950/72 px-2.5 py-1.5 text-[0.66rem] font-medium text-slate-100 backdrop-blur-xl">
+                  <Wifi className="h-3 w-3 text-emerald-200" />
+                  {onlineCount}
                 </div>
-
-                <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none]">
-                  {summaryCards.map((card) => {
-                    const Icon = card.icon;
-                    return (
-                      <div
-                        key={card.label}
-                        className={cn(
-                          'min-w-[6.7rem] flex-1 rounded-[16px] border border-white/10 bg-gradient-to-br p-2 shadow-[0_12px_26px_rgba(15,23,42,0.24)]',
-                          card.accentClassName
-                        )}
-                      >
-                        <div className="flex items-start justify-between gap-1.5">
-                          <div>
-                            <p className="text-[0.52rem] font-medium uppercase tracking-[0.12em] text-slate-300/75">
-                              {card.label}
-                            </p>
-                            <p className="mt-1 text-[0.95rem] font-semibold tracking-tight text-white">
-                              {card.value}
-                            </p>
-                            <p className="mt-0.5 line-clamp-2 text-[0.52rem] leading-[1.1] text-slate-300/80">
-                              {card.supporting}
-                            </p>
-                          </div>
-                          <div className={cn('flex h-6 w-6 items-center justify-center rounded-[12px]', card.iconClassName)}>
-                            <Icon className="h-3 w-3" />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {selectedLocation?.point && (
-                  <div className="mt-2 flex flex-wrap items-center gap-2 rounded-[16px] border border-sky-300/20 bg-sky-400/12 px-2.5 py-2">
-                    <div className="flex h-6 w-6 items-center justify-center rounded-[12px] bg-white/10 text-sky-100">
-                      <Crosshair className="h-3 w-3" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[0.7rem] font-semibold text-white">
-                        {getDeviceLabel(selectedLocation.device)}
-                      </p>
-                      <p className="mt-0.5 truncate text-[0.58rem] text-slate-200/80">
-                        {formatCoords(selectedLocation.point)} • {formatTimeAgo(selectedLocation.point.receivedAt)}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleOpenTracking(selectedLocation.device.id)}
-                      className="inline-flex items-center gap-1 rounded-[14px] border border-white/10 bg-white/10 px-2.5 py-1 text-[0.6rem] font-medium text-white hover:bg-white/15"
-                    >
-                      <ArrowUpRight className="h-2.5 w-2.5" />
-                      Open tracking
-                    </button>
-                  </div>
-                )}
+                <button
+                  type="button"
+                  onClick={handleRefresh}
+                  disabled={loading}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-slate-950/72 text-white shadow-[0_14px_28px_rgba(2,6,23,0.28)] backdrop-blur-xl disabled:opacity-60"
+                  aria-label="Refresh locations"
+                >
+                  <RefreshCw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
+                </button>
               </div>
             </div>
 
@@ -967,30 +857,30 @@ export function AllDevicesMapPage() {
             <div className="absolute inset-x-0 bottom-0 z-[720] lg:hidden">
               <div
                 className={cn(
-                  'mx-2 rounded-t-[30px] border border-white/10 bg-slate-950/90 shadow-[0_-20px_80px_rgba(2,6,23,0.65)] backdrop-blur-2xl transition-all duration-300 sm:mx-3',
-                  mobileSheetExpanded ? 'h-[76dvh]' : 'h-[19rem]'
+                  'rounded-t-[30px] border-x border-t border-white/10 bg-slate-950 shadow-[0_-20px_80px_rgba(2,6,23,0.65)] transition-all duration-300',
+                  mobileSheetExpanded ? 'h-[82dvh]' : 'h-[25rem]'
                 )}
                 style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.6rem)' }}
               >
-                <div className="flex items-center justify-between px-5 pt-3">
+                <div className="flex items-center justify-center px-4 pt-3">
                   <div className="mx-auto h-1.5 w-12 rounded-full bg-white/15" />
                 </div>
 
-                <div className="flex items-center justify-between px-5 pb-1 pt-3">
+                <div className="flex items-center justify-between px-4 pb-1 pt-3">
                   <div>
-                    <p className="text-[0.68rem] font-medium uppercase tracking-[0.28em] text-slate-400">
-                      Mobile Sheet
+                    <p className="text-[0.62rem] font-medium uppercase tracking-[0.24em] text-slate-400">
+                      Fleet Drawer
                     </p>
-                    <p className="mt-1 text-sm font-semibold text-white">
-                      Native-style device drawer
+                    <p className="mt-1 text-[0.84rem] font-semibold text-white">
+                      Native mobile feed
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setMobileSheetExpanded((value) => !value)}
-                    className="inline-flex h-10 items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3.5 text-xs font-medium text-white"
+                    className="inline-flex h-9 items-center gap-1.5 rounded-[16px] border border-white/10 bg-white/5 px-3 text-[0.7rem] font-medium text-white"
                   >
-                    {mobileSheetExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                    {mobileSheetExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
                     {mobileSheetExpanded ? 'Collapse' : 'Expand'}
                   </button>
                 </div>
