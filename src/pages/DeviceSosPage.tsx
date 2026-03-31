@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import type { MouseEvent as ReactMouseEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Siren, RefreshCw, Loader2, MapPin,
@@ -117,6 +118,14 @@ function batteryColor(pct?: number) {
 
 const PAGE_SIZE = 10;
 
+async function reverseGeocode(lat: number, lng: number): Promise<string> {
+  const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`;
+  const response = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+  if (!response.ok) throw new Error('Geocode failed');
+  const json = await response.json();
+  return (json.display_name as string) ?? 'Unknown address';
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 export function DeviceSosPage() {
   const { deviceId } = useParams<{ deviceId: string }>();
@@ -150,6 +159,29 @@ export function DeviceSosPage() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [flyTrigger, setFlyTrigger] = useState(0);
   const selectedEvent = events.find((e) => e.id === selectedId) ?? null;
+
+  // Address lookup (keyed by event id)
+  const [addresses, setAddresses]           = useState<Record<number, string>>({});
+  const [addressLoading, setAddressLoading] = useState<Record<number, boolean>>({});
+
+  const handleShowAddress = useCallback(async (
+    e: ReactMouseEvent<HTMLButtonElement>,
+    evId: number,
+    lat: number,
+    lng: number,
+  ) => {
+    e.stopPropagation();
+    if (addresses[evId] || addressLoading[evId]) return;
+    setAddressLoading((prev) => ({ ...prev, [evId]: true }));
+    try {
+      const addr = await reverseGeocode(lat, lng);
+      setAddresses((prev) => ({ ...prev, [evId]: addr }));
+    } catch {
+      setAddresses((prev) => ({ ...prev, [evId]: 'Could not fetch address' }));
+    } finally {
+      setAddressLoading((prev) => ({ ...prev, [evId]: false }));
+    }
+  }, [addresses, addressLoading]);
 
   const fetchEvents = useCallback(async () => {
     if (!device?.deviceUuid) return;
@@ -246,11 +278,30 @@ export function DeviceSosPage() {
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1.5 mb-2">
-                  <MapPin className="h-3.5 w-3.5 text-red-500 flex-shrink-0" />
-                  <span className="text-xs font-mono text-muted-foreground">
-                    {ev.latitude.toFixed(5)}, {ev.longitude.toFixed(5)}
-                  </span>
+                <div className="flex items-start gap-1.5 mb-2">
+                  <MapPin className="h-3.5 w-3.5 text-red-500 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-xs font-mono text-muted-foreground">
+                      {ev.latitude.toFixed(5)}, {ev.longitude.toFixed(5)}
+                    </span>
+                    {addresses[ev.id] ? (
+                      <p className="text-[11px] text-muted-foreground mt-0.5 leading-tight break-words">
+                        {addresses[ev.id]}
+                      </p>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(e) => handleShowAddress(e, ev.id, ev.latitude, ev.longitude)}
+                        disabled={addressLoading[ev.id]}
+                        className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-700 disabled:opacity-60 transition-colors"
+                      >
+                        {addressLoading[ev.id]
+                          ? <><Loader2 className="h-2.5 w-2.5 animate-spin" />Fetching…</>
+                          : <><MapPin className="h-2.5 w-2.5" />Show address</>
+                        }
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
