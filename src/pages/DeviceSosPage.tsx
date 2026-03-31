@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Siren, RefreshCw, Loader2, MapPin,
   BatteryMedium, Wifi, WifiOff, ChevronLeft, ChevronRight,
-  ExternalLink, Radio, CalendarDays,
+  ExternalLink, Radio, SlidersHorizontal, X, List,
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -21,43 +21,41 @@ L.Icon.Default.mergeOptions({
 
 const SOS_PIN = new L.DivIcon({
   className: '',
-  html: `<div style="position:relative;width:36px;height:50px;">
-    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="50" viewBox="0 0 36 50">
-      <path d="M18 0C8.06 0 0 8.06 0 18c0 13.5 18 32 18 32s18-18.5 18-32C36 8.06 27.94 0 18 0z"
+  html: `<div style="position:relative;width:34px;height:48px;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="34" height="48" viewBox="0 0 34 48">
+      <path d="M17 0C7.61 0 0 7.61 0 17c0 12.75 17 31 17 31s17-18.25 17-31C34 7.61 26.39 0 17 0z"
             fill="#dc2626" stroke="white" stroke-width="2"/>
-      <circle cx="18" cy="17" r="9" fill="white"/>
+      <circle cx="17" cy="16" r="9" fill="white"/>
     </svg>
-    <div style="position:absolute;top:9px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:900;color:#dc2626;line-height:1;">SOS</div>
+    <div style="position:absolute;top:8px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:900;color:#dc2626;line-height:1;letter-spacing:-0.5px;">SOS</div>
   </div>`,
-  iconSize: [36, 50], iconAnchor: [18, 50], popupAnchor: [0, -52],
+  iconSize: [34, 48], iconAnchor: [17, 48], popupAnchor: [0, -50],
 });
 
 const SELECTED_PIN = new L.DivIcon({
   className: '',
-  html: `<div style="position:relative;width:44px;height:60px;">
-    <svg xmlns="http://www.w3.org/2000/svg" width="44" height="60" viewBox="0 0 44 60">
-      <path d="M22 0C9.85 0 0 9.85 0 22c0 16.5 22 38 22 38s22-21.5 22-38C44 9.85 34.15 0 22 0z"
+  html: `<div style="position:relative;width:42px;height:58px;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="42" height="58" viewBox="0 0 42 58">
+      <path d="M21 0C9.4 0 0 9.4 0 21c0 15.75 21 37 21 37s21-21.25 21-37C42 9.4 32.6 0 21 0z"
             fill="#b91c1c" stroke="white" stroke-width="2.5"/>
-      <circle cx="22" cy="21" r="11" fill="white"/>
+      <circle cx="21" cy="20" r="11" fill="white"/>
     </svg>
-    <div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:900;color:#b91c1c;line-height:1;">SOS</div>
+    <div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:900;color:#b91c1c;line-height:1;letter-spacing:-0.5px;">SOS</div>
   </div>`,
-  iconSize: [44, 60], iconAnchor: [22, 60], popupAnchor: [0, -62],
+  iconSize: [42, 58], iconAnchor: [21, 58], popupAnchor: [0, -60],
 });
 
 // ── Map helpers ───────────────────────────────────────────────────────────────
-interface FlyToProps { lat: number; lng: number; trigger: number }
-function FlyTo({ lat, lng, trigger }: FlyToProps) {
+function FlyTo({ lat, lng, trigger }: { lat: number; lng: number; trigger: number }) {
   const map = useMap();
   useEffect(() => {
-    if (lat && lng) map.flyTo([lat, lng], 15, { duration: 1 });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (lat && lng) map.flyTo([lat, lng], 15, { duration: 0.9 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trigger]);
   return null;
 }
 
-interface FitAllProps { events: TrackingEventData[] }
-function FitAll({ events }: FitAllProps) {
+function FitAll({ events }: { events: TrackingEventData[] }) {
   const map = useMap();
   const done = useRef(false);
   useEffect(() => {
@@ -65,22 +63,23 @@ function FitAll({ events }: FitAllProps) {
     if (events.length === 1) {
       map.setView([events[0].latitude, events[0].longitude], 14);
     } else {
-      const bounds = L.latLngBounds(events.map((e) => [e.latitude, e.longitude]));
-      map.fitBounds(bounds, { padding: [40, 40] });
+      map.fitBounds(
+        L.latLngBounds(events.map((e) => [e.latitude, e.longitude])),
+        { padding: [40, 40] }
+      );
     }
     done.current = true;
   }, [events, map]);
   return null;
 }
 
-// ── Metadata parsing ──────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 interface SosMeta { battery?: number; network?: string; ts?: number }
 function parseMeta(raw: string | null): SosMeta {
   if (!raw) return {};
   try { return JSON.parse(raw) as SosMeta; } catch { return {}; }
 }
 
-// ── Formatters ────────────────────────────────────────────────────────────────
 function fmtDate(iso: string) {
   return new Intl.DateTimeFormat('en-US', {
     month: 'short', day: 'numeric', year: 'numeric',
@@ -88,51 +87,69 @@ function fmtDate(iso: string) {
   }).format(new Date(iso));
 }
 
-function toInputDate(d: Date) {
-  return d.toISOString().slice(0, 16);
+function fmtDateShort(iso: string) {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  }).format(new Date(iso));
 }
 
-function networkIcon(network?: string) {
+/** Format a Date as local time for datetime-local input (YYYY-MM-DDTHH:mm) */
+function toLocalInputDate(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function NetworkIcon({ network }: { network?: string }) {
   if (!network) return null;
   const n = network.toUpperCase();
-  if (n === 'WIFI') return <Wifi className="h-3.5 w-3.5" />;
+  if (n === 'WIFI') return <Wifi    className="h-3.5 w-3.5" />;
   if (n === 'NONE') return <WifiOff className="h-3.5 w-3.5" />;
   return <Radio className="h-3.5 w-3.5" />;
 }
 
 function batteryColor(pct?: number) {
   if (pct == null) return 'text-gray-400';
-  if (pct <= 20)  return 'text-red-500';
-  if (pct <= 50)  return 'text-amber-500';
+  if (pct <= 20)   return 'text-red-500';
+  if (pct <= 50)   return 'text-amber-500';
   return 'text-green-600';
 }
+
+const PAGE_SIZE = 10;
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export function DeviceSosPage() {
   const { deviceId } = useParams<{ deviceId: string }>();
-  const navigate = useNavigate();
+  const navigate     = useNavigate();
   const { data: devices = [] } = useDevicesQuery();
   const device = devices.find((d) => String(d.id) === deviceId);
 
-  // Filter state
-  const now = new Date();
-  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const [from, setFrom] = useState(toInputDate(weekAgo));
-  const [to, setTo]     = useState(toInputDate(now));
-  const [page, setPage] = useState(0);
-  const PAGE_SIZE = 10;
+  // Default: start of today 00:00 → end of today 23:59 in LOCAL time
+  const makeDefaults = () => {
+    const start = new Date(); start.setHours(0,  0,  0, 0);
+    const end   = new Date(); end.setHours(23, 59, 0, 0);
+    return { start, end };
+  };
+  const { start: defaultStart, end: defaultEnd } = makeDefaults();
+  const [from, setFrom]           = useState(toLocalInputDate(defaultStart));
+  const [to,   setTo]             = useState(toLocalInputDate(defaultEnd));
+  const [page, setPage]           = useState(0);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  // Mobile list drawer
+  const [listOpen, setListOpen] = useState(false);
 
   // Data state
-  const [events, setEvents]       = useState<TrackingEventData[]>([]);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalItems, setTotalItems] = useState(0);
-  const [loading, setLoading]     = useState(false);
-  const [error, setError]         = useState<string | null>(null);
+  const [events,      setEvents]     = useState<TrackingEventData[]>([]);
+  const [totalPages,  setTotalPages] = useState(0);
+  const [totalItems,  setTotalItems] = useState(0);
+  const [loading,     setLoading]    = useState(false);
+  const [error,       setError]      = useState<string | null>(null);
 
-  // Selected event for map focus
+  // Selected event
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [flyTrigger, setFlyTrigger] = useState(0);
-  const selectedEvent = events.find((e) => e.id === selectedId) ?? events[0] ?? null;
+  const selectedEvent = events.find((e) => e.id === selectedId) ?? null;
 
   const fetchEvents = useCallback(async () => {
     if (!device?.deviceUuid) return;
@@ -152,7 +169,7 @@ export function DeviceSosPage() {
       setTotalItems(p.totalElements ?? 0);
       if (p.content?.length) setSelectedId(p.content[0].id);
     } catch {
-      setError('Failed to load SOS events. Please try again.');
+      setError('Failed to load SOS events.');
     } finally {
       setLoading(false);
     }
@@ -160,206 +177,235 @@ export function DeviceSosPage() {
 
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
 
+  /** Select an event: fly the map, close the mobile list drawer */
   const handleSelect = (ev: TrackingEventData) => {
     setSelectedId(ev.id);
     setFlyTrigger((t) => t + 1);
+    setListOpen(false); // close drawer on mobile
   };
 
   const defaultCenter: [number, number] = selectedEvent
     ? [selectedEvent.latitude, selectedEvent.longitude]
     : [24.8607, 67.0011];
 
+  // ── Shared event list content (used in both desktop panel & mobile drawer) ──
+  const EventList = (
+    <>
+      {loading && (
+        <div className="flex flex-col items-center justify-center py-12 gap-2 text-muted-foreground">
+          <Loader2 className="h-6 w-6 animate-spin text-red-500" />
+          <p className="text-sm">Loading SOS events…</p>
+        </div>
+      )}
+
+      {!loading && error && (
+        <div className="flex flex-col items-center justify-center py-12 gap-2 px-6 text-center">
+          <Siren className="h-8 w-8 text-red-300" />
+          <p className="text-sm text-red-600">{error}</p>
+          <button type="button" onClick={fetchEvents} className="text-xs text-blue-600 underline mt-1">
+            Retry
+          </button>
+        </div>
+      )}
+
+      {!loading && !error && events.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-14 gap-3 px-6 text-center">
+          <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center">
+            <Siren className="h-7 w-7 text-red-300" />
+          </div>
+          <p className="font-medium text-sm">No SOS Events</p>
+          <p className="text-xs text-muted-foreground">No SOS events in the selected time range.</p>
+        </div>
+      )}
+
+      {!loading && !error && events.length > 0 && (
+        <div className="flex-1 overflow-y-auto overscroll-contain min-h-0">
+          {events.map((ev, idx) => {
+            const meta       = parseMeta(ev.metadata);
+            const isSelected = selectedId === ev.id;
+            return (
+              <button
+                key={ev.id}
+                type="button"
+                onClick={() => handleSelect(ev)}
+                className={`w-full text-left px-4 py-4 border-b transition-colors active:bg-muted/80 ${
+                  isSelected
+                    ? 'bg-red-50 dark:bg-red-950/20 border-l-[3px] border-l-red-500 pl-[13px]'
+                    : 'hover:bg-muted/50'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="inline-flex items-center gap-1 bg-red-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full flex-shrink-0">
+                    <Siren className="h-2.5 w-2.5" /> SOS
+                  </span>
+                  <span className="text-sm font-semibold text-foreground flex-1 min-w-0 truncate">
+                    {fmtDateShort(ev.eventTime)}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground flex-shrink-0">
+                    #{(page * PAGE_SIZE) + idx + 1}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1.5 mb-2">
+                  <MapPin className="h-3.5 w-3.5 text-red-500 flex-shrink-0" />
+                  <span className="text-xs font-mono text-muted-foreground">
+                    {ev.latitude.toFixed(5)}, {ev.longitude.toFixed(5)}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  {meta.battery != null && (
+                    <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-muted ${batteryColor(meta.battery)}`}>
+                      <BatteryMedium className="h-3 w-3" />{meta.battery}%
+                    </span>
+                  )}
+                  {meta.network && (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                      <NetworkIcon network={meta.network} />{meta.network}
+                    </span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {!loading && totalPages > 1 && (
+        <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/20 flex-shrink-0">
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-xl border font-medium hover:bg-muted active:bg-muted/80 disabled:opacity-40 transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4" /> Prev
+          </button>
+          <span className="text-xs text-muted-foreground font-medium">{page + 1} / {totalPages}</span>
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={page >= totalPages - 1}
+            className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-xl border font-medium hover:bg-muted active:bg-muted/80 disabled:opacity-40 transition-colors"
+          >
+            Next <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+    </>
+  );
+
   return (
-    <div className="flex flex-col h-screen bg-background overflow-hidden">
-      {/* ── Header ───────────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b bg-white dark:bg-gray-900 shadow-sm flex-shrink-0">
+    <div className="flex flex-col bg-background" style={{ height: '100dvh' }}>
+
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 border-b bg-white dark:bg-gray-900 shadow-sm flex-shrink-0">
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+          className="p-2 -ml-1 rounded-xl hover:bg-muted transition-colors"
+          aria-label="Back"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <div className="p-2 bg-gradient-to-br from-red-500 to-rose-600 rounded-lg shadow-md shadow-red-500/20">
+
+        <div className="p-2 bg-gradient-to-br from-red-500 to-rose-600 rounded-xl shadow-md shadow-red-500/20 flex-shrink-0">
           <Siren className="h-4 w-4 text-white" />
         </div>
+
         <div className="flex-1 min-w-0">
-          <h1 className="font-semibold text-base leading-tight">SOS History</h1>
+          <h1 className="font-semibold text-sm sm:text-base leading-tight">SOS History</h1>
           <p className="text-xs text-muted-foreground truncate">
             {device ? (device.deviceName || device.model) : `Device #${deviceId}`}
           </p>
         </div>
-        {/* Stats pill */}
-        {!loading && (
-          <span className="hidden sm:inline-flex items-center gap-1.5 text-xs bg-red-50 text-red-700 border border-red-200 rounded-full px-3 py-1 font-medium">
-            <Siren className="h-3 w-3" />
-            {totalItems} SOS event{totalItems !== 1 ? 's' : ''}
+
+        {!loading && totalItems > 0 && (
+          <span className="inline-flex items-center gap-1.5 text-xs bg-red-50 text-red-700 border border-red-200 rounded-full px-2.5 py-1 font-medium flex-shrink-0">
+            <Siren className="h-3 w-3" />{totalItems}
           </span>
         )}
+
+        {/* Filter toggle */}
+        <button
+          type="button"
+          onClick={() => setFiltersOpen((v) => !v)}
+          className={`p-2 rounded-xl transition-colors ${filtersOpen ? 'bg-red-50 text-red-600' : 'hover:bg-muted'}`}
+          aria-label="Toggle filters"
+        >
+          <SlidersHorizontal className="h-4 w-4" />
+        </button>
+
         <button
           type="button"
           onClick={fetchEvents}
           disabled={loading}
-          className="p-1.5 rounded-lg hover:bg-muted transition-colors disabled:opacity-40"
+          className="p-2 rounded-xl hover:bg-muted transition-colors disabled:opacity-40"
+          aria-label="Refresh"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
-      {/* ── Filter bar ───────────────────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-center gap-3 px-4 py-2.5 border-b bg-muted/30 flex-shrink-0">
-        <div className="flex items-center gap-1.5">
-          <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground font-medium">From</span>
-          <input
-            type="datetime-local"
-            value={from}
-            onChange={(e) => { setFrom(e.target.value); setPage(0); }}
-            className="text-xs border rounded px-2 py-1 bg-background focus:outline-none focus:ring-1 focus:ring-red-400"
-          />
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs text-muted-foreground font-medium">To</span>
-          <input
-            type="datetime-local"
-            value={to}
-            onChange={(e) => { setTo(e.target.value); setPage(0); }}
-            className="text-xs border rounded px-2 py-1 bg-background focus:outline-none focus:ring-1 focus:ring-red-400"
-          />
+      {/* ── Filter bar (collapsible) ────────────────────────────────────────── */}
+      <div className={`border-b bg-muted/30 flex-shrink-0 overflow-hidden transition-all duration-200 ${filtersOpen ? 'max-h-40' : 'max-h-0'}`}>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 px-4 py-3">
+          <div className="flex items-center gap-2 flex-1">
+            <label className="text-xs text-muted-foreground font-medium whitespace-nowrap w-8">From</label>
+            <input
+              type="datetime-local"
+              value={from}
+              onChange={(e) => { setFrom(e.target.value); setPage(0); }}
+              className="flex-1 text-xs border rounded-lg px-2.5 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-red-400 min-w-0"
+            />
+          </div>
+          <div className="flex items-center gap-2 flex-1">
+            <label className="text-xs text-muted-foreground font-medium whitespace-nowrap w-8">To</label>
+            <input
+              type="datetime-local"
+              value={to}
+              onChange={(e) => { setTo(e.target.value); setPage(0); }}
+              className="flex-1 text-xs border rounded-lg px-2.5 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-red-400 min-w-0"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => setFiltersOpen(false)}
+            className="sm:hidden self-end flex items-center gap-1 text-xs text-muted-foreground"
+          >
+            <X className="h-3.5 w-3.5" /> Close
+          </button>
         </div>
       </div>
 
-      {/* ── Body ─────────────────────────────────────────────────────────────── */}
-      <div className="flex flex-1 min-h-0 overflow-hidden">
+      {/* ── Body ───────────────────────────────────────────────────────────── */}
+      <div className="flex flex-1 min-h-0 overflow-hidden relative">
 
-        {/* Left — event list */}
-        <div className="w-full md:w-[380px] xl:w-[420px] flex flex-col border-r flex-shrink-0 bg-white dark:bg-gray-900">
-          {/* loading / error / empty states */}
-          {loading && (
-            <div className="flex flex-col items-center justify-center flex-1 gap-2 text-muted-foreground">
-              <Loader2 className="h-7 w-7 animate-spin text-red-500" />
-              <p className="text-sm">Loading SOS events…</p>
-            </div>
-          )}
-          {!loading && error && (
-            <div className="flex flex-col items-center justify-center flex-1 gap-2 px-6 text-center">
-              <Siren className="h-8 w-8 text-red-300" />
-              <p className="text-sm text-red-600">{error}</p>
-              <button
-                type="button"
-                onClick={fetchEvents}
-                className="text-xs text-blue-600 underline"
-              >
-                Retry
-              </button>
-            </div>
-          )}
-          {!loading && !error && events.length === 0 && (
-            <div className="flex flex-col items-center justify-center flex-1 gap-3 px-6 text-center">
-              <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center">
-                <Siren className="h-7 w-7 text-red-300" />
-              </div>
-              <p className="font-medium text-sm">No SOS Events</p>
-              <p className="text-xs text-muted-foreground">
-                No SOS events recorded in the selected time range.
-              </p>
-            </div>
-          )}
+        {/* ═══════════════════════════════════════════════════════════════════
+            DESKTOP (md+): side-by-side — list left, map right
+            MOBILE       : map fills everything; list is a floating drawer
+        ═══════════════════════════════════════════════════════════════════ */}
 
-          {/* Event cards */}
-          {!loading && !error && events.length > 0 && (
-            <div className="flex-1 overflow-y-auto">
-              {events.map((ev, idx) => {
-                const meta = parseMeta(ev.metadata);
-                const isSelected = selectedId === ev.id;
-                return (
-                  <button
-                    key={ev.id}
-                    type="button"
-                    onClick={() => handleSelect(ev)}
-                    className={`w-full text-left px-4 py-3.5 border-b transition-colors ${
-                      isSelected
-                        ? 'bg-red-50 dark:bg-red-950/20 border-l-2 border-l-red-500'
-                        : 'hover:bg-muted/50'
-                    }`}
-                  >
-                    {/* Top row */}
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="inline-flex items-center gap-1 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                        <Siren className="h-3 w-3" /> SOS
-                      </span>
-                      <span className="text-xs text-muted-foreground ml-auto">
-                        #{(page * PAGE_SIZE) + idx + 1}
-                      </span>
-                    </div>
-
-                    {/* Date/time */}
-                    <p className="text-sm font-semibold text-foreground mb-1.5">
-                      {fmtDate(ev.eventTime)}
-                    </p>
-
-                    {/* Coordinates */}
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <MapPin className="h-3.5 w-3.5 text-red-500 flex-shrink-0" />
-                      <span className="text-xs font-mono text-muted-foreground">
-                        {ev.latitude.toFixed(6)}, {ev.longitude.toFixed(6)}
-                      </span>
-                    </div>
-
-                    {/* Battery + Network row */}
-                    <div className="flex items-center gap-3">
-                      {meta.battery != null && (
-                        <span className={`flex items-center gap-1 text-xs font-medium ${batteryColor(meta.battery)}`}>
-                          <BatteryMedium className="h-3.5 w-3.5" />
-                          {meta.battery}%
-                        </span>
-                      )}
-                      {meta.network && (
-                        <span className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
-                          {networkIcon(meta.network)}
-                          {meta.network}
-                        </span>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Pagination */}
-          {!loading && totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-2.5 border-t bg-muted/20 flex-shrink-0">
-              <button
-                type="button"
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
-                disabled={page === 0}
-                className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded border hover:bg-muted disabled:opacity-40 transition-colors"
-              >
-                <ChevronLeft className="h-3.5 w-3.5" /> Prev
-              </button>
-              <span className="text-xs text-muted-foreground">
-                Page {page + 1} of {totalPages}
-              </span>
-              <button
-                type="button"
-                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                disabled={page >= totalPages - 1}
-                className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded border hover:bg-muted disabled:opacity-40 transition-colors"
-              >
-                Next <ChevronRight className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          )}
+        {/* ── Desktop list panel ─────────────────────────────────────────── */}
+        <div className="hidden md:flex md:w-[360px] xl:w-[400px] flex-col border-r bg-white dark:bg-gray-900 flex-shrink-0 min-h-0">
+          <div className="px-4 py-2 border-b bg-muted/40 flex-shrink-0">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              SOS Events {totalItems > 0 && `(${totalItems})`}
+            </p>
+          </div>
+          <div className="flex flex-col flex-1 min-h-0">
+            {EventList}
+          </div>
         </div>
 
-        {/* Right — Map */}
-        <div className="flex-1 relative hidden md:block">
+        {/* ── Map (full area on mobile, flex-1 on desktop) ───────────────── */}
+        <div className="flex-1 relative h-full">
+
           {/* Empty state overlay */}
           {!loading && events.length === 0 && (
-            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-muted/30">
-              <MapPin className="h-10 w-10 text-muted-foreground/40 mb-2" />
-              <p className="text-sm text-muted-foreground">No SOS locations to display</p>
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-muted/30 gap-2 pointer-events-none">
+              <MapPin className="h-8 w-8 text-muted-foreground/40" />
+              <p className="text-xs text-muted-foreground">No SOS locations to display</p>
             </div>
           )}
 
@@ -367,22 +413,18 @@ export function DeviceSosPage() {
             center={defaultCenter}
             zoom={selectedEvent ? 14 : 5}
             style={{ height: '100%', width: '100%' }}
+            zoomControl={false}
           >
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-
-            {/* Fit all on first load */}
             {events.length > 0 && <FitAll events={events} />}
-
-            {/* Fly to selected event */}
             {selectedEvent && (
               <FlyTo lat={selectedEvent.latitude} lng={selectedEvent.longitude} trigger={flyTrigger} />
             )}
-
             {events.map((ev) => {
-              const meta = parseMeta(ev.metadata);
+              const meta       = parseMeta(ev.metadata);
               const isSelected = selectedId === ev.id;
               return (
                 <Marker
@@ -391,39 +433,24 @@ export function DeviceSosPage() {
                   icon={isSelected ? SELECTED_PIN : SOS_PIN}
                   eventHandlers={{ click: () => handleSelect(ev) }}
                 >
-                  <Popup minWidth={220} maxWidth={240}>
+                  <Popup minWidth={210} maxWidth={230}>
                     <div style={{ fontFamily: 'inherit' }}>
-                      {/* SOS badge */}
                       <div style={{
                         display: 'inline-flex', alignItems: 'center', gap: 5,
                         background: '#dc2626', color: 'white',
                         fontSize: 11, fontWeight: 700, padding: '3px 8px',
                         borderRadius: 999, marginBottom: 8,
-                      }}>
-                        🆘 SOS Alert
-                      </div>
-
-                      {/* Time */}
+                      }}>🆘 SOS Alert</div>
                       <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
                         {fmtDate(ev.eventTime)}
                       </p>
-
-                      {/* Coords */}
                       <p style={{ fontSize: 11, color: '#64748b', fontFamily: 'monospace', marginBottom: 6 }}>
                         {ev.latitude.toFixed(6)}, {ev.longitude.toFixed(6)}
                       </p>
-
-                      {/* Battery + Network */}
                       <div style={{ display: 'flex', gap: 12, fontSize: 11, color: '#475569', marginBottom: 10 }}>
-                        {meta.battery != null && (
-                          <span>🔋 {meta.battery}%</span>
-                        )}
-                        {meta.network && (
-                          <span>📶 {meta.network}</span>
-                        )}
+                        {meta.battery != null && <span>🔋 {meta.battery}%</span>}
+                        {meta.network  && <span>📶 {meta.network}</span>}
                       </div>
-
-                      {/* Open Tracking button */}
                       <button
                         type="button"
                         onClick={() => window.open(`/device/${deviceId}/tracking`, '_blank')}
@@ -431,11 +458,8 @@ export function DeviceSosPage() {
                           width: '100%', fontSize: 12, fontWeight: 500,
                           background: '#dc2626', color: 'white', border: 'none',
                           borderRadius: 6, padding: '6px 0', cursor: 'pointer',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                         }}
-                      >
-                        Open Live Tracking ↗
-                      </button>
+                      >Open Live Tracking ↗</button>
                     </div>
                   </Popup>
                 </Marker>
@@ -443,59 +467,102 @@ export function DeviceSosPage() {
             })}
           </MapContainer>
 
-          {/* Selected event detail panel */}
-          {selectedEvent && (
-            <div className="absolute bottom-4 left-4 right-4 z-[400] bg-white dark:bg-gray-900 rounded-xl shadow-xl border p-4 max-w-sm">
-              <div className="flex items-start justify-between gap-2 mb-3">
-                <div>
-                  <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-xs font-bold px-2.5 py-1 rounded-full mb-1.5">
-                    <Siren className="h-3.5 w-3.5" /> SOS Alert
-                  </span>
-                  <p className="text-sm font-semibold">{fmtDate(selectedEvent.eventTime)}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => window.open(`/device/${deviceId}/tracking`, '_blank')}
-                  className="flex items-center gap-1.5 text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg transition-colors font-medium flex-shrink-0"
-                >
-                  <ExternalLink className="h-3.5 w-3.5" />
-                  Live Tracking
-                </button>
-              </div>
+          {/* ── Mobile: "View List" floating button (top-left of map) ─── */}
+          <button
+            type="button"
+            onClick={() => setListOpen(true)}
+            className="md:hidden absolute top-3 left-3 z-[400] flex items-center gap-2 bg-white dark:bg-gray-900 shadow-lg border rounded-xl px-3 py-2 text-sm font-medium hover:bg-muted active:scale-95 transition-all"
+          >
+            <List className="h-4 w-4 text-red-600" />
+            <span>SOS List</span>
+            {totalItems > 0 && (
+              <span className="bg-red-600 text-white text-[11px] font-bold px-1.5 py-0.5 rounded-full leading-none">
+                {totalItems}
+              </span>
+            )}
+          </button>
 
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="bg-muted/50 rounded-lg p-2">
-                  <p className="text-muted-foreground mb-0.5">Latitude</p>
-                  <p className="font-mono font-medium">{selectedEvent.latitude.toFixed(6)}</p>
+          {/* ── Selected event detail card (bottom of map) ───────────── */}
+          {selectedEvent && (() => {
+            const meta = parseMeta(selectedEvent.metadata);
+            return (
+              <div className="absolute bottom-3 left-3 right-3 z-[400] bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-border p-3">
+                <div className="flex items-center justify-between gap-2 mb-2.5">
+                  <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-xs font-bold px-2.5 py-1 rounded-full">
+                    <Siren className="h-3 w-3" /> SOS
+                  </span>
+                  <span className="text-xs text-muted-foreground font-medium flex-1 truncate text-center">
+                    {fmtDateShort(selectedEvent.eventTime)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => window.open(`/device/${deviceId}/tracking`, '_blank')}
+                    className="flex items-center gap-1.5 text-xs bg-red-600 hover:bg-red-700 active:bg-red-800 text-white px-3 py-1.5 rounded-lg transition-colors font-medium flex-shrink-0"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    Tracking
+                  </button>
                 </div>
-                <div className="bg-muted/50 rounded-lg p-2">
-                  <p className="text-muted-foreground mb-0.5">Longitude</p>
-                  <p className="font-mono font-medium">{selectedEvent.longitude.toFixed(6)}</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-xs">
+                  <div className="bg-muted/60 rounded-lg px-2 py-1.5">
+                    <p className="text-muted-foreground text-[10px] mb-0.5">Latitude</p>
+                    <p className="font-mono font-medium">{selectedEvent.latitude.toFixed(5)}</p>
+                  </div>
+                  <div className="bg-muted/60 rounded-lg px-2 py-1.5">
+                    <p className="text-muted-foreground text-[10px] mb-0.5">Longitude</p>
+                    <p className="font-mono font-medium">{selectedEvent.longitude.toFixed(5)}</p>
+                  </div>
+                  {meta.battery != null && (
+                    <div className="bg-muted/60 rounded-lg px-2 py-1.5">
+                      <p className="text-muted-foreground text-[10px] mb-0.5">Battery</p>
+                      <p className={`font-semibold flex items-center gap-1 ${batteryColor(meta.battery)}`}>
+                        <BatteryMedium className="h-3 w-3" />{meta.battery}%
+                      </p>
+                    </div>
+                  )}
+                  {meta.network && (
+                    <div className="bg-muted/60 rounded-lg px-2 py-1.5">
+                      <p className="text-muted-foreground text-[10px] mb-0.5">Network</p>
+                      <p className="font-semibold flex items-center gap-1">
+                        <NetworkIcon network={meta.network} />{meta.network}
+                      </p>
+                    </div>
+                  )}
                 </div>
-                {(() => { const m = parseMeta(selectedEvent.metadata); return (
-                  <>
-                    {m.battery != null && (
-                      <div className="bg-muted/50 rounded-lg p-2">
-                        <p className="text-muted-foreground mb-0.5">Battery</p>
-                        <p className={`font-semibold ${batteryColor(m.battery)}`}>
-                          {m.battery}%
-                        </p>
-                      </div>
-                    )}
-                    {m.network && (
-                      <div className="bg-muted/50 rounded-lg p-2">
-                        <p className="text-muted-foreground mb-0.5">Network</p>
-                        <p className="font-semibold flex items-center gap-1">
-                          {networkIcon(m.network)} {m.network}
-                        </p>
-                      </div>
-                    )}
-                  </>
-                ); })()}
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
+
+        {/* ── Mobile list drawer (overlay) ───────────────────────────────── */}
+        {listOpen && (
+          <div className="md:hidden absolute inset-0 z-[500] flex flex-col bg-white dark:bg-gray-900">
+            {/* Drawer header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b bg-white dark:bg-gray-900 flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <Siren className="h-4 w-4 text-red-600" />
+                <span className="font-semibold text-sm">SOS Events</span>
+                {totalItems > 0 && (
+                  <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">
+                    {totalItems}
+                  </span>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setListOpen(false)}
+                className="p-2 rounded-xl hover:bg-muted transition-colors"
+                aria-label="Close list"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            {/* Scrollable list content */}
+            <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              {EventList}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
