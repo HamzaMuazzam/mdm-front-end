@@ -332,6 +332,10 @@ export function DeviceManagement() {
     navigate(`/device/${device.id}/tracking`);
   };
 
+  const handleSosHistory = (device: Device) => {
+    navigate(`/device/${device.id}/sos`);
+  };
+
   const fetchAlertStatus = useCallback(async (deviceId: number) => {
     if (alertStatusByDevice[deviceId] !== undefined || alertStatusLoading[deviceId]) return;
     setAlertStatusLoading((prev) => ({ ...prev, [deviceId]: true }));
@@ -739,6 +743,11 @@ export function DeviceManagement() {
                           <MapPin className="h-4 w-4" /> Live Tracking
                         </button>
                       )}
+                      {hasPermission('tracking:history') && (
+                        <button type="button" className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 transition-colors font-medium" onClick={() => { closeActionsMenu(); handleSosHistory(device); }}>
+                          <Siren className="h-4 w-4" /> SOS History
+                        </button>
+                      )}
                       {hasPermission('notifications:manage-alerts') && (
                         <button
                           type="button"
@@ -915,6 +924,11 @@ export function DeviceManagement() {
                               {hasPermission('tracking:history') && (
                                 <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50" onClick={() => { closeActionsMenu(); handleTracking(device); }}>
                                   <MapPin className="h-4 w-4" /> Live Tracking
+                                </button>
+                              )}
+                              {hasPermission('tracking:history') && (
+                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 font-medium" onClick={() => { closeActionsMenu(); handleSosHistory(device); }}>
+                                  <Siren className="h-4 w-4" /> SOS History
                                 </button>
                               )}
                               {hasPermission('devices:update') && (
