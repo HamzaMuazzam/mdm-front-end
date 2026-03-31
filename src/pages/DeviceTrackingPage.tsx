@@ -1972,7 +1972,7 @@ export function DeviceTrackingPage() {
       {/* ══════════════════════════════════════════════════════════════════
           MOBILE BOTTOM NAV BAR  (md:hidden) — fixed, always visible
       ══════════════════════════════════════════════════════════════════ */}
-      <div className="md:hidden fixed bottom-0 inset-x-0 z-[200] shrink-0 flex items-stretch border-t border-gray-200/80 dark:border-slate-700/60 bg-white dark:bg-slate-950 shadow-[0_-4px_20px_rgba(0,0,0,0.10)]" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <div className={`md:hidden fixed bottom-0 inset-x-0 z-[200] shrink-0 ${activePanel ? 'hidden' : 'flex'} items-stretch border-t border-gray-200/80 dark:border-slate-700/60 bg-white dark:bg-slate-950 shadow-[0_-4px_20px_rgba(0,0,0,0.10)]`} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {([
           { id: null            , Icon: MapPin,       label: 'Map',     badge: null          },
           { id: 'history'       , Icon: Sheet,        label: 'History', badge: hasLoaded && totalElements > 0 ? totalElements : null },
@@ -2002,7 +2002,7 @@ export function DeviceTrackingPage() {
 
       {/* ── Universal panel overlay (desktop: right slide-in · mobile: native bottom sheet) ── */}
       {activePanel && (
-        <div className="fixed inset-0 z-[9999] flex md:flex-row flex-col-reverse" onClick={() => setActivePanel(null)}>
+        <div className="fixed inset-0 z-[9999] flex flex-col md:flex-row" onClick={() => setActivePanel(null)}>
           {/* Backdrop — full on mobile (bottom sheet), partial on desktop */}
           <div className="flex-1 bg-black/50 md:bg-black/30 backdrop-blur-sm md:backdrop-blur-sm" />
           {/* Panel — native bottom sheet on mobile, right-side drawer on desktop */}

@@ -142,14 +142,19 @@
 }
 
 .all-devices-map-page .leaflet-popup-content-wrapper {
-  border-radius: 1.75rem;
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.28);
+  border-radius: 1.25rem;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.7);
   padding: 0;
 }
 
 .all-devices-map-page .leaflet-popup-tip {
-  background: rgba(255, 255, 255, 0.95);
+  background: #0f172a;
+}
+
+.all-devices-map-page .leaflet-popup-close-button {
+  color: rgba(148, 163, 184, 0.8) !important;
 }
 
 .all-devices-map-page .leaflet-popup-content {

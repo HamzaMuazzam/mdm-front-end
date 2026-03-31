@@ -715,7 +715,7 @@ export function AllDevicesMapPage() {
 
       <div className="relative flex h-[100dvh] flex-col p-0 lg:p-5">
         <div className="grid flex-1 min-h-0 gap-0 lg:gap-3 lg:grid-cols-[minmax(0,1fr)_24rem] xl:grid-cols-[minmax(0,1fr)_26rem]">
-          <section className="relative min-h-0 overflow-hidden bg-slate-900/85 lg:rounded-[34px] lg:border lg:border-white/10 lg:shadow-[0_32px_120px_rgba(15,23,42,0.45)] lg:ring-1 lg:ring-white/5">
+          <section className="relative min-h-0 overflow-hidden bg-slate-950 lg:rounded-[34px] lg:border lg:border-white/10 lg:shadow-[0_32px_120px_rgba(15,23,42,0.45)] lg:ring-1 lg:ring-white/5">
             <div
               className="pointer-events-none absolute inset-x-0 top-0 z-[710] flex items-center justify-between px-3 lg:hidden"
               style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.85rem)' }}
@@ -743,8 +743,8 @@ export function AllDevicesMapPage() {
             </div>
 
             {(loading || devicesLoading) && (
-              <div className="absolute inset-0 z-[750] flex items-center justify-center bg-slate-950/45 backdrop-blur-sm">
-                <div className="rounded-[28px] border border-white/10 bg-slate-950/80 px-8 py-7 text-center shadow-[0_24px_80px_rgba(2,6,23,0.5)]">
+              <div className="absolute inset-0 z-[750] flex items-center justify-center bg-slate-950/70">
+                <div className="rounded-[28px] border border-white/10 bg-slate-900 px-8 py-7 text-center shadow-[0_24px_80px_rgba(2,6,23,0.5)]">
                   <Loader2 className="mx-auto h-9 w-9 animate-spin text-cyan-300" />
                   <p className="mt-4 text-sm font-medium text-white">Loading device locations</p>
                   <p className="mt-1 text-xs text-slate-400">
@@ -789,62 +789,52 @@ export function AllDevicesMapPage() {
                       click: () => setSelectedUuid(device.deviceUuid),
                     }}
                   >
-                    <Popup minWidth={260} maxWidth={260}>
-                      <div className="w-[240px] p-4">
-                        <div className="flex items-start justify-between gap-3">
+                    <Popup minWidth={240} maxWidth={240}>
+                      <div className="w-[220px] p-3">
+                        <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-slate-950">
+                            <p className="truncate text-sm font-semibold text-white">
                               {getDeviceLabel(device)}
                             </p>
-                            <p className="mt-1 truncate text-xs text-slate-500">
+                            <p className="mt-0.5 truncate text-xs text-slate-400">
                               {getDeviceSubtitle(device)}
                             </p>
                           </div>
                           <span
                             className={cn(
-                              'inline-flex items-center gap-1 rounded-full px-2 py-1 text-[0.68rem] font-medium',
+                              'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[0.65rem] font-medium',
                               isOnline
-                                ? 'bg-emerald-100 text-emerald-700'
-                                : 'bg-slate-100 text-slate-600'
+                                ? 'bg-emerald-400/15 text-emerald-300'
+                                : 'bg-slate-700/60 text-slate-300'
                             )}
                           >
-                            {isOnline ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
+                            {isOnline ? <Wifi className="h-2.5 w-2.5" /> : <WifiOff className="h-2.5 w-2.5" />}
                             {isOnline ? 'Online' : 'Offline'}
                           </span>
                         </div>
 
-                        <div className="mt-4 grid grid-cols-2 gap-2">
-                          <div className="rounded-2xl bg-slate-100 p-3">
-                            <p className="text-[0.65rem] uppercase tracking-[0.18em] text-slate-500">
-                              Speed
-                            </p>
-                            <p className="mt-1 text-sm font-semibold text-slate-900">
-                              {formatSpeed(point!.speed)}
-                            </p>
+                        <div className="mt-3 grid grid-cols-2 gap-1.5">
+                          <div className="rounded-xl bg-white/[0.06] p-2.5">
+                            <p className="text-[0.6rem] uppercase tracking-[0.14em] text-slate-400">Speed</p>
+                            <p className="mt-1 text-sm font-semibold text-white">{formatSpeed(point!.speed)}</p>
                           </div>
-                          <div className="rounded-2xl bg-slate-100 p-3">
-                            <p className="text-[0.65rem] uppercase tracking-[0.18em] text-slate-500">
-                              Updated
-                            </p>
-                            <p className="mt-1 text-sm font-semibold text-slate-900">
-                              {formatTimeAgo(point!.receivedAt)}
-                            </p>
+                          <div className="rounded-xl bg-white/[0.06] p-2.5">
+                            <p className="text-[0.6rem] uppercase tracking-[0.14em] text-slate-400">Updated</p>
+                            <p className="mt-1 text-sm font-semibold text-white">{formatTimeAgo(point!.receivedAt)}</p>
                           </div>
                         </div>
 
-                        <div className="mt-3 rounded-2xl bg-slate-100 p-3 text-xs leading-5 text-slate-600">
-                          <div>Lat: {point!.latitude.toFixed(6)}</div>
-                          <div>Lng: {point!.longitude.toFixed(6)}</div>
-                          <div>Accuracy: {point!.accuracy.toFixed(1)} m</div>
-                          <div>{formatTimestamp(point!.receivedAt)}</div>
+                        <div className="mt-1.5 rounded-xl bg-white/[0.06] p-2.5 text-xs leading-5 text-slate-300 font-mono">
+                          <div>{point!.latitude.toFixed(6)}, {point!.longitude.toFixed(6)}</div>
+                          <div className="text-slate-400">{formatTimestamp(point!.receivedAt)}</div>
                         </div>
 
                         <button
                           type="button"
                           onClick={() => handleOpenTracking(device.id)}
-                          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-medium text-white transition-transform duration-200 hover:-translate-y-0.5"
+                          className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white/10 border border-white/10 px-3 py-2 text-xs font-medium text-white hover:bg-white/15 transition-colors"
                         >
-                          <ArrowUpRight className="h-4 w-4" />
+                          <ArrowUpRight className="h-3.5 w-3.5" />
                           Open tracking
                         </button>
                       </div>
@@ -892,7 +882,7 @@ export function AllDevicesMapPage() {
             </div>
           </section>
 
-          <aside className="hidden min-h-0 overflow-hidden rounded-[34px] border border-white/10 bg-slate-950/78 shadow-[0_28px_90px_rgba(2,6,23,0.42)] backdrop-blur-2xl lg:flex lg:flex-col">
+          <aside className="hidden min-h-0 overflow-hidden rounded-[34px] border border-white/10 bg-slate-950 shadow-[0_28px_90px_rgba(2,6,23,0.42)] lg:flex lg:flex-col">
             {renderPanelContent(false)}
           </aside>
         </div>
