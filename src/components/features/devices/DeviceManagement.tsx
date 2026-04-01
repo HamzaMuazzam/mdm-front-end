@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, Eye, BarChart3, MoreVertical, Power, RotateCcw, Siren, Mic, Database, Map } from 'lucide-react';
+import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, Eye, BarChart3, MoreVertical, Power, RotateCcw, Siren, Mic, Database, Map, Plus } from 'lucide-react';
 import QRCode from 'qrcode';
 import type { CreateDeviceRequest, UpdateDeviceRequest, Device, UpdateDeviceConfigurationRequest } from '@/types/device.types';
 import { ROUTES } from '@/utils/constants';
@@ -506,7 +506,8 @@ export function DeviceManagement() {
           )}
           {hasPermission('devices:create') && (
             <Button onClick={() => setIsModalOpen(true)} className="flex-1 sm:flex-none bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white border-0">
-              + Add Device
+              <Plus className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">Add Device</span>
             </Button>
           )}
         </div>
@@ -708,89 +709,112 @@ export function DeviceManagement() {
                     <span className="text-[10px] font-medium">More</span>
                   </button>
                   {openActionMenuDeviceId === device.id && (
-                    <div className="absolute right-0 bottom-full mb-2 z-30 w-56 overflow-hidden rounded-xl border border-border bg-popover shadow-2xl">
-                      <div className="px-3 py-2 border-b border-border bg-muted/40">
-                        <p className="text-xs font-semibold text-foreground truncate">{device.deviceName || 'Device'}</p>
-                        <p className="text-[11px] text-muted-foreground truncate">{device.userEmail || device.deviceUuid}</p>
-                      </div>
-                      {hasPermission('devices:configurations:read') && (
-                        <button type="button" className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-foreground hover:bg-muted transition-colors" onClick={() => { closeActionsMenu(); handleViewConfig(device); }}>
-                          <Settings className="h-4 w-4 text-muted-foreground" /> Configuration
-                        </button>
-                      )}
-                      {hasPermission('notifications:view-history') && (
-                        <button type="button" className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-foreground hover:bg-muted transition-colors" onClick={() => { closeActionsMenu(); handleViewNotifications(device); }}>
-                          <Bell className="h-4 w-4 text-muted-foreground" /> View Notifications
-                        </button>
-                      )}
-                      {hasPermission('device-alerts:send') && (
-                        <button type="button" className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 transition-colors" onClick={() => { closeActionsMenu(); handleSendAlert(device); }}>
-                          <Siren className="h-4 w-4" /> Send Alarm
-                        </button>
-                      )}
-                      {hasPermission('device-audio:listen') && (
-                        <button type="button" className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-green-600 hover:bg-green-50 transition-colors" onClick={() => { closeActionsMenu(); handleListenAudio(device); }}>
-                          <Mic className="h-4 w-4" /> Listen to Device
-                        </button>
-                      )}
-                      {hasPermission('device-data:read') && (
-                        <button type="button" className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-violet-600 hover:bg-violet-50 transition-colors" onClick={() => { closeActionsMenu(); handleMonitorData(device); }}>
-                          <Database className="h-4 w-4" /> Contacts &amp; SMS &amp; Calls
-                        </button>
-                      )}
-                      {hasPermission('tracking:history') && (
-                        <button type="button" className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-blue-600 hover:bg-blue-50 transition-colors" onClick={() => { closeActionsMenu(); handleTracking(device); }}>
-                          <MapPin className="h-4 w-4" /> Live Tracking
-                        </button>
-                      )}
-                      {hasPermission('tracking:history') && (
-                        <button type="button" className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 transition-colors font-medium" onClick={() => { closeActionsMenu(); handleSosHistory(device); }}>
-                          <Siren className="h-4 w-4" /> SOS History
-                        </button>
-                      )}
-                      {hasPermission('notifications:manage-alerts') && (
-                        <button
-                          type="button"
-                          className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm transition-colors ${alertsMenuClass}`}
-                          onClick={() => { closeActionsMenu(); handleToggleAlerts(device); }}
-                          disabled={alertsLoading || updateNotificationSettingsMutation.isPending}
-                        >
-                          <Bell className="h-4 w-4" /> {alertsLabel}
-                        </button>
-                      )}
-                      <button type="button" className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-foreground hover:bg-muted transition-colors" onClick={() => { closeActionsMenu(); handleShowCode(device.deviceVerificationCode); }}>
-                        <Key className="h-4 w-4 text-muted-foreground" /> Verification Code
-                      </button>
-                      {hasPermission('devices:update') && (
-                        <>
-                          <div className="my-1 h-px bg-border" />
-                          <button type="button" className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-foreground hover:bg-muted transition-colors" onClick={() => { closeActionsMenu(); handleOpenCommandDialog(device, 'reboot'); }}>
-                            <Power className="h-4 w-4 text-muted-foreground" /> Reboot Device
+                    <>
+                      {/* Backdrop */}
+                      <div className="fixed inset-0 z-40 bg-black/40" onClick={closeActionsMenu} />
+                      {/* Bottom sheet */}
+                      <div className="fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-2xl border-t border-border bg-popover shadow-2xl max-h-[80vh]">
+                        {/* Drag handle */}
+                        <div className="flex justify-center pt-3 pb-1 shrink-0">
+                          <div className="w-10 h-1 rounded-full bg-border" />
+                        </div>
+                        {/* Header */}
+                        <div className="px-4 py-2.5 border-b border-border bg-muted/40 shrink-0">
+                          <p className="text-sm font-semibold text-foreground truncate">{device.deviceName || 'Device'}</p>
+                          <p className="text-xs text-muted-foreground truncate">{device.userEmail || device.deviceUuid}</p>
+                        </div>
+                        {/* Scrollable menu items */}
+                        <div className="overflow-y-auto flex-1 pb-safe">
+                          {hasPermission('devices:configurations:read') && (
+                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-foreground hover:bg-muted transition-colors" onClick={() => { closeActionsMenu(); handleViewConfig(device); }}>
+                              <Settings className="h-5 w-5 text-muted-foreground shrink-0" /> Configuration
+                            </button>
+                          )}
+                          {hasPermission('notifications:view-history') && (
+                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-foreground hover:bg-muted transition-colors" onClick={() => { closeActionsMenu(); handleViewNotifications(device); }}>
+                              <Bell className="h-5 w-5 text-muted-foreground shrink-0" /> View Notifications
+                            </button>
+                          )}
+                          {hasPermission('device-alerts:send') && (
+                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" onClick={() => { closeActionsMenu(); handleSendAlert(device); }}>
+                              <Siren className="h-5 w-5 shrink-0" /> Send Alarm
+                            </button>
+                          )}
+                          {hasPermission('device-audio:listen') && (
+                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors" onClick={() => { closeActionsMenu(); handleListenAudio(device); }}>
+                              <Mic className="h-5 w-5 shrink-0" /> Listen to Device
+                            </button>
+                          )}
+                          {hasPermission('device-data:read') && (
+                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors" onClick={() => { closeActionsMenu(); handleMonitorData(device); }}>
+                              <Database className="h-5 w-5 shrink-0" /> Contacts &amp; SMS &amp; Calls
+                            </button>
+                          )}
+                          {hasPermission('tracking:history') && (
+                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors" onClick={() => { closeActionsMenu(); handleTracking(device); }}>
+                              <MapPin className="h-5 w-5 shrink-0" /> Live Tracking
+                            </button>
+                          )}
+                          {hasPermission('tracking:history') && (
+                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors font-medium" onClick={() => { closeActionsMenu(); handleSosHistory(device); }}>
+                              <Siren className="h-5 w-5 shrink-0" /> SOS History
+                            </button>
+                          )}
+                          {hasPermission('notifications:manage-alerts') && (
+                            <button
+                              type="button"
+                              className={`flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm transition-colors ${alertsMenuClass}`}
+                              onClick={() => { closeActionsMenu(); handleToggleAlerts(device); }}
+                              disabled={alertsLoading || updateNotificationSettingsMutation.isPending}
+                            >
+                              <Bell className="h-5 w-5 shrink-0" /> {alertsLabel}
+                            </button>
+                          )}
+                          <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-foreground hover:bg-muted transition-colors" onClick={() => { closeActionsMenu(); handleShowCode(device.deviceVerificationCode); }}>
+                            <Key className="h-5 w-5 text-muted-foreground shrink-0" /> Verification Code
                           </button>
-                          <button type="button" className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" onClick={() => { closeActionsMenu(); handleOpenCommandDialog(device, 'reset'); }}>
-                            <RotateCcw className="h-4 w-4" /> Factory Reset
-                          </button>
-                        </>
-                      )}
-                      {hasPermission('devices:delete') && (
-                        <>
-                          <div className="my-1 h-px bg-border" />
+                          {hasPermission('devices:update') && (
+                            <>
+                              <div className="my-1 h-px bg-border" />
+                              <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-foreground hover:bg-muted transition-colors" onClick={() => { closeActionsMenu(); handleOpenCommandDialog(device, 'reboot'); }}>
+                                <Power className="h-5 w-5 text-muted-foreground shrink-0" /> Reboot Device
+                              </button>
+                              <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" onClick={() => { closeActionsMenu(); handleOpenCommandDialog(device, 'reset'); }}>
+                                <RotateCcw className="h-5 w-5 shrink-0" /> Factory Reset
+                              </button>
+                            </>
+                          )}
+                          {hasPermission('devices:delete') && (
+                            <>
+                              <div className="my-1 h-px bg-border" />
+                              <button
+                                type="button"
+                                className={`flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm transition-colors ${
+                                  isActive
+                                    ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
+                                    : 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
+                                }`}
+                                onClick={() => { closeActionsMenu(); handleToggleClick(device); }}
+                                disabled={toggleStatusMutation.isPending}
+                              >
+                                {isActive ? <AlertCircle className="h-5 w-5 shrink-0" /> : <Check className="h-5 w-5 shrink-0" />}
+                                {isActive ? 'Deactivate Device' : 'Activate Device'}
+                              </button>
+                            </>
+                          )}
+                        </div>
+                        {/* Close button */}
+                        <div className="shrink-0 p-3 border-t border-border">
                           <button
                             type="button"
-                            className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm transition-colors ${
-                              isActive
-                                ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
-                                : 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
-                            }`}
-                            onClick={() => { closeActionsMenu(); handleToggleClick(device); }}
-                            disabled={toggleStatusMutation.isPending}
+                            className="w-full py-3 rounded-xl bg-muted text-sm font-medium text-foreground hover:bg-muted/80 transition-colors"
+                            onClick={closeActionsMenu}
                           >
-                            {isActive ? <AlertCircle className="h-4 w-4" /> : <Check className="h-4 w-4" />}
-                            {isActive ? 'Deactivate Device' : 'Activate Device'}
+                            Cancel
                           </button>
-                        </>
-                      )}
-                    </div>
+                        </div>
+                      </div>
+                    </>
                   )}
                 </div>
               </div>
@@ -869,7 +893,7 @@ export function DeviceManagement() {
                           </Button>
 
                           {openActionMenuDeviceId === device.id && (
-                            <div className="absolute right-0 z-20 mt-2 w-52 overflow-hidden rounded-md border border-border bg-popover shadow-lg">
+                            <div className="absolute right-0 z-20 mt-2 w-52 rounded-md border border-border bg-popover shadow-lg max-h-[70vh] overflow-y-auto">
                               {hasPermission('devices:monitoring') && (
                                 <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => { closeActionsMenu(); handleOpenMonitorDashboard(device); }}>
                                   <BarChart3 className="h-4 w-4" /> Open Monitor Dashboard
