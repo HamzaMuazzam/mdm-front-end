@@ -75,6 +75,32 @@ function speedColor(kmh: number): string {
 
 interface RouteSeg { pts: [number, number][]; color: string; }
 
+type HistorySortDirection = 'asc' | 'desc';
+type HistorySortField =
+  | 'id'
+  | 'localPrimaryId'
+  | 'receivedAt'
+  | 'deviceRdt'
+  | 'gpsRdt'
+  | 'latitude'
+  | 'longitude'
+  | 'speed'
+  | 'accuracy'
+  | 'altitude'
+  | 'bearing'
+  | 'satellites'
+  | 'provider'
+  | 'versionNo'
+  | 'uploadRetryCount'
+  | 'igStatus'
+  | 'reason';
+
+interface HistoryTableColumn {
+  label: string;
+  sortField?: HistorySortField;
+  className?: string;
+}
+
 /** Group consecutive same-color points into segments — greatly reduces Leaflet objects */
 function buildRouteSegments(pts: { latitude: number; longitude: number; speed: number }[]): RouteSeg[] {
   if (pts.length < 2) return [];
@@ -123,6 +149,105 @@ function parsePolygonPoints(raw: string | null): [number, number][] {
   } catch { /* ignore */ }
   return [];
 }
+
+function formatDateTimeWithMillis(value: string | null | undefined): string {
+  if (!value) return '-';
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  const pad = (num: number, size = 2) => String(num).padStart(size, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}.${pad(date.getMilliseconds(), 3)}`;
+}
+
+function normalizeReason(reason: string | null | undefined): string {
+  const normalized = reason?.trim();
+  return normalized ? normalized : 'Unspecified';
+}
+
+function getHistorySortValue(point: HistoryPoint, field: HistorySortField): string | number | null {
+  switch (field) {
+    case 'id':
+      return point.id > 0 ? point.id : null;
+    case 'localPrimaryId':
+      return point.localPrimaryId ?? null;
+    case 'receivedAt': {
+      const time = point.receivedAt ? new Date(point.receivedAt).getTime() : NaN;
+      return Number.isNaN(time) ? null : time;
+    }
+    case 'deviceRdt':
+      return point.deviceRdt?.trim() || null;
+    case 'gpsRdt':
+      return point.gpsRdt?.trim() || null;
+    case 'latitude':
+      return point.latitude ?? null;
+    case 'longitude':
+      return point.longitude ?? null;
+    case 'speed':
+      return point.speed ?? null;
+    case 'accuracy':
+      return point.accuracy ?? null;
+    case 'altitude':
+      return point.altitude ?? null;
+    case 'bearing':
+      return point.bearing ?? null;
+    case 'satellites':
+      return point.connectedSatellite ?? point.availableSatellite ?? null;
+    case 'provider':
+      return point.provider?.trim() || null;
+    case 'versionNo':
+      return point.versionNo?.trim() || null;
+    case 'uploadRetryCount':
+      return point.uploadRetryCount ?? null;
+    case 'igStatus':
+      return point.igStatus ?? null;
+    case 'reason':
+      return normalizeReason(point.reason);
+    default:
+      return null;
+  }
+}
+
+function compareHistoryValues(
+  left: string | number | null,
+  right: string | number | null,
+  direction: HistorySortDirection
+): number {
+  if (left == null && right == null) return 0;
+  if (left == null) return 1;
+  if (right == null) return -1;
+
+  if (typeof left === 'number' && typeof right === 'number') {
+    return direction === 'asc' ? left - right : right - left;
+  }
+
+  const leftText = String(left);
+  const rightText = String(right);
+  return direction === 'asc'
+    ? leftText.localeCompare(rightText, undefined, { numeric: true, sensitivity: 'base' })
+    : rightText.localeCompare(leftText, undefined, { numeric: true, sensitivity: 'base' });
+}
+
+const HISTORY_TABLE_COLUMNS: HistoryTableColumn[] = [
+  { label: '#' },
+  { label: 'ID', sortField: 'id' },
+  { label: 'Local Primary ID', sortField: 'localPrimaryId' },
+  { label: 'Received At', sortField: 'receivedAt' },
+  { label: 'Device RDT', sortField: 'deviceRdt' },
+  { label: 'GPS RDT', sortField: 'gpsRdt' },
+  { label: 'Lat', sortField: 'latitude' },
+  { label: 'Lng', sortField: 'longitude' },
+  { label: 'Speed', sortField: 'speed' },
+  { label: 'Accuracy', sortField: 'accuracy' },
+  { label: 'Alt', sortField: 'altitude' },
+  { label: 'Bearing', sortField: 'bearing' },
+  { label: 'Satellites', sortField: 'satellites' },
+  { label: 'Provider', sortField: 'provider' },
+  { label: 'Version', sortField: 'versionNo' },
+  { label: 'Upload Retry', sortField: 'uploadRetryCount' },
+  { label: 'IG', sortField: 'igStatus' },
+  { label: 'Reason', sortField: 'reason', className: 'min-w-[180px]' },
+];
 
 function todayStart(): string { const d = new Date(); d.setHours(0,0,0,0); return fmt(d); }
 function todayEnd():   string { const d = new Date(); d.setHours(23,59,59,0); return fmt(d); }
@@ -473,6 +598,8 @@ export function DeviceTrackingPage() {
   const [toDt, setToDt]           = useState(todayEnd);
   const [page, setPage]           = useState(0);
   const [pageSize]                = useState(2000);
+  const [historySortField, setHistorySortField] = useState<HistorySortField>('localPrimaryId');
+  const [historySortDirection, setHistorySortDirection] = useState<HistorySortDirection>('desc');
   const [totalPages, setTotalPages]       = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [points, setPoints]       = useState<HistoryPoint[]>([]);
@@ -538,7 +665,9 @@ export function DeviceTrackingPage() {
   const [playbackIdx, setPlaybackIdx]       = useState(0);
   const [playbackSpeed, setPlaybackSpeed]   = useState(1); // 1x, 2x, 5x
   const playbackRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const playbackPoint = playbackActive && points.length > 0 ? points[playbackIdx] : null;
+  const initialHistoryDeviceRef = useRef<string | null>(null);
+  const playbackPointSourceIdx = points.length > 0 ? points.length - 1 - playbackIdx : -1;
+  const playbackPoint = playbackActive && playbackPointSourceIdx >= 0 ? points[playbackPointSourceIdx] : null;
 
   // ── Trips (Module 1) ──────────────────────────────────────────────────────
   const [trips, setTrips]               = useState<Trip[]>([]);
@@ -563,6 +692,54 @@ export function DeviceTrackingPage() {
 
   // Speed-colored segments (replaces the heavy per-point CircleMarker approach)
   const routeSegments = useMemo(() => buildRouteSegments(points), [points]);
+
+  const sortedHistoryPoints = useMemo(() => {
+    return points
+      .map((point, index) => ({ point, index }))
+      .sort((left, right) => {
+        const result = compareHistoryValues(
+          getHistorySortValue(left.point, historySortField),
+          getHistorySortValue(right.point, historySortField),
+          historySortDirection
+        );
+        return result !== 0 ? result : left.index - right.index;
+      })
+      .map(({ point }) => point);
+  }, [historySortDirection, historySortField, points]);
+
+  const historySpeedStats = useMemo(() => {
+    const speeds = points
+      .map((point) => point.speed)
+      .filter((speed): speed is number => typeof speed === 'number' && Number.isFinite(speed));
+
+    if (speeds.length === 0) {
+      return { min: null, avg: null, max: null, count: 0 };
+    }
+
+    const min = Math.min(...speeds);
+    const max = Math.max(...speeds);
+    const avg = speeds.reduce((sum, speed) => sum + speed, 0) / speeds.length;
+    return { min, avg, max, count: speeds.length };
+  }, [points]);
+
+  const historyReasonStats = useMemo(() => {
+    const reasonCounts = new Map<string, number>();
+
+    points.forEach((point) => {
+      const reason = normalizeReason(point.reason);
+      reasonCounts.set(reason, (reasonCounts.get(reason) ?? 0) + 1);
+    });
+
+    return Array.from(reasonCounts.entries())
+      .map(([label, count]) => ({ label, count }))
+      .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label));
+  }, [points]);
+
+  const effectiveTotalPages = useMemo(() => {
+    if (totalPages > 0) return totalPages;
+    if (totalElements > 0) return Math.max(1, Math.ceil(totalElements / pageSize));
+    return hasLoaded ? 1 : 0;
+  }, [hasLoaded, pageSize, totalElements, totalPages]);
 
   // Direction arrows — evenly sampled across all loaded points.
   // Keys are lat/lng-based (not index) so prepending live MQTT points never causes
@@ -615,7 +792,18 @@ export function DeviceTrackingPage() {
     try {
       const resp = await trackingService.getHistory(deviceUuid, { from: fromDt, to: toDt, page: pg, size: pageSize });
       if (resp.success && resp.data) {
-        setPoints(resp.data.content); setTotalPages(resp.data.totalPages); setTotalElements(resp.data.totalElements);
+        const resolvedTotalElements = resp.data.totalElements > 0 ? resp.data.totalElements : resp.data.content.length;
+        const resolvedPageSize = resp.data.size > 0 ? resp.data.size : pageSize;
+        const resolvedTotalPages = resp.data.totalPages > 0
+          ? resp.data.totalPages
+          : resolvedTotalElements > 0
+            ? Math.ceil(resolvedTotalElements / resolvedPageSize)
+            : 1;
+
+        setPoints(resp.data.content);
+        setTotalPages(resolvedTotalPages);
+        setTotalElements(resolvedTotalElements);
+        setPage(typeof resp.data.number === 'number' ? resp.data.number : pg);
         setFitBoundsKey((k) => k + 1);
       }
     } catch { /**/ } finally { setLoading(false); setHasLoaded(true); }
@@ -640,6 +828,16 @@ export function DeviceTrackingPage() {
     }
     return () => { if (playbackRef.current) clearInterval(playbackRef.current); };
   }, [playbackActive, playbackSpeed, points.length]);
+
+  useEffect(() => {
+    if (points.length === 0) {
+      setPlaybackActive(false);
+      setPlaybackIdx(0);
+      return;
+    }
+
+    setPlaybackIdx((prev) => Math.min(prev, points.length - 1));
+  }, [points.length]);
 
   // ── Fetch trips ───────────────────────────────────────────────────────────
   const fetchTrips = useCallback(async (pg: number) => {
@@ -781,7 +979,17 @@ export function DeviceTrackingPage() {
     };
   }, [deviceUuid]);
 
-  useEffect(() => { fetchHistory(0); setPage(0); /* eslint-disable-next-line */ }, []);
+  useEffect(() => {
+    if (!deviceUuid || initialHistoryDeviceRef.current === deviceUuid) return;
+
+    initialHistoryDeviceRef.current = deviceUuid;
+    setHasLoaded(false);
+    setPlaybackActive(false);
+    setPlaybackIdx(0);
+    setPage(0);
+    fetchHistory(0);
+  }, [deviceUuid, fetchHistory]);
+
   useEffect(() => { fetchGeofences(); fetchGeoTypes(); fetchGeoEvents(); }, [fetchGeofences, fetchGeoTypes, fetchGeoEvents]);
   // Mobile: auto-switch panel during draw workflow so the map is visible while drawing
   useEffect(() => {
@@ -975,7 +1183,7 @@ export function DeviceTrackingPage() {
         ID: p.id, Latitude: p.latitude, Longitude: p.longitude, Speed: p.speed,
         Accuracy: p.accuracy, Bearing: p.bearing, Altitude: p.altitude,
         'Available Satellite': p.availableSatellite, 'Connected Satellite': p.connectedSatellite,
-        'Device RDT': p.deviceRdt, 'GPS RDT': p.gpsRdt, 'Received At': p.receivedAt,
+        'Device RDT': p.deviceRdt, 'GPS RDT': p.gpsRdt, 'Received At': formatDateTimeWithMillis(p.receivedAt),
         'Upload Retry': p.uploadRetryCount, Provider: p.provider, Version: p.versionNo,
         'IG Status': p.igStatus, Reason: p.reason, 'Local Primary ID': p.localPrimaryId,
       }));
@@ -1005,6 +1213,63 @@ export function DeviceTrackingPage() {
     ? 'basis-0 flex-[1.35] min-h-[24rem]'
     : 'basis-0 flex-1 min-h-0';
 
+  const handleHistorySort = useCallback((field: HistorySortField) => {
+    if (historySortField === field) {
+      setHistorySortDirection((direction) => direction === 'asc' ? 'desc' : 'asc');
+      return;
+    }
+
+    setHistorySortField(field);
+    setHistorySortDirection(field === 'localPrimaryId' ? 'desc' : 'asc');
+  }, [historySortField]);
+
+  const loadHistoryPage = useCallback((nextPage: number) => {
+    const maxPage = Math.max(effectiveTotalPages - 1, 0);
+    const clampedPage = effectiveTotalPages > 0
+      ? Math.max(0, Math.min(nextPage, maxPage))
+      : Math.max(0, nextPage);
+
+    setPage(clampedPage);
+    fetchHistory(clampedPage);
+  }, [effectiveTotalPages, fetchHistory]);
+
+  const historyPageCount = Math.max(effectiveTotalPages, 1);
+  const historyCurrentPageLabel = Math.min(page + 1, historyPageCount);
+  const canHistoryPrev = page > 0;
+  const canHistoryNext = page < historyPageCount - 1;
+
+  const historySummaryInline = hasLoaded && points.length > 0 ? (
+    <div
+      className="min-w-0 flex flex-1 items-center gap-1.5 overflow-x-auto pb-0.5"
+      onClick={(event) => event.stopPropagation()}
+    >
+      {[
+        { label: 'Min', value: historySpeedStats.min != null ? `${historySpeedStats.min.toFixed(1)} km/h` : '-' },
+        { label: 'Avg', value: historySpeedStats.avg != null ? `${historySpeedStats.avg.toFixed(1)} km/h` : '-' },
+        { label: 'Max', value: historySpeedStats.max != null ? `${historySpeedStats.max.toFixed(1)} km/h` : '-' },
+      ].map((item) => (
+        <span
+          key={item.label}
+          className="inline-flex shrink-0 items-center gap-1 rounded-full border border-slate-200/80 bg-white/90 px-2.5 py-1 text-[11px] font-medium text-slate-600 shadow-sm dark:border-slate-700/60 dark:bg-slate-900/80 dark:text-slate-200"
+        >
+          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">{item.label}</span>
+          <span className="font-semibold text-slate-800 dark:text-slate-100">{item.value}</span>
+        </span>
+      ))}
+      {historyReasonStats.map((reason) => (
+        <span
+          key={reason.label}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-slate-200/80 bg-slate-50/95 px-2.5 py-1 text-[11px] font-medium text-slate-600 shadow-sm dark:border-slate-700/60 dark:bg-slate-800/85 dark:text-slate-200"
+        >
+          <span className="truncate">{reason.label}</span>
+          <span className="rounded-full bg-slate-200/90 px-1.5 py-0.5 text-[10px] font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100">
+            {reason.count}
+          </span>
+        </span>
+      ))}
+    </div>
+  ) : null;
+
   // ── Map element ───────────────────────────────────────────────────────────
   const mapElement = (
     <div className="relative flex h-full min-h-0 w-full flex-1 overflow-hidden md:rounded-[28px] border border-white/70 bg-slate-950 shadow-[0_24px_80px_rgba(15,23,42,0.22)] ring-1 ring-slate-900/5 dark:border-slate-700/60 dark:ring-white/10">
@@ -1016,9 +1281,12 @@ export function DeviceTrackingPage() {
       )}
       {/* Route Playback floating controls (Module 3) */}
       {hasLoaded && points.length > 1 && !isDrawingActive && (
-        <div className="pointer-events-auto absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-2 rounded-2xl border border-white/70 bg-white/96 px-4 py-2.5 shadow-xl backdrop-blur-md dark:border-slate-700/60 dark:bg-slate-950/94">
+        <div className={`pointer-events-auto absolute left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-2 rounded-2xl border border-white/70 bg-white/96 px-4 py-2.5 shadow-xl backdrop-blur-md dark:border-slate-700/60 dark:bg-slate-950/94 ${leftMode === 'map' ? 'bottom-14' : 'bottom-4'}`}>
           <button
-            onClick={() => { setPlaybackIdx(0); }}
+            onClick={() => {
+              setPlaybackActive(false);
+              setPlaybackIdx(0);
+            }}
             title="Reset"
             className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
           >
@@ -1049,6 +1317,32 @@ export function DeviceTrackingPage() {
             <span className="text-[10px] text-slate-400 font-mono">
               {playbackIdx + 1}/{points.length}
             </span>
+          </div>
+        </div>
+      )}
+      {hasLoaded && leftMode === 'map' && (
+        <div className="pointer-events-auto absolute inset-x-0 bottom-0 z-[1000] hidden items-center justify-between gap-3 border-t border-white/60 bg-white/92 px-4 py-1.5 text-[11px] backdrop-blur-md dark:border-slate-700/60 dark:bg-slate-950/88 md:flex">
+          <div className="flex min-w-0 items-center gap-2 text-slate-500 dark:text-slate-400">
+            <span className="font-semibold text-slate-700 dark:text-slate-200">{totalElements.toLocaleString()}</span>
+            <span>records</span>
+            <span className="h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-600" />
+            <span>Page {historyCurrentPageLabel} / {historyPageCount}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => loadHistoryPage(page - 1)}
+              disabled={!canHistoryPrev || loading}
+              className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200/80 bg-white/85 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 disabled:opacity-35 dark:border-slate-700/60 dark:bg-slate-900/85 dark:text-slate-300 dark:hover:bg-slate-800"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={() => loadHistoryPage(page + 1)}
+              disabled={!canHistoryNext || loading}
+              className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200/80 bg-white/85 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 disabled:opacity-35 dark:border-slate-700/60 dark:bg-slate-900/85 dark:text-slate-300 dark:hover:bg-slate-800"
+            >
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
           </div>
         </div>
       )}
@@ -1266,7 +1560,7 @@ export function DeviceTrackingPage() {
 
       {/* ── Speed legend ───────────────────────────────────────────────────── */}
       {points.length > 0 && (
-        <div className="pointer-events-none absolute bottom-4 left-4 z-[1000] rounded-2xl border border-white/60 bg-white/92 px-3.5 py-2.5 shadow-xl shadow-slate-900/10 backdrop-blur-md dark:border-slate-700/60 dark:bg-slate-950/88">
+        <div className="pointer-events-none absolute top-4 right-4 z-[1000] rounded-2xl border border-white/60 bg-white/92 px-3.5 py-2.5 shadow-xl shadow-slate-900/10 backdrop-blur-md dark:border-slate-700/60 dark:bg-slate-950/88">
           <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500 mb-1.5">Speed</p>
           <div className="flex flex-col gap-1">
             {([
@@ -1425,30 +1719,21 @@ export function DeviceTrackingPage() {
             <div className={`shrink-0 select-none border-b border-slate-200/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.88),rgba(241,245,249,0.7))] px-4 py-3 dark:border-slate-700/50 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.82),rgba(15,23,42,0.66))] ${leftMode === 'split' ? 'cursor-pointer' : ''}`}
               onClick={() => leftMode === 'split' && setTableOpen((v) => !v)}>
               <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-300">
-                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <div className="flex shrink-0 items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-300">
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>
+                    </div>
+                    <div>
+                      <span className="block text-xs font-semibold uppercase tracking-[0.18em] text-slate-600 dark:text-slate-300">Excel View</span>
+                      {hasLoaded && <span className="text-[11px] text-slate-500 dark:text-slate-400">{totalElements.toLocaleString()} route records</span>}
+                    </div>
                   </div>
-                  <div>
-                    <span className="block text-xs font-semibold uppercase tracking-[0.18em] text-slate-600 dark:text-slate-300">Excel View</span>
-                    {hasLoaded && <span className="text-[11px] text-slate-500 dark:text-slate-400">{totalElements.toLocaleString()} route records</span>}
+                  <div className="hidden min-w-0 flex-1 md:flex">
+                    {historySummaryInline}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {/* Pagination */}
-                  {totalPages > 1 && isTableExpanded && (
-                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                      <button onClick={() => { setPage(page - 1); fetchHistory(page - 1); }} disabled={page === 0 || loading}
-                        className="rounded-lg p-1 text-slate-500 transition-colors hover:bg-slate-200/70 hover:text-slate-800 disabled:opacity-40 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200">
-                        <ChevronLeft className="w-3.5 h-3.5" />
-                      </button>
-                      <span className="min-w-[60px] text-center text-xs text-slate-500 dark:text-slate-400">{page + 1} / {totalPages}</span>
-                      <button onClick={() => { setPage(page + 1); fetchHistory(page + 1); }} disabled={page >= totalPages - 1 || loading}
-                        className="rounded-lg p-1 text-slate-500 transition-colors hover:bg-slate-200/70 hover:text-slate-800 disabled:opacity-40 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200">
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  )}
                   {/* Fullscreen table toggle */}
                   <button onClick={(e) => { e.stopPropagation(); setLeftMode((m) => m === 'table' ? 'split' : 'table'); }}
                     title={leftMode === 'table' ? 'Exit fullscreen' : 'Fullscreen table'}
@@ -1461,58 +1746,118 @@ export function DeviceTrackingPage() {
                   )}
                 </div>
               </div>
+              <div className="mt-2 flex md:hidden">
+                {historySummaryInline}
+              </div>
             </div>
 
-            {/* Table content */}
             {isTableExpanded && (
-              <div className="flex-1 overflow-auto min-h-0">
-                {loading && <div className="flex items-center justify-center py-10"><Loader2 className="w-7 h-7 animate-spin text-blue-400" /></div>}
-                {!loading && hasLoaded && points.length === 0 && (
-                  <div className="flex flex-col items-center justify-center py-10 text-slate-400 dark:text-slate-500">
-                    <MapPin className="w-8 h-8 mb-2 opacity-30" />
-                    <p className="text-sm">No location data for selected range</p>
+              <>
+                <div className="flex-1 overflow-auto min-h-0">
+                  {loading && <div className="flex items-center justify-center py-10"><Loader2 className="w-7 h-7 animate-spin text-blue-400" /></div>}
+                  {!loading && hasLoaded && points.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-10 text-slate-400 dark:text-slate-500">
+                      <MapPin className="w-8 h-8 mb-2 opacity-30" />
+                      <p className="text-sm">No location data for selected range</p>
+                    </div>
+                  )}
+                  {!loading && points.length > 0 && (
+                    <table className="w-full text-left text-xs">
+                      <thead className="sticky top-0 bg-[linear-gradient(180deg,rgba(248,250,252,0.96),rgba(241,245,249,0.92))] text-slate-500 uppercase tracking-wider dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.96),rgba(15,23,42,0.92))] dark:text-slate-400">
+                        <tr>
+                          {HISTORY_TABLE_COLUMNS.map((column) => (
+                            <th
+                              key={column.label}
+                              scope="col"
+                              aria-sort={
+                                column.sortField && historySortField === column.sortField
+                                  ? historySortDirection === 'asc'
+                                    ? 'ascending'
+                                    : 'descending'
+                                  : 'none'
+                              }
+                              className={`whitespace-nowrap border-b border-slate-200/70 px-3 py-2.5 dark:border-slate-700/50 ${column.className ?? ''}`}
+                            >
+                              {column.sortField ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleHistorySort(column.sortField!)}
+                                  aria-label={`Sort by ${column.label}${historySortField === column.sortField ? `, currently ${historySortDirection}` : ''}`}
+                                  title={`Sort by ${column.label}`}
+                                  className="group inline-flex items-center gap-1.5 font-semibold transition-colors hover:text-slate-700 dark:hover:text-slate-200"
+                                >
+                                  <span>{column.label}</span>
+                                  <span className="text-[11px] text-slate-400 transition-colors group-hover:text-slate-600 dark:group-hover:text-slate-300">
+                                    {historySortField === column.sortField
+                                      ? historySortDirection === 'asc' ? '↑' : '↓'
+                                      : '↕'}
+                                  </span>
+                                </button>
+                              ) : (
+                                <span className="font-semibold">{column.label}</span>
+                              )}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100/90 dark:divide-slate-700/30">
+                        {sortedHistoryPoints.map((p, i) => (
+                          <tr key={`${p.id}-${p.localPrimaryId ?? 'na'}-${i}`} className="bg-white/80 transition-colors hover:bg-sky-50/60 dark:bg-transparent dark:hover:bg-slate-800/40">
+                            <td className="px-3 py-2 text-slate-400 dark:text-slate-500">{page * pageSize + i + 1}</td>
+                            <td className="px-3 py-2 font-mono text-slate-400 dark:text-slate-500">{p.id > 0 ? p.id : '-'}</td>
+                            <td className="px-3 py-2 font-mono text-slate-600 dark:text-slate-300">{p.localPrimaryId || '-'}</td>
+                            <td className="whitespace-nowrap px-3 py-2 text-slate-600 dark:text-slate-300">{formatDateTimeWithMillis(p.receivedAt)}</td>
+                            <td className="whitespace-nowrap px-3 py-2 text-slate-600 dark:text-slate-300">{p.deviceRdt || '-'}</td>
+                            <td className="whitespace-nowrap px-3 py-2 text-slate-600 dark:text-slate-300">{p.gpsRdt || '-'}</td>
+                            <td className="px-3 py-2 font-mono text-slate-800 dark:text-slate-200">{p.latitude?.toFixed(6)}</td>
+                            <td className="px-3 py-2 font-mono text-slate-800 dark:text-slate-200">{p.longitude?.toFixed(6)}</td>
+                            <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{p.speed != null ? p.speed.toFixed(1) : '-'}</td>
+                            <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{p.accuracy != null ? `±${p.accuracy.toFixed(0)}` : '-'}</td>
+                            <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{p.altitude != null ? p.altitude.toFixed(0) : '-'}</td>
+                            <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{p.bearing != null ? `${p.bearing.toFixed(1)}°` : '-'}</td>
+                            <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{p.connectedSatellite}/{p.availableSatellite}</td>
+                            <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{p.provider || '-'}</td>
+                            <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{p.versionNo || '-'}</td>
+                            <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{p.uploadRetryCount ?? '-'}</td>
+                            <td className="px-3 py-1.5">
+                              <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${p.igStatus === 1 ? 'bg-green-500/15 text-green-600 dark:text-green-400' : 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400'}`}>
+                                {p.igStatus === 1 ? 'ON' : 'OFF'}
+                              </span>
+                            </td>
+                            <td className="max-w-[160px] truncate px-3 py-2 text-slate-500 dark:text-slate-400">{p.reason || '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+                {hasLoaded && (
+                  <div className="shrink-0 flex items-center justify-between gap-3 border-t border-slate-200/70 bg-white/92 px-4 py-1.5 text-[11px] backdrop-blur-sm dark:border-slate-700/50 dark:bg-slate-950/82">
+                    <div className="flex min-w-0 items-center gap-2 text-slate-500 dark:text-slate-400">
+                      <span className="font-semibold text-slate-700 dark:text-slate-200">{totalElements.toLocaleString()}</span>
+                      <span>records</span>
+                      <span className="h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-600" />
+                      <span>Page {historyCurrentPageLabel} / {historyPageCount}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => loadHistoryPage(page - 1)}
+                        disabled={!canHistoryPrev || loading}
+                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200/80 bg-white/85 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 disabled:opacity-35 dark:border-slate-700/60 dark:bg-slate-900/85 dark:text-slate-300 dark:hover:bg-slate-800"
+                      >
+                        <ChevronLeft className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => loadHistoryPage(page + 1)}
+                        disabled={!canHistoryNext || loading}
+                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200/80 bg-white/85 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 disabled:opacity-35 dark:border-slate-700/60 dark:bg-slate-900/85 dark:text-slate-300 dark:hover:bg-slate-800"
+                      >
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
                 )}
-                {!loading && points.length > 0 && (
-                  <table className="w-full text-left text-xs">
-                    <thead className="sticky top-0 bg-[linear-gradient(180deg,rgba(248,250,252,0.96),rgba(241,245,249,0.92))] text-slate-500 uppercase tracking-wider dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.96),rgba(15,23,42,0.92))] dark:text-slate-400">
-                      <tr>
-                        {['#','ID','Local Primary ID','Received At','Device RDT','GPS RDT','Lat','Lng','Speed','Accuracy','Alt','Bearing','Satellites','Provider','Version','Upload Retry','IG','Reason'].map((h) => (
-                          <th key={h} className="whitespace-nowrap border-b border-slate-200/70 px-3 py-2.5 dark:border-slate-700/50">{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100/90 dark:divide-slate-700/30">
-                      {points.map((p, i) => (
-                        <tr key={p.id} className="bg-white/80 transition-colors hover:bg-sky-50/60 dark:bg-transparent dark:hover:bg-slate-800/40">
-                          <td className="px-3 py-2 text-slate-400 dark:text-slate-500">{page * pageSize + i + 1}</td>
-                          <td className="px-3 py-2 font-mono text-slate-400 dark:text-slate-500">{p.id > 0 ? p.id : '-'}</td>
-                          <td className="px-3 py-2 font-mono text-slate-600 dark:text-slate-300">{p.localPrimaryId || '-'}</td>
-                          <td className="whitespace-nowrap px-3 py-2 text-slate-600 dark:text-slate-300">{p.receivedAt ? new Date(p.receivedAt).toLocaleString() : '-'}</td>
-                          <td className="whitespace-nowrap px-3 py-2 text-slate-600 dark:text-slate-300">{p.deviceRdt || '-'}</td>
-                          <td className="whitespace-nowrap px-3 py-2 text-slate-600 dark:text-slate-300">{p.gpsRdt || '-'}</td>
-                          <td className="px-3 py-2 font-mono text-slate-800 dark:text-slate-200">{p.latitude?.toFixed(6)}</td>
-                          <td className="px-3 py-2 font-mono text-slate-800 dark:text-slate-200">{p.longitude?.toFixed(6)}</td>
-                          <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{p.speed != null ? p.speed.toFixed(1) : '-'}</td>
-                          <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{p.accuracy != null ? `±${p.accuracy.toFixed(0)}` : '-'}</td>
-                          <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{p.altitude != null ? p.altitude.toFixed(0) : '-'}</td>
-                          <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{p.bearing != null ? `${p.bearing.toFixed(1)}°` : '-'}</td>
-                          <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{p.connectedSatellite}/{p.availableSatellite}</td>
-                          <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{p.provider || '-'}</td>
-                          <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{p.versionNo || '-'}</td>
-                          <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{p.uploadRetryCount ?? '-'}</td>
-                          <td className="px-3 py-1.5">
-                            <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${p.igStatus === 1 ? 'bg-green-500/15 text-green-600 dark:text-green-400' : 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400'}`}>
-                              {p.igStatus === 1 ? 'ON' : 'OFF'}
-                            </span>
-                          </td>
-                          <td className="max-w-[160px] truncate px-3 py-2 text-slate-500 dark:text-slate-400">{p.reason || '-'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
+              </>
             )}
           </div>
         </div>
@@ -2046,7 +2391,7 @@ export function DeviceTrackingPage() {
                     </div>
                   </div>
                   <div className="flex gap-3">
-                    <button onClick={() => { setPage(0); fetchHistory(0); }} disabled={loading}
+                    <button onClick={() => loadHistoryPage(0)} disabled={loading}
                       className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 shadow-sm">
                       {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />} Search History
                     </button>
@@ -2061,9 +2406,10 @@ export function DeviceTrackingPage() {
                   </div>
                   {hasLoaded && totalElements > 0 && (
                     <p className="text-sm text-slate-500 dark:text-slate-400">
-                      <span className="font-semibold text-slate-700 dark:text-slate-200">{totalElements.toLocaleString()}</span> route records · page {page + 1} of {totalPages || 1}
+                      <span className="font-semibold text-slate-700 dark:text-slate-200">{totalElements.toLocaleString()}</span> route records
                     </p>
                   )}
+                  {historySummaryInline}
                 </div>
                 <div className="flex-1 overflow-y-auto min-h-0">
                   {loading && <div className="flex items-center justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-blue-400" /></div>}
@@ -2074,11 +2420,11 @@ export function DeviceTrackingPage() {
                     </div>
                   )}
                   <div className="divide-y divide-slate-100 dark:divide-slate-700/30">
-                    {points.map((p, i) => (
-                      <div key={p.id} className="flex items-start gap-3 px-6 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer"
+                    {sortedHistoryPoints.map((p, i) => (
+                      <div key={`${p.id}-${p.localPrimaryId ?? 'na'}-${i}`} className="flex items-start gap-3 px-6 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer"
                         onClick={() => {
                           setCenterTarget([p.latitude, p.longitude]);
-                          setPinnedMarker({ lat: p.latitude, lng: p.longitude, title: p.reason || 'Location Point', detail: `${p.speed != null ? p.speed.toFixed(1) + ' km/h · ' : ''}${p.receivedAt ? new Date(p.receivedAt).toLocaleString() : ''}`, color: getPointColor(p.reason) });
+                          setPinnedMarker({ lat: p.latitude, lng: p.longitude, title: p.reason || 'Location Point', detail: `${p.speed != null ? p.speed.toFixed(1) + ' km/h · ' : ''}${formatDateTimeWithMillis(p.receivedAt)}`, color: getPointColor(p.reason) });
                           setActivePanel(null);
                         }}>
                         <div className="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0" style={{ background: getPointColor(p.reason) }} />
@@ -2088,24 +2434,37 @@ export function DeviceTrackingPage() {
                             <span className="text-xs text-slate-400 shrink-0">{p.speed != null ? `${p.speed.toFixed(1)} km/h` : ''}</span>
                           </div>
                           <p className="text-xs font-mono text-slate-400 dark:text-slate-500">{p.latitude.toFixed(6)}, {p.longitude.toFixed(6)}</p>
-                          <p className="text-xs text-slate-400 mt-0.5">{p.receivedAt ? new Date(p.receivedAt).toLocaleString() : '-'}</p>
+                          <p className="text-xs text-slate-400 mt-0.5">{formatDateTimeWithMillis(p.receivedAt)}</p>
                         </div>
                         <span className="text-[10px] text-slate-300 dark:text-slate-600 shrink-0 pt-1">#{page * pageSize + i + 1}</span>
                       </div>
                     ))}
                   </div>
                 </div>
-                {totalPages > 1 && (
-                  <div className="shrink-0 flex items-center justify-between px-6 py-3 border-t border-slate-200/70 dark:border-slate-700/50">
-                    <button onClick={() => { setPage(page - 1); fetchHistory(page - 1); }} disabled={page === 0 || loading}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-40 transition-colors">
-                      <ChevronLeft className="w-4 h-4" /> Prev
-                    </button>
-                    <span className="text-sm text-slate-500">{page + 1} / {totalPages}</span>
-                    <button onClick={() => { setPage(page + 1); fetchHistory(page + 1); }} disabled={page >= totalPages - 1 || loading}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-40 transition-colors">
-                      Next <ChevronRight className="w-4 h-4" />
-                    </button>
+                {hasLoaded && (
+                  <div className="shrink-0 flex items-center justify-between gap-3 border-t border-slate-200/70 bg-white/92 px-4 py-2 text-xs backdrop-blur-sm dark:border-slate-700/50 dark:bg-slate-950/82">
+                    <div className="flex min-w-0 items-center gap-2 text-slate-500 dark:text-slate-400">
+                      <span className="font-semibold text-slate-700 dark:text-slate-200">{totalElements.toLocaleString()}</span>
+                      <span>records</span>
+                      <span className="h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-600" />
+                      <span>Page {historyCurrentPageLabel} / {historyPageCount}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => loadHistoryPage(page - 1)}
+                        disabled={!canHistoryPrev || loading}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200/80 bg-white/85 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 disabled:opacity-35 dark:border-slate-700/60 dark:bg-slate-900/85 dark:text-slate-300 dark:hover:bg-slate-800"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => loadHistoryPage(page + 1)}
+                        disabled={!canHistoryNext || loading}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200/80 bg-white/85 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 disabled:opacity-35 dark:border-slate-700/60 dark:bg-slate-900/85 dark:text-slate-300 dark:hover:bg-slate-800"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -2922,7 +3281,7 @@ export function DeviceTrackingPage() {
 function PointPopup({ point, color, label }: { point: HistoryPoint; color: string; label?: string }) {
   if (!point) return null;
   const rows: [string, string][] = [
-    ['Received At', point.receivedAt ? new Date(point.receivedAt).toLocaleString() : '-'],
+    ['Received At', formatDateTimeWithMillis(point.receivedAt)],
     ['Latitude',    point.latitude?.toFixed(6) ?? '-'],
     ['Longitude',   point.longitude?.toFixed(6) ?? '-'],
     ['Speed',       point.speed != null ? `${point.speed.toFixed(1)} km/h` : '-'],
