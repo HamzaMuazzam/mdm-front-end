@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, Eye, BarChart3, MoreVertical, Power, RotateCcw, Siren, Mic, Database, Map, Plus } from 'lucide-react';
+import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, Eye, BarChart3, MoreVertical, Power, RotateCcw, Siren, Mic, Database, Map, Plus, RefreshCw } from 'lucide-react';
 import QRCode from 'qrcode';
 import type { CreateDeviceRequest, UpdateDeviceRequest, Device, UpdateDeviceConfigurationRequest } from '@/types/device.types';
 import { ROUTES } from '@/utils/constants';
@@ -45,7 +45,7 @@ export function DeviceManagement() {
   const [configDeviceId, setConfigDeviceId] = useState<number | null>(null);
   const [configFormData, setConfigFormData] = useState<UpdateDeviceConfigurationRequest>({});
   const hasPermission = usePermissionStore((state) => state.hasPermission);
-  const { data: devices = [], isLoading } = useDevicesQuery();
+  const { data: devices = [], isLoading, refetch: refetchDevices, isFetching } = useDevicesQuery();
   const { data: deviceConfig, isLoading: isLoadingConfig } = useDeviceConfiguration(configDeviceId);
   const createMutation = useCreateDevice();
   const updateMutation = useUpdateDevice();
@@ -485,7 +485,37 @@ export function DeviceManagement() {
             <Smartphone className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Device Management</h1>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Device Management</h1>
+              {devices.length > 0 && (() => {
+                const liveCount    = devices.filter((d) => deviceStatuses[d.deviceUuid] === 'online').length;
+                const offlineCount = devices.length - liveCount;
+                return (
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                      {devices.length} total
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                      {liveCount} live
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs font-medium text-slate-500 dark:text-slate-400">
+                      <span className="h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                      {offlineCount} offline
+                    </span>
+                  </div>
+                );
+              })()}
+              <button
+                type="button"
+                onClick={() => refetchDevices()}
+                disabled={isFetching}
+                title="Refresh devices"
+                className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
             <p className="text-xs text-muted-foreground mt-0.5 sm:hidden">{devices.length} device{devices.length !== 1 ? 's' : ''} registered</p>
           </div>
         </div>
