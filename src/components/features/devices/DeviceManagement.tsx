@@ -44,6 +44,7 @@ export function DeviceManagement() {
   const [editingDevice, setEditingDevice] = useState<Device | null>(null);
   const [configDeviceId, setConfigDeviceId] = useState<number | null>(null);
   const [configFormData, setConfigFormData] = useState<UpdateDeviceConfigurationRequest>({});
+  const [verificationCodeModal, setVerificationCodeModal] = useState<{ code: number | null } | null>(null);
   const hasPermission = usePermissionStore((state) => state.hasPermission);
   const { data: devices = [], isLoading, refetch: refetchDevices, isFetching } = useDevicesQuery();
   const [searchQuery, setSearchQuery] = useState('');
@@ -467,11 +468,7 @@ export function DeviceManagement() {
   };
 
   const handleShowCode = (code: number | undefined) => {
-    if (code) {
-      alert(`Device Verification Code: ${code}`);
-    } else {
-      alert('No verification code available for this device.');
-    }
+    setVerificationCodeModal({ code: code ?? null });
   };
 
   if (isLoading) {
@@ -1069,6 +1066,58 @@ export function DeviceManagement() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Verification Code Modal */}
+      {verificationCodeModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" onClick={() => setVerificationCodeModal(null)}>
+          <div
+            className="w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl bg-card border border-border shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-border">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-indigo-100 dark:bg-indigo-900/30">
+                  <Key className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <h2 className="text-base font-semibold text-foreground">Verification Code</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setVerificationCodeModal(null)}
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            {/* Body */}
+            <div className="px-5 py-6 flex flex-col items-center gap-3">
+              {verificationCodeModal.code != null ? (
+                <>
+                  <p className="text-sm text-muted-foreground text-center">Use this code to verify the device</p>
+                  <div className="w-full rounded-xl bg-muted px-6 py-4 flex items-center justify-center">
+                    <span className="text-3xl font-bold tracking-[0.25em] text-foreground font-mono select-all">
+                      {verificationCodeModal.code}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-2">No verification code available for this device.</p>
+              )}
+            </div>
+            {/* Footer */}
+            <div className="px-5 pb-5">
+              <button
+                type="button"
+                onClick={() => setVerificationCodeModal(null)}
+                className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add Device Modal */}
       {isModalOpen && (
