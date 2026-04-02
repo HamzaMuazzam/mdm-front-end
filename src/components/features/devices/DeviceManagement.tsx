@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, Eye, BarChart3, MoreVertical, Power, RotateCcw, Siren, Mic, Database, Map, Plus, RefreshCw } from 'lucide-react';
+import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, Eye, BarChart3, MoreVertical, Power, RotateCcw, Siren, Mic, Database, Map, Plus, RefreshCw, Search } from 'lucide-react';
 import QRCode from 'qrcode';
 import type { CreateDeviceRequest, UpdateDeviceRequest, Device, UpdateDeviceConfigurationRequest } from '@/types/device.types';
 import { ROUTES } from '@/utils/constants';
@@ -46,6 +46,19 @@ export function DeviceManagement() {
   const [configFormData, setConfigFormData] = useState<UpdateDeviceConfigurationRequest>({});
   const hasPermission = usePermissionStore((state) => state.hasPermission);
   const { data: devices = [], isLoading, refetch: refetchDevices, isFetching } = useDevicesQuery();
+  const [searchQuery, setSearchQuery] = useState('');
+  const filteredDevices = searchQuery.trim()
+    ? devices.filter((d) => {
+        const q = searchQuery.toLowerCase();
+        return (
+          d.deviceName?.toLowerCase().includes(q) ||
+          d.deviceUuid?.toLowerCase().includes(q) ||
+          d.userEmail?.toLowerCase().includes(q) ||
+          d.model?.toLowerCase().includes(q) ||
+          d.description?.toLowerCase().includes(q)
+        );
+      })
+    : devices;
   const { data: deviceConfig, isLoading: isLoadingConfig } = useDeviceConfiguration(configDeviceId);
   const createMutation = useCreateDevice();
   const updateMutation = useUpdateDevice();
@@ -478,7 +491,7 @@ export function DeviceManagement() {
   return (
     <div className="flex h-full flex-col">
       {/* ── Page header ─────────────────────────────────────────── */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start mb-4 sm:mb-6">
         {/* Mobile: icon + title stacked */}
         <div className="flex items-center gap-3">
           <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg shadow-blue-500/20 sm:hidden">
@@ -517,6 +530,26 @@ export function DeviceManagement() {
               </button>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5 sm:hidden">{devices.length} device{devices.length !== 1 ? 's' : ''} registered</p>
+            {/* Search — full width on mobile, constrained on desktop */}
+            <div className="relative mt-2 w-full sm:w-56 lg:w-72">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search devices…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full rounded-lg border border-border bg-background py-1.5 pl-8 pr-8 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
@@ -545,16 +578,25 @@ export function DeviceManagement() {
 
       {/* ── Mobile: beautiful card list (hidden on sm+) ─────────── */}
       <div className="flex flex-col gap-3 sm:hidden pb-4">
-        {devices.length === 0 && (
+        {filteredDevices.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 px-4">
             <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mb-3">
               <Smartphone className="h-8 w-8 text-muted-foreground" />
             </div>
-            <p className="font-medium text-foreground mb-1">No Devices Found</p>
-            <p className="text-sm text-muted-foreground text-center">Add your first device to get started.</p>
+            {searchQuery.trim() ? (
+              <>
+                <p className="font-medium text-foreground mb-1">No results for "{searchQuery}"</p>
+                <p className="text-sm text-muted-foreground text-center">Try a different name, UUID, or email.</p>
+              </>
+            ) : (
+              <>
+                <p className="font-medium text-foreground mb-1">No Devices Found</p>
+                <p className="text-sm text-muted-foreground text-center">Add your first device to get started.</p>
+              </>
+            )}
           </div>
         )}
-        {devices.map((device: Device) => {
+        {filteredDevices.map((device: Device) => {
           const isActive = !device.deletedAt;
           const onlineStatus = deviceStatuses[device.deviceUuid];
           const gradient = avatarGradients[device.id % avatarGradients.length];
@@ -874,7 +916,7 @@ export function DeviceManagement() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {devices.map((device:Device) => {
+                {filteredDevices.map((device:Device) => {
                   const isActive = !device.deletedAt;
                   const alertsEnabled = alertStatusByDevice[device.id];
                   const alertsLoading = alertStatusLoading[device.id];
