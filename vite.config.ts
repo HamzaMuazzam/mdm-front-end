@@ -25,11 +25,11 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
 
-    origin: 'http://10.10.11.101',
+    origin: 'https://mdm.dspl.pk',
 
     hmr: {
-      protocol: 'ws',
-      host: '10.10.11.101',
+      protocol: 'wss',
+      host: 'mdm.dspl.pk',
       port: 5173,
     },
     cors: {
@@ -38,7 +38,7 @@ export default defineConfig({
       allowedHeaders: ['*'],
     },
 
-    allowedHosts: ['10.10.11.101']
+    allowedHosts: ['mdm.dspl.pk']
   },
 })
 
