@@ -26,7 +26,7 @@ export function DeviceManagement() {
   const deviceStatuses = useDeviceStatusStore((s) => s.statuses);
   const setDeviceStatus = useDeviceStatusStore((s) => s.setStatus);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
-  const [userEmail, setUserEmail] = useState('');
+  const [userCode, setUserCode] = useState('');
   const [qrDataUrl, setQrDataUrl] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -92,16 +92,16 @@ export function DeviceManagement() {
     resolver: zodResolver(updateDeviceSchema),
   });
 
-  // Load logged-in user email from localStorage and generate QR on mount
+  // Load userCode from localStorage and generate QR on mount
   useEffect(() => {
     const userStr = localStorage.getItem('user');
     if (userStr) {
       try {
         const user = JSON.parse(userStr);
-        const email = user.email || '';
-        setUserEmail(email);
-        if (email) {
-          QRCode.toDataURL(email, {
+        const code = user.userCode || '';
+        setUserCode(code);
+        if (code) {
+          QRCode.toDataURL(code, {
             width: 300,
             margin: 2,
             color: { dark: '#000000', light: '#ffffff' },
@@ -109,7 +109,7 @@ export function DeviceManagement() {
           }).then(setQrDataUrl).catch(() => setQrDataUrl(''));
         }
       } catch {
-        setUserEmail('');
+        setUserCode('');
       }
     }
   }, []);
@@ -1361,14 +1361,14 @@ export function DeviceManagement() {
               {qrDataUrl ? (
                 <>
                   <img src={qrDataUrl} alt="QR Code" className="w-[250px] h-[250px]" />
-                  <p className="text-sm text-muted-foreground">{userEmail}</p>
+                  <p className="text-sm font-mono text-muted-foreground">{userCode}</p>
                   <Button onClick={handleDownloadQr}>
                     <Download className="h-4 w-4 mr-2" />
                     Download QR Code
                   </Button>
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground">No user email found.</p>
+                <p className="text-sm text-muted-foreground">No user code found. Please log in again.</p>
               )}
             </CardContent>
           </Card>

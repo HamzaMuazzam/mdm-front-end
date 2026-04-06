@@ -7,8 +7,8 @@
 
 //TODO: for local development
 export const WS = 'ws';
-export const API_BASE_URL = 'http://10.10.10.81:9000/apis';
-export const MQTT_BROKER_URL = `ws://10.10.10.81:8083/mqtt`;
+export const API_BASE_URL = 'http://10.10.11.101:9000/apis';
+export const MQTT_BROKER_URL = `ws://10.10.11.101:8083/mqtt`;
 
 
 export const ROUTES = {
