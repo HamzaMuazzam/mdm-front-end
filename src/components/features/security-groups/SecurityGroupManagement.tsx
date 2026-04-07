@@ -195,7 +195,11 @@ export function SecurityGroupManagement() {
             ) : (
               <div className="p-4 space-y-5">
                 {matrix.permissionGroups.map((group) => {
-                  const allocatedCount = group.permissions.filter((p) => p.isAllocated).length;
+                  const visiblePerms = group.permissions.filter(
+                    (p) => matrix.securityGroupId === 1 || p.isAllocated || p.isAllowed
+                  );
+                  if (visiblePerms.length === 0) return null;
+                  const allocatedCount = visiblePerms.filter((p) => p.isAllocated).length;
                   return (
                     <div key={group.permissionGroupId}>
                       <div className="flex items-center gap-2 mb-2">
@@ -203,27 +207,23 @@ export function SecurityGroupManagement() {
                           {group.permissionGroupName}
                         </span>
                         <div className="flex-1 h-px bg-border" />
-                        <span className={`text-xs font-medium ${allocatedCount === group.permissions.length ? 'text-success' : 'text-muted-foreground'}`}>
-                          {allocatedCount}/{group.permissions.length}
+                        <span className={`text-xs font-medium ${allocatedCount === visiblePerms.length ? 'text-success' : 'text-muted-foreground'}`}>
+                          {allocatedCount}/{visiblePerms.length}
                         </span>
                       </div>
                       <ul className="space-y-1">
-                        {group.permissions.map((perm) => {
+                        {visiblePerms.map((perm) => {
                           const isToggling = togglingPermissionId === perm.permissionId;
-                          const isDisabled = matrix.securityGroupId !== 1 && !perm.isAllocated && !perm.isAllowed;
                           return (
                             <li
                               key={perm.permissionId}
-                              onClick={() => !isDisabled && hasPermission('security-group:update') && handleTogglePermission(perm)}
-                              title={isDisabled ? 'This permission is not available for your security group' : undefined}
+                              onClick={() => hasPermission('security-group:update') && handleTogglePermission(perm)}
                               className={`flex items-start gap-2 px-2 py-1.5 rounded-md transition-colors select-none ${
-                                isDisabled
-                                  ? 'cursor-not-allowed opacity-40'
-                                  : !hasPermission('security-group:update')
-                                    ? 'cursor-default'
-                                    : togglingPermissionId !== null
-                                      ? 'cursor-not-allowed opacity-60'
-                                      : 'cursor-pointer hover:bg-muted/50'
+                                !hasPermission('security-group:update')
+                                  ? 'cursor-default'
+                                  : togglingPermissionId !== null
+                                    ? 'cursor-not-allowed opacity-60'
+                                    : 'cursor-pointer hover:bg-muted/50'
                               }`}
                             >
                               {isToggling ? (
