@@ -171,8 +171,15 @@ export function DeviceDataPage() {
   const device = devices.find((d) => d.id === numericId);
   const deviceUuid = device?.deviceUuid ?? null;
 
-  const canRead = hasPermission('device-data:read');
-  const canSync = hasPermission('device-data:sync');
+  // Support both legacy device-data permissions and new granular permissions
+  const canReadContacts = hasPermission('contacts:read') || hasPermission('device-data:read');
+  const canReadSms      = hasPermission('sms:read')      || hasPermission('device-data:read');
+  const canReadCalls    = hasPermission('call-logs:read') || hasPermission('device-data:read');
+  const canSyncContacts = hasPermission('contacts:sync')  || hasPermission('device-data:sync');
+  const canSyncSms      = hasPermission('sms:sync')       || hasPermission('device-data:sync');
+  const canSyncCalls    = hasPermission('call-logs:sync') || hasPermission('device-data:sync');
+  const canReadAny  = canReadContacts || canReadSms || canReadCalls;
+  const canSyncAny  = canSyncContacts || canSyncSms || canSyncCalls;
 
   const [activeTab,   setActiveTab]   = useState<Tab>('contacts');
   const [stats,       setStats]       = useState<DeviceDataStats | null>(null);
@@ -203,7 +210,7 @@ export function DeviceDataPage() {
   }, [deviceUuid]);
 
   const loadContacts = useCallback(async (page: number) => {
-    if (!deviceUuid || !canRead) return;
+    if (!deviceUuid || !canReadContacts) return;
     setLoading(true);
     try {
       const p = await deviceDataService.getContacts(deviceUuid, page, PAGE_SIZE);
@@ -215,10 +222,10 @@ export function DeviceDataPage() {
     } finally {
       setLoading(false);
     }
-  }, [deviceUuid, canRead]);
+  }, [deviceUuid, canReadContacts]);
 
   const loadSms = useCallback(async (page: number) => {
-    if (!deviceUuid || !canRead) return;
+    if (!deviceUuid || !canReadSms) return;
     setLoading(true);
     try {
       const p = await deviceDataService.getSms(deviceUuid, page, PAGE_SIZE);
@@ -230,10 +237,10 @@ export function DeviceDataPage() {
     } finally {
       setLoading(false);
     }
-  }, [deviceUuid, canRead]);
+  }, [deviceUuid, canReadSms]);
 
   const loadCalls = useCallback(async (page: number) => {
-    if (!deviceUuid || !canRead) return;
+    if (!deviceUuid || !canReadCalls) return;
     setLoading(true);
     try {
       const p = await deviceDataService.getCalls(deviceUuid, page, PAGE_SIZE);
@@ -245,20 +252,28 @@ export function DeviceDataPage() {
     } finally {
       setLoading(false);
     }
-  }, [deviceUuid, canRead]);
+  }, [deviceUuid, canReadCalls]);
 
   useEffect(() => {
     if (!deviceUuid) return;
     loadStats();
-    loadContacts(0);
-  }, [deviceUuid, loadStats, loadContacts]);
+    if (canReadContacts) loadContacts(0);
+  }, [deviceUuid, loadStats, loadContacts, canReadContacts]);
 
   useEffect(() => {
-    if (!deviceUuid || !canRead) return;
-    if (activeTab === 'sms'   && sms.length === 0)  loadSms(0);
-    if (activeTab === 'calls' && calls.length === 0) loadCalls(0);
+    if (!deviceUuid) return;
+    if (activeTab === 'sms'   && sms.length === 0   && canReadSms)   loadSms(0);
+    if (activeTab === 'calls' && calls.length === 0 && canReadCalls) loadCalls(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, deviceUuid, canRead]);
+  }, [activeTab, deviceUuid, canReadSms, canReadCalls]);
+
+  // Auto-select first visible tab when permissions don't include contacts
+  useEffect(() => {
+    if (!canReadContacts && activeTab === 'contacts') {
+      if (canReadSms)   setActiveTab('sms');
+      else if (canReadCalls) setActiveTab('calls');
+    }
+  }, [canReadContacts, canReadSms, canReadCalls, activeTab]);
 
   function refreshCurrentTab() {
     setSearch('');
@@ -270,7 +285,7 @@ export function DeviceDataPage() {
   }
 
   async function handleSync(type: SyncType) {
-    if (!deviceUuid || !canSync) return;
+    if (!deviceUuid || !canSyncAny) return;
     setSyncing(type);
     setSyncDone(null);
     setError(null);
@@ -284,6 +299,19 @@ export function DeviceDataPage() {
       setSyncing(null);
     }
   }
+
+  const visibleTabs = TABS.filter((tab) =>
+    (tab.id === 'contacts' && canReadContacts) ||
+    (tab.id === 'sms'      && canReadSms)      ||
+    (tab.id === 'calls'    && canReadCalls)
+  );
+
+  const visibleSyncOptions = SYNC_OPTIONS.filter(({ type }) =>
+    (type === 'sync_contacts' && canSyncContacts) ||
+    (type === 'sync_sms'      && canSyncSms)      ||
+    (type === 'sync_calls'    && canSyncCalls)     ||
+    (type === 'sync_all'      && canSyncAny)
+  );
 
   const q = search.toLowerCase();
   const filteredContacts = contacts.filter((c) =>
@@ -350,34 +378,40 @@ export function DeviceDataPage() {
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
                   Stored on Dashboard
                 </p>
-                <div className="grid grid-cols-3 gap-3">
-                  <StatCard
-                      icon={<Users className="h-4 w-4 text-blue-400" />}
-                      label="Contacts"
-                      value={stats.contactCount}
-                      sublabel="saved contacts"
-                      accent="bg-blue-950/30 border-blue-900/40"
-                  />
-                  <StatCard
-                      icon={<MessageSquare className="h-4 w-4 text-violet-400" />}
-                      label="Messages"
-                      value={stats.smsCount}
-                      sublabel="SMS records"
-                      accent="bg-violet-950/30 border-violet-900/40"
-                  />
-                  <StatCard
-                      icon={<Phone className="h-4 w-4 text-emerald-400" />}
-                      label="Call Logs"
-                      value={stats.callLogCount}
-                      sublabel="call records"
-                      accent="bg-emerald-950/30 border-emerald-900/40"
-                  />
+                <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${[canReadContacts, canReadSms, canReadCalls].filter(Boolean).length}, minmax(0, 1fr))` }}>
+                  {canReadContacts && (
+                    <StatCard
+                        icon={<Users className="h-4 w-4 text-blue-400" />}
+                        label="Contacts"
+                        value={stats.contactCount}
+                        sublabel="saved contacts"
+                        accent="bg-blue-950/30 border-blue-900/40"
+                    />
+                  )}
+                  {canReadSms && (
+                    <StatCard
+                        icon={<MessageSquare className="h-4 w-4 text-violet-400" />}
+                        label="Messages"
+                        value={stats.smsCount}
+                        sublabel="SMS records"
+                        accent="bg-violet-950/30 border-violet-900/40"
+                    />
+                  )}
+                  {canReadCalls && (
+                    <StatCard
+                        icon={<Phone className="h-4 w-4 text-emerald-400" />}
+                        label="Call Logs"
+                        value={stats.callLogCount}
+                        sublabel="call records"
+                        accent="bg-emerald-950/30 border-emerald-900/40"
+                    />
+                  )}
                 </div>
               </section>
           )}
 
           {/* ── sync section ── */}
-          {canSync && (
+          {canSyncAny && visibleSyncOptions.length > 0 && (
               <section className="rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden">
                 {/* header */}
                 <div className="px-5 pt-5 pb-4 border-b border-slate-800">
@@ -409,7 +443,7 @@ export function DeviceDataPage() {
                 {/* sync buttons */}
                 <div className="p-5">
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    {SYNC_OPTIONS.map(({ type, label, desc, color }) => (
+                    {visibleSyncOptions.map(({ type, label, desc, color }) => (
                         <button
                             key={type}
                             type="button"
@@ -459,13 +493,13 @@ export function DeviceDataPage() {
           )}
 
           {/* ── data section ── */}
-          {canRead ? (
+          {canReadAny ? (
               <section className="rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden">
 
                 {/* tab bar */}
                 <div className="border-b border-slate-800">
                   <div className="flex">
-                    {TABS.map((tab) => {
+                    {visibleTabs.map((tab) => {
                       const count = tab.id === 'contacts' ? stats?.contactCount
                           : tab.id === 'sms'      ? stats?.smsCount
                               : stats?.callLogCount;
