@@ -736,7 +736,7 @@ export function DeviceManagement() {
                   </button>
                 )}
 
-                {hasPermission('device-audio:listen') && (
+                {(hasPermission('device-audio:listen') || hasPermission('audio-management:listen')) && (
                   <button
                     type="button"
                     onClick={() => handleListenAudio(device)}
@@ -746,7 +746,7 @@ export function DeviceManagement() {
                     <span className="text-[10px] font-semibold">Listen</span>
                   </button>
                 )}
-                {hasPermission('device-data:read') && (
+                {(hasPermission('device-data:read') || hasPermission('contacts:read') || hasPermission('sms:read') || hasPermission('call-logs:read')) && (
                   <button
                     type="button"
                     onClick={() => handleMonitorData(device)}
