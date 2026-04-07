@@ -48,6 +48,7 @@ export function useAudioStream(deviceUuid: string | null, enabled: boolean) {
 
     const streamTopic = `device/${deviceUuid}/audioStream`;
     const ackTopic    = `device/${deviceUuid}/audioAck`;
+    console.debug(`streamTopic: ${streamTopic}`);
 
     const emailRaw = (() => {
       try { return JSON.parse(localStorage.getItem('user') ?? '{}')?.email ?? 'web'; }
@@ -66,10 +67,12 @@ export function useAudioStream(deviceUuid: string | null, enabled: boolean) {
     client.on('connect', () => {
       client.subscribe(streamTopic, { qos: 0 });
       client.subscribe(ackTopic,    { qos: 1 });
+      console.log("streamTopic connect", streamTopic);
     });
 
     client.on('message', (t: string, payload: Buffer) => {
       // ── ack channel: screen turned on → signal the page ──────────────────
+      console.debug(`received ${payload}`);
       if (t === ackTopic) {
         try {
           const data = JSON.parse(payload.toString()) as { status?: string };
@@ -106,6 +109,7 @@ export function useAudioStream(deviceUuid: string | null, enabled: boolean) {
         source.start(startAt);
         nextTimeRef.current = startAt + buffer.duration;
       } catch {
+        console.debug(`received catch error ${payload}`);
         // silently ignore malformed chunks
       }
     });
