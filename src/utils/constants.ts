@@ -9,7 +9,7 @@
 export const WS = 'wss';
 // export const API_BASE_URL = 'http://10.10.11.101:9000/api';
 export const API_BASE_URL = 'https://mdm.dspl.pk/api';
-export const MQTT_BROKER_URL = `${WS}://mdm.dspl.pk/mqtt`;
+export const MQTT_BROKER_URL = `${WS}://mdm.dspl.pk:8084/mqtt`;
 // export const MQTT_BROKER_URL = `${WS}://10.10.11.101:8083/mqtt`;
 
 
