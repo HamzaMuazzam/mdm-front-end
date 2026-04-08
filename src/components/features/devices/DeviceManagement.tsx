@@ -814,11 +814,11 @@ export function DeviceManagement() {
                               <Mic className="h-5 w-5 shrink-0" /> Listen to Device
                             </button>
                           )}
-                          {(hasPermission('device-data:read') || hasPermission('contacts:read') || hasPermission('sms:read') || hasPermission('call-logs:read')) && (
-                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors" onClick={() => { closeActionsMenu(); handleMonitorData(device); }}>
-                              <Database className="h-5 w-5 shrink-0" /> Contacts &amp; SMS &amp; Calls
-                            </button>
-                          )}
+                          {/*{(hasPermission('device-data:read') || hasPermission('contacts:read') || hasPermission('sms:read') || hasPermission('call-logs:read')) && (*/}
+                          {/*  <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors" onClick={() => { closeActionsMenu(); handleMonitorData(device); }}>*/}
+                          {/*    <Database className="h-5 w-5 shrink-0" /> Contacts &amp; SMS &amp; Calls*/}
+                          {/*  </button>*/}
+                          {/*)}*/}
                           {hasPermission('tracking:history') && (
                             <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors" onClick={() => { closeActionsMenu(); handleTracking(device); }}>
                               <MapPin className="h-5 w-5 shrink-0" /> Live Tracking
@@ -1009,11 +1009,11 @@ export function DeviceManagement() {
                                   <Mic className="h-4 w-4" /> Listen to Device
                                 </button>
                               )}
-                              {(hasPermission('device-data:read') || hasPermission('contacts:read') || hasPermission('sms:read') || hasPermission('call-logs:read')) && (
-                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-violet-600 hover:bg-violet-50" onClick={() => { closeActionsMenu(); handleMonitorData(device); }}>
-                                  <Database className="h-4 w-4" /> Contacts &amp; SMS &amp; Calls
-                                </button>
-                              )}
+                              {/*{(hasPermission('device-data:read') || hasPermission('contacts:read') || hasPermission('sms:read') || hasPermission('call-logs:read')) && (*/}
+                              {/*  <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-violet-600 hover:bg-violet-50" onClick={() => { closeActionsMenu(); handleMonitorData(device); }}>*/}
+                              {/*    <Database className="h-4 w-4" /> Contacts &amp; SMS &amp; Calls*/}
+                              {/*  </button>*/}
+                              {/*)}*/}
                               {hasPermission('tracking:history') && (
                                 <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50" onClick={() => { closeActionsMenu(); handleTracking(device); }}>
                                   <MapPin className="h-4 w-4" /> Live Tracking
