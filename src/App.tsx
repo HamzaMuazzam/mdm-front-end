@@ -21,6 +21,7 @@ import { DeviceDataPage } from './pages/DeviceDataPage';
 import { DeviceTrackingPage } from './pages/DeviceTrackingPage';
 import { AllDevicesMapPage } from './pages/AllDevicesMapPage';
 import { DeviceSosPage } from './pages/DeviceSosPage';
+import { DeviceTimeRangePage } from './pages/DeviceTimeRangePage';
 
 function App() {
   return (
@@ -132,6 +133,15 @@ function App() {
           element={
             <ProtectedRoute requiresSubscription>
               <AllDevicesMapPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path={ROUTES.DEVICE_TIME_RANGE}
+          element={
+            <ProtectedRoute requiresSubscription>
+              <DeviceTimeRangePage />
             </ProtectedRoute>
           }
         />

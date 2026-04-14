@@ -1,49 +1,48 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
-export default defineConfig({
-  plugins: [react()],
-  define: {
-    global: 'globalThis',
-  },
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), 'VITE_');
+  const isLocal = mode === 'development';
+
+  return {
+    plugins: [react()],
+    define: {
+      global: 'globalThis',
     },
-  },
-  optimizeDeps: {
-    include: ['mqtt'],
-    esbuildOptions: {
-      define: {
-        global: 'globalThis',
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
       },
     },
-  },
-  server: {
-    host: true,
-    port: 5173,
-    strictPort: true,
-
-    // origin: 'http://10.10.11.101',
-    origin: 'https://mdm.dspl.pk',
-
-    hmr: {
-      // protocol: 'ws',
-      protocol: 'wss',
-      // host: '10.10.11.101',
-      host: 'mdm.dspl.pk',
+    optimizeDeps: {
+      include: ['mqtt'],
+      esbuildOptions: {
+        define: {
+          global: 'globalThis',
+        },
+      },
+    },
+    server: {
+      host: true,
       port: 5173,
-    },
-    cors: {
-      origin: '*',
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['*'],
-    },
+      strictPort: true,
 
-    // allowedHosts: ['10.10.11.101']
-    allowedHosts: ['mdm.dspl.pk']
-  },
+      origin: env.VITE_SERVER_ORIGIN,
+
+      hmr: {
+        protocol: isLocal ? 'ws' : 'wss',
+        host: env.VITE_SERVER_HOST,
+        port: 5173,
+      },
+      cors: {
+        origin: '*',
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['*'],
+      },
+
+      allowedHosts: [env.VITE_SERVER_HOST],
+    },
+  }
 })
-
-// in all above urls these are react web urls.

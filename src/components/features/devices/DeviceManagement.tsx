@@ -11,7 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, Eye, BarChart3, MoreVertical, Power, RotateCcw, Siren, Mic, Database, Map, Plus, RefreshCw, Search } from 'lucide-react';
+import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, Eye, BarChart3, MoreVertical, Power, RotateCcw, Siren, Mic, Database, Map, Plus, RefreshCw, Search, Clock, CheckSquare, Square, Users } from 'lucide-react';
+import { timeRangeService } from '@/api/services/timerange.service';
 import QRCode from 'qrcode';
 import type { CreateDeviceRequest, UpdateDeviceRequest, Device, UpdateDeviceConfigurationRequest } from '@/types/device.types';
 import { ROUTES } from '@/utils/constants';
@@ -45,6 +46,18 @@ export function DeviceManagement() {
   const [configDeviceId, setConfigDeviceId] = useState<number | null>(null);
   const [configFormData, setConfigFormData] = useState<UpdateDeviceConfigurationRequest>({});
   const [verificationCodeModal, setVerificationCodeModal] = useState<{ code: number | null } | null>(null);
+
+  // ── Bulk Time Range modal state ───────────────────────────────────────────
+  const [isBulkTimeRangeOpen, setIsBulkTimeRangeOpen] = useState(false);
+  const [bulkSelectedUuids, setBulkSelectedUuids] = useState<Set<string>>(new Set());
+  const [bulkSearchQuery, setBulkSearchQuery] = useState('');
+  const [bulkStartTime, setBulkStartTime] = useState('09:00');
+  const [bulkEndTime, setBulkEndTime] = useState('17:00');
+  const [bulkTimezone, setBulkTimezone] = useState('device');
+  const [bulkEnabled, setBulkEnabled] = useState(true);
+  const [bulkSaving, setBulkSaving] = useState(false);
+  const [bulkResult, setBulkResult] = useState<{ success: number; failed: number } | null>(null);
+
   const hasPermission = usePermissionStore((state) => state.hasPermission);
   const { data: devices = [], isLoading, refetch: refetchDevices, isFetching } = useDevicesQuery();
   const [searchQuery, setSearchQuery] = useState('');
@@ -350,6 +363,71 @@ export function DeviceManagement() {
     navigate(`/device/${device.id}/sos`);
   };
 
+  const handleTimeRange = (device: Device) => {
+    navigate(`/device/${device.deviceUuid}/time-range`);
+  };
+
+  // ── Bulk Time Range handlers ─────────────────────────────────────────────
+
+  const openBulkTimeRange = () => {
+    setBulkSelectedUuids(new Set());
+    setBulkSearchQuery('');
+    setBulkStartTime('09:00');
+    setBulkEndTime('17:00');
+    setBulkTimezone('device');
+    setBulkEnabled(true);
+    setBulkResult(null);
+    setIsBulkTimeRangeOpen(true);
+  };
+
+  const bulkFilteredDevices = bulkSearchQuery.trim()
+    ? devices.filter((d: Device) => {
+        const q = bulkSearchQuery.toLowerCase();
+        return (
+          d.deviceName?.toLowerCase().includes(q) ||
+          d.deviceUuid?.toLowerCase().includes(q) ||
+          d.userEmail?.toLowerCase().includes(q) ||
+          d.model?.toLowerCase().includes(q)
+        );
+      })
+    : devices;
+
+  const toggleBulkDevice = (uuid: string) => {
+    setBulkSelectedUuids((prev) => {
+      const next = new Set(prev);
+      next.has(uuid) ? next.delete(uuid) : next.add(uuid);
+      return next;
+    });
+  };
+
+  const toggleBulkSelectAll = () => {
+    if (bulkSelectedUuids.size === bulkFilteredDevices.length) {
+      setBulkSelectedUuids(new Set());
+    } else {
+      setBulkSelectedUuids(new Set(bulkFilteredDevices.map((d: Device) => d.deviceUuid)));
+    }
+  };
+
+  const handleBulkApply = async () => {
+    if (bulkSelectedUuids.size === 0) return;
+    setBulkSaving(true);
+    setBulkResult(null);
+    try {
+      const results = await timeRangeService.bulkAssign({
+        deviceUuids: Array.from(bulkSelectedUuids),
+        startTime: bulkStartTime,
+        endTime: bulkEndTime,
+        timezone: bulkTimezone,
+        enabled: bulkEnabled,
+      });
+      setBulkResult({ success: results.length, failed: bulkSelectedUuids.size - results.length });
+    } catch {
+      setBulkResult({ success: 0, failed: bulkSelectedUuids.size });
+    } finally {
+      setBulkSaving(false);
+    }
+  };
+
   const fetchAlertStatus = useCallback(async (deviceId: number) => {
     if (alertStatusByDevice[deviceId] !== undefined || alertStatusLoading[deviceId]) return;
     setAlertStatusLoading((prev) => ({ ...prev, [deviceId]: true }));
@@ -564,6 +642,16 @@ export function DeviceManagement() {
               Track All
             </Button>
           )}
+          {devices.length > 0 && (
+            <Button
+              variant="outline"
+              onClick={openBulkTimeRange}
+              className="flex-1 sm:flex-none border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-300"
+            >
+              <Clock className="h-4 w-4 mr-2" />
+              Bulk Time Range
+            </Button>
+          )}
           {hasPermission('devices:create') && (
             <Button onClick={() => setIsModalOpen(true)} className="flex-1 sm:flex-none bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white border-0">
               <Plus className="h-4 w-4 shrink-0" />
@@ -766,6 +854,14 @@ export function DeviceManagement() {
                     <span className="text-[10px] font-semibold">Tracking</span>
                   </button>
                 )}
+                <button
+                  type="button"
+                  onClick={() => handleTimeRange(device)}
+                  className="flex flex-col items-center gap-0.5 px-2.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 transition-colors text-white"
+                >
+                  <Clock className="h-4 w-4" />
+                  <span className="text-[10px] font-semibold">Time Range</span>
+                </button>
 
                 {/* Overflow menu */}
                 <div className="relative ml-auto" data-device-actions-menu>
@@ -814,11 +910,11 @@ export function DeviceManagement() {
                               <Mic className="h-5 w-5 shrink-0" /> Listen to Device
                             </button>
                           )}
-                          {/*{(hasPermission('device-data:read') || hasPermission('contacts:read') || hasPermission('sms:read') || hasPermission('call-logs:read')) && (*/}
-                          {/*  <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors" onClick={() => { closeActionsMenu(); handleMonitorData(device); }}>*/}
-                          {/*    <Database className="h-5 w-5 shrink-0" /> Contacts &amp; SMS &amp; Calls*/}
-                          {/*  </button>*/}
-                          {/*)}*/}
+                          {(hasPermission('device-data:read') || hasPermission('contacts:read') || hasPermission('sms:read') || hasPermission('call-logs:read')) && (
+                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors" onClick={() => { closeActionsMenu(); handleMonitorData(device); }}>
+                              <Database className="h-5 w-5 shrink-0" /> Contacts &amp; SMS &amp; Calls
+                            </button>
+                          )}
                           {hasPermission('tracking:history') && (
                             <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors" onClick={() => { closeActionsMenu(); handleTracking(device); }}>
                               <MapPin className="h-5 w-5 shrink-0" /> Live Tracking
@@ -829,6 +925,9 @@ export function DeviceManagement() {
                               <Siren className="h-5 w-5 shrink-0" /> SOS History
                             </button>
                           )}
+                          <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors" onClick={() => { closeActionsMenu(); handleTimeRange(device); }}>
+                            <Clock className="h-5 w-5 shrink-0" /> Usage Time Range
+                          </button>
                           {hasPermission('notifications:manage-alerts') && (
                             <button
                               type="button"
@@ -1009,11 +1108,11 @@ export function DeviceManagement() {
                                   <Mic className="h-4 w-4" /> Listen to Device
                                 </button>
                               )}
-                              {/*{(hasPermission('device-data:read') || hasPermission('contacts:read') || hasPermission('sms:read') || hasPermission('call-logs:read')) && (*/}
-                              {/*  <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-violet-600 hover:bg-violet-50" onClick={() => { closeActionsMenu(); handleMonitorData(device); }}>*/}
-                              {/*    <Database className="h-4 w-4" /> Contacts &amp; SMS &amp; Calls*/}
-                              {/*  </button>*/}
-                              {/*)}*/}
+                              {(hasPermission('device-data:read') || hasPermission('contacts:read') || hasPermission('sms:read') || hasPermission('call-logs:read')) && (
+                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-violet-600 hover:bg-violet-50" onClick={() => { closeActionsMenu(); handleMonitorData(device); }}>
+                                  <Database className="h-4 w-4" /> Contacts &amp; SMS &amp; Calls
+                                </button>
+                              )}
                               {hasPermission('tracking:history') && (
                                 <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50" onClick={() => { closeActionsMenu(); handleTracking(device); }}>
                                   <MapPin className="h-4 w-4" /> Live Tracking
@@ -1024,6 +1123,9 @@ export function DeviceManagement() {
                                   <Siren className="h-4 w-4" /> SOS History
                                 </button>
                               )}
+                              <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20" onClick={() => { closeActionsMenu(); handleTimeRange(device); }}>
+                                <Clock className="h-4 w-4" /> Usage Time Range
+                              </button>
                               {hasPermission('devices:update') && (
                                 <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => { closeActionsMenu(); handleEdit(device); }}>
                                   <Pencil className="h-4 w-4" /> Edit Device
@@ -1066,6 +1168,245 @@ export function DeviceManagement() {
           </div>
         </CardContent>
       </Card>
+
+      {/* ── Bulk Time Range Modal ────────────────────────────────────────────── */}
+      {isBulkTimeRangeOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
+          onClick={() => setIsBulkTimeRangeOpen(false)}
+        >
+          <div
+            className="w-full sm:max-w-2xl rounded-t-2xl sm:rounded-2xl bg-card border border-border shadow-2xl flex flex-col max-h-[92dvh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-border shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-indigo-100 dark:bg-indigo-900/30">
+                  <Clock className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold text-foreground">Bulk Time Range</h2>
+                  <p className="text-xs text-muted-foreground">Apply the same time range to multiple devices at once</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsBulkTimeRangeOpen(false)}
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="flex flex-col sm:flex-row flex-1 min-h-0 overflow-hidden">
+
+              {/* Left panel: device selection */}
+              <div className="flex flex-col sm:w-80 border-b sm:border-b-0 sm:border-r border-border max-h-64 sm:max-h-none">
+                {/* Device search + select all */}
+                <div className="px-4 py-3 border-b border-border shrink-0 space-y-2">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                    <input
+                      type="text"
+                      placeholder="Search devices…"
+                      value={bulkSearchQuery}
+                      onChange={(e) => setBulkSearchQuery(e.target.value)}
+                      className="w-full rounded-lg border border-input bg-background py-1.5 pl-8 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={toggleBulkSelectAll}
+                    className="flex items-center gap-2 text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                  >
+                    {bulkSelectedUuids.size === bulkFilteredDevices.length && bulkFilteredDevices.length > 0
+                      ? <CheckSquare className="h-3.5 w-3.5" />
+                      : <Square className="h-3.5 w-3.5" />}
+                    {bulkSelectedUuids.size === bulkFilteredDevices.length && bulkFilteredDevices.length > 0
+                      ? 'Deselect all'
+                      : `Select all (${bulkFilteredDevices.length})`}
+                  </button>
+                </div>
+
+                {/* Device list */}
+                <div className="flex-1 overflow-y-auto divide-y divide-border">
+                  {bulkFilteredDevices.length === 0 ? (
+                    <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
+                      No devices found
+                    </div>
+                  ) : (
+                    bulkFilteredDevices.map((device: Device) => {
+                      const selected = bulkSelectedUuids.has(device.deviceUuid);
+                      const online   = deviceStatuses[device.deviceUuid] === 'online';
+                      return (
+                        <button
+                          key={device.deviceUuid}
+                          type="button"
+                          onClick={() => toggleBulkDevice(device.deviceUuid)}
+                          className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
+                            selected ? 'bg-indigo-50 dark:bg-indigo-900/20' : 'hover:bg-muted'
+                          }`}
+                        >
+                          <div className={`shrink-0 h-4 w-4 rounded border-2 flex items-center justify-center transition-colors ${
+                            selected
+                              ? 'bg-indigo-600 border-indigo-600'
+                              : 'border-border bg-background'
+                          }`}>
+                            {selected && <Check className="h-2.5 w-2.5 text-white" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate">
+                              {device.deviceName || 'Unnamed Device'}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {device.userEmail || device.deviceUuid}
+                            </p>
+                          </div>
+                          <span className={`shrink-0 h-2 w-2 rounded-full ${online ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+
+                {/* Selection count */}
+                <div className="px-4 py-2.5 border-t border-border bg-muted/30 shrink-0">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <Users className="h-3.5 w-3.5" />
+                    <span>
+                      <span className="font-semibold text-foreground">{bulkSelectedUuids.size}</span> device{bulkSelectedUuids.size !== 1 ? 's' : ''} selected
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Right panel: time range config */}
+              <div className="flex flex-col flex-1 min-h-0">
+                <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
+
+                  {/* Time pickers */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-muted-foreground mb-1">
+                        Start Time (allowed from)
+                      </label>
+                      <input
+                        type="time"
+                        value={bulkStartTime}
+                        onChange={(e) => setBulkStartTime(e.target.value)}
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-muted-foreground mb-1">
+                        End Time (lock after)
+                      </label>
+                      <input
+                        type="time"
+                        value={bulkEndTime}
+                        onChange={(e) => setBulkEndTime(e.target.value)}
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Midnight-crossing hint */}
+                  {bulkStartTime > bulkEndTime && (
+                    <p className="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                      Midnight-crossing range: unlocks at {bulkStartTime}, locks at {bulkEndTime} next day.
+                    </p>
+                  )}
+
+                  {/* Timezone */}
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1">Timezone</label>
+                    <select
+                      value={bulkTimezone}
+                      onChange={(e) => setBulkTimezone(e.target.value)}
+                      className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    >
+                      {['device','UTC','Asia/Karachi','Asia/Kolkata','Asia/Dubai','America/New_York','America/Los_Angeles','Europe/London','Europe/Berlin','Australia/Sydney'].map((tz) => (
+                        <option key={tz} value={tz}>{tz === 'device' ? 'Device local timezone' : tz}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Enable toggle */}
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setBulkEnabled((v) => !v)}
+                      className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                        bulkEnabled
+                          ? 'border-green-300 bg-green-50 text-green-800 hover:bg-green-100'
+                          : 'border-border bg-muted text-muted-foreground hover:bg-muted/80'
+                      }`}
+                    >
+                      {bulkEnabled ? <CheckSquare className="h-4 w-4" /> : <Square className="h-4 w-4" />}
+                      {bulkEnabled ? 'Enabled' : 'Disabled'}
+                    </button>
+                    <span className="text-xs text-muted-foreground">
+                      {bulkEnabled ? 'Policy will be enforced immediately on all selected devices.' : 'Config saved but not enforced.'}
+                    </span>
+                  </div>
+
+                  {/* Result banner */}
+                  {bulkResult && (
+                    <div className={`rounded-lg border px-4 py-3 text-sm flex items-start gap-2 ${
+                      bulkResult.failed === 0
+                        ? 'bg-green-50 border-green-200 text-green-800'
+                        : bulkResult.success === 0
+                        ? 'bg-red-50 border-red-200 text-red-800'
+                        : 'bg-amber-50 border-amber-200 text-amber-800'
+                    }`}>
+                      <Check className="h-4 w-4 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-medium">
+                          {bulkResult.failed === 0
+                            ? `Time range applied to all ${bulkResult.success} device${bulkResult.success !== 1 ? 's' : ''}.`
+                            : `Applied to ${bulkResult.success} device${bulkResult.success !== 1 ? 's' : ''}. ${bulkResult.failed} failed.`}
+                        </p>
+                        <p className="text-xs opacity-80 mt-0.5">Each device will enforce the policy at the next scheduled transition.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer */}
+                <div className="shrink-0 px-5 py-4 border-t border-border flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsBulkTimeRangeOpen(false)}
+                    className="flex-1 sm:flex-none py-2.5 px-4 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleBulkApply}
+                    disabled={bulkSelectedUuids.size === 0 || bulkSaving}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium transition-colors"
+                  >
+                    {bulkSaving ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        Applying…
+                      </>
+                    ) : (
+                      <>
+                        <Clock className="h-4 w-4" />
+                        Apply to {bulkSelectedUuids.size} device{bulkSelectedUuids.size !== 1 ? 's' : ''}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Verification Code Modal */}
       {verificationCodeModal && (
