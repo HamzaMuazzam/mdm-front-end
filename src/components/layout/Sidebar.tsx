@@ -1,241 +1,259 @@
 import { useState, type ReactNode } from 'react';
-import { useAuthStore } from '@/store/authStore';
-import { useLogout } from '@/hooks/useAuth';
-import { usePermissionStore } from '@/store/permissionStore';
-import { Button } from '@/components/ui/button';
 import {
   LayoutDashboard,
-  Users,
   Smartphone,
+  Users,
   CreditCard,
-  Settings,
+  SlidersHorizontal,
+  ShieldCheck,
+  Upload,
+  Store,
+  FolderSync,
   LogOut,
   ChevronLeft,
   ChevronRight,
-  ShieldCheck,
-  RefreshCw,
-  PackageSearch,
-  HardDrive,
   X,
 } from 'lucide-react';
+import { useAuthStore } from '@/store/authStore';
+import { useLogout } from '@/hooks/useAuth';
+import { usePermissionStore } from '@/store/permissionStore';
+import { nexusTheme, type TabKey } from '@/lib/theme';
 
 interface SidebarProps {
-  activeTab: 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager';
-  onTabChange: (tab: 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager') => void;
+  activeTab: TabKey;
+  onTabChange: (tab: TabKey) => void;
   isMobileOpen?: boolean;
   onMobileClose?: () => void;
 }
 
-export function Sidebar({ activeTab, onTabChange, isMobileOpen = false, onMobileClose }: SidebarProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const user = useAuthStore((state) => state.user);
+interface NavItem {
+  key: TabKey;
+  label: string;
+  icon: ReactNode;
+  permission: string | string[];
+}
+
+const NAV_ITEMS: NavItem[] = [
+  {
+    key: 'overview',
+    label: 'Overview',
+    icon: <LayoutDashboard className="h-[18px] w-[18px]" />,
+    permission: 'user:analytics',
+  },
+  {
+    key: 'devices',
+    label: 'Device Hub',
+    icon: <Smartphone className="h-[18px] w-[18px]" />,
+    permission: 'devices:read',
+  },
+  {
+    key: 'team',
+    label: 'Team',
+    icon: <Users className="h-[18px] w-[18px]" />,
+    permission: 'user:read',
+  },
+  {
+    key: 'plans',
+    label: 'Plans',
+    icon: <CreditCard className="h-[18px] w-[18px]" />,
+    permission: 'subscriptions:read',
+  },
+  {
+    key: 'profiles',
+    label: 'Device Profiles',
+    icon: <SlidersHorizontal className="h-[18px] w-[18px]" />,
+    permission: 'configuration:read',
+  },
+  {
+    key: 'access-control',
+    label: 'Access Control',
+    icon: <ShieldCheck className="h-[18px] w-[18px]" />,
+    permission: 'security-group:read',
+  },
+  {
+    key: 'app-deploy',
+    label: 'App Deploy',
+    icon: <Upload className="h-[18px] w-[18px]" />,
+    permission: 'app-updates:upload',
+  },
+  {
+    key: 'app-store',
+    label: 'App Store',
+    icon: <Store className="h-[18px] w-[18px]" />,
+    permission: ['app-management:read', 'app-management:upload', 'app-management:deploy'],
+  },
+  {
+    key: 'file-transfer',
+    label: 'File Transfer',
+    icon: <FolderSync className="h-[18px] w-[18px]" />,
+    permission: ['file-manager:read', 'file-manager:command'],
+  },
+];
+
+function getInitials(email?: string): string {
+  if (!email) return '?';
+  const [local] = email.split('@');
+  const parts = local.split(/[._-]/);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return local.slice(0, 2).toUpperCase();
+}
+
+export function Sidebar({
+  activeTab,
+  onTabChange,
+  isMobileOpen = false,
+  onMobileClose,
+}: SidebarProps) {
+  const [collapsed, setCollapsed] = useState(false);
+  const user = useAuthStore((s) => s.user);
   const logout = useLogout();
-  const hasPermission = usePermissionStore((state) => state.hasPermission);
+  const hasPermission = usePermissionStore((s) => s.hasPermission);
 
-  const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
+  const checkPerm = (perm: string | string[]) => {
+    if (Array.isArray(perm)) return perm.some((p) => hasPermission(p));
+    return hasPermission(perm);
   };
 
-  const handleNavClick = (tab: SidebarProps['activeTab']) => {
+  const handleNav = (tab: TabKey) => {
     onTabChange(tab);
-    if (onMobileClose) onMobileClose();
+    onMobileClose?.();
   };
 
-  // Desktop sidebar content (shared)
-  const sidebarContent = (collapsed: boolean) => (
-    <>
-      {/* Logo Section */}
-      <div className={`p-6 ${collapsed ? 'px-4' : ''}`}>
-        <div className={`flex flex-col items-center justify-center space-y-2 ${collapsed ? 'space-y-0' : ''}`}>
-          <img
-            src="/tw_logo.png"
-            alt="MDM Portal"
-            className={`transition-all duration-300 ${collapsed ? 'h-8 w-8' : 'h-10 w-auto'}`}
-          />
-          <h1
-            className={`text-2xl font-bold whitespace-nowrap overflow-hidden transition-all duration-300 ${
-              collapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
-            }`}
-          >
-            MDM Portal
-          </h1>
+  const content = (isCollapsed: boolean) => (
+    <div className="flex flex-col h-full">
+      {/* ── Brand ──────────────────────────────────────────────── */}
+      <div className={`flex items-center gap-3 px-5 py-5 ${isCollapsed ? 'px-4 justify-center' : ''}`}>
+        <div className="flex-shrink-0 w-8 h-8 rounded-xl nexus-gradient flex items-center justify-center shadow-glow-primary">
+          <span className="text-white font-bold text-sm tracking-tight">N</span>
         </div>
+        {!isCollapsed && (
+          <div className="overflow-hidden">
+            <p className="text-white font-bold text-base leading-none tracking-tight">
+              {nexusTheme.brand.name}
+            </p>
+            <p className="text-[10px] text-white/40 font-medium uppercase tracking-[0.12em] mt-0.5">
+              MDM Platform
+            </p>
+          </div>
+        )}
       </div>
 
-      {/* User Info Section */}
-      <div className={`mx-4 mb-6 p-3 bg-white/10 rounded-lg overflow-hidden transition-all duration-300 ${
-        collapsed ? 'mx-2 p-2' : ''
-      }`}>
-        {collapsed ? (
-          <div className="flex justify-center">
-            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-              <span className="text-xs font-bold">
-                {user?.email?.charAt(0).toUpperCase()}
-              </span>
-            </div>
+      {/* ── Divider ─────────────────────────────────────────────── */}
+      <div className="mx-4 h-px bg-white/8 mb-3" />
+
+      {/* ── User Profile ────────────────────────────────────────── */}
+      <div className={`mx-3 mb-4 ${isCollapsed ? 'flex justify-center' : ''}`}>
+        {isCollapsed ? (
+          <div
+            className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center"
+            title={user?.email}
+          >
+            <span className="text-white text-xs font-bold">{getInitials(user?.email)}</span>
           </div>
         ) : (
-          <>
-            <p className="text-sm text-gray-300">Signed in as</p>
-            <p className="font-medium truncate">{user?.email}</p>
-          </>
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/6 hover:bg-white/10 transition-colors cursor-default">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center flex-shrink-0">
+              <span className="text-white text-xs font-bold">{getInitials(user?.email)}</span>
+            </div>
+            <div className="min-w-0">
+              <p className="text-white/90 text-xs font-semibold truncate leading-none">
+                {user?.email?.split('@')[0]}
+              </p>
+              <p className="text-white/40 text-[10px] truncate mt-0.5 leading-none">
+                {user?.email}
+              </p>
+            </div>
+          </div>
         )}
       </div>
 
-      {/* Navigation */}
-      <nav className={`flex-1 space-y-2 ${collapsed ? 'px-2' : 'px-4'}`}>
-        {hasPermission('user:analytics') && (
-          <NavButton
-            icon={<LayoutDashboard className="h-5 w-5" />}
-            label="Analytics"
-            isActive={activeTab === 'analytics'}
-            isCollapsed={collapsed}
-            onClick={() => handleNavClick('analytics')}
-          />
+      {/* ── Navigation ──────────────────────────────────────────── */}
+      <nav className={`flex-1 overflow-y-auto space-y-0.5 ${isCollapsed ? 'px-2' : 'px-3'}`}>
+        {!isCollapsed && (
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/25 px-3 mb-2">
+            Navigation
+          </p>
         )}
-        {hasPermission('user:read') && (
-          <NavButton
-            icon={<Users className="h-5 w-5" />}
-            label="Users"
-            isActive={activeTab === 'users'}
-            isCollapsed={collapsed}
-            onClick={() => handleNavClick('users')}
-          />
-        )}
-        {hasPermission('subscriptions:read') && (
-          <NavButton
-            icon={<CreditCard className="h-5 w-5" />}
-            label="Subscriptions"
-            isActive={activeTab === 'subscriptions'}
-            isCollapsed={collapsed}
-            onClick={() => handleNavClick('subscriptions')}
-          />
-        )}
-        {hasPermission('devices:read') && (
-          <NavButton
-            icon={<Smartphone className="h-5 w-5" />}
-            label="Devices"
-            isActive={activeTab === 'devices'}
-            isCollapsed={collapsed}
-            onClick={() => handleNavClick('devices')}
-          />
-        )}
-        {hasPermission('configuration:read') && (
-          <NavButton
-            icon={<Settings className="h-5 w-5" />}
-            label="Configuration"
-            isActive={activeTab === 'configuration'}
-            isCollapsed={collapsed}
-            onClick={() => handleNavClick('configuration')}
-          />
-        )}
-        {hasPermission('security-group:read') && (
-          <NavButton
-            icon={<ShieldCheck className="h-5 w-5" />}
-            label="Security Groups"
-            isActive={activeTab === 'security-groups'}
-            isCollapsed={collapsed}
-            onClick={() => handleNavClick('security-groups')}
-          />
-        )}
-        {hasPermission('app-updates:upload') && (
-          <NavButton
-            icon={<RefreshCw className="h-5 w-5" />}
-            label="App Update"
-            isActive={activeTab === 'app-update'}
-            isCollapsed={collapsed}
-            onClick={() => handleNavClick('app-update')}
-          />
-        )}
-        {(hasPermission('app-management:read') || hasPermission('app-management:upload') || hasPermission('app-management:deploy')) && (
-          <NavButton
-            icon={<PackageSearch className="h-5 w-5" />}
-            label="App Management"
-            isActive={activeTab === 'app-management'}
-            isCollapsed={collapsed}
-            onClick={() => handleNavClick('app-management')}
-          />
-        )}
-        {(hasPermission('file-manager:read') || hasPermission('file-manager:command')) && (
-          <NavButton
-            icon={<HardDrive className="h-5 w-5" />}
-            label="File Manager"
-            isActive={activeTab === 'file-manager'}
-            isCollapsed={collapsed}
-            onClick={() => handleNavClick('file-manager')}
-          />
-        )}
+        {NAV_ITEMS.filter((item) => checkPerm(item.permission)).map((item) => {
+          const isActive = activeTab === item.key;
+          return (
+            <NavButton
+              key={item.key}
+              icon={item.icon}
+              label={item.label}
+              isActive={isActive}
+              isCollapsed={isCollapsed}
+              onClick={() => handleNav(item.key)}
+            />
+          );
+        })}
       </nav>
 
-      {/* Logout Button */}
-      <div className={`p-4 ${collapsed ? 'px-2' : ''}`}>
-        <Button
-          variant="destructive"
-          className={`w-full transition-all duration-300 ${
-            collapsed ? 'px-2' : ''
-          }`}
+      {/* ── Divider ─────────────────────────────────────────────── */}
+      <div className="mx-4 h-px bg-white/8 my-3" />
+
+      {/* ── Logout ──────────────────────────────────────────────── */}
+      <div className={`pb-4 ${isCollapsed ? 'px-2' : 'px-3'}`}>
+        <button
           onClick={logout}
+          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/50 hover:text-white/80 hover:bg-white/8 transition-all duration-150 group ${
+            isCollapsed ? 'justify-center' : ''
+          }`}
+          title={isCollapsed ? 'Sign Out' : undefined}
         >
-          <LogOut className={`h-5 w-5 ${collapsed ? '' : 'mr-2'}`} />
-          <span
-            className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${
-              collapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
-            }`}
-          >
-            Logout
-          </span>
-        </Button>
+          <LogOut className="h-[18px] w-[18px] flex-shrink-0 group-hover:translate-x-0.5 transition-transform" />
+          {!isCollapsed && <span className="text-sm font-medium">Sign Out</span>}
+        </button>
       </div>
-    </>
+    </div>
   );
 
   return (
     <>
-      {/* Mobile Drawer Overlay */}
+      {/* ── Mobile overlay ──────────────────────────────────────── */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
           onClick={onMobileClose}
         />
       )}
 
-      {/* Mobile Drawer */}
+      {/* ── Mobile Drawer ───────────────────────────────────────── */}
       <div
-        className={`fixed top-0 left-0 h-full z-50 w-72 bg-sidebar text-white flex flex-col transition-transform duration-300 ease-in-out lg:hidden ${
+        className={`fixed top-0 left-0 h-full z-50 w-72 bg-[#0f172a] flex flex-col transition-transform duration-300 ease-out lg:hidden ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        {/* Close button */}
         <button
           onClick={onMobileClose}
-          className="absolute top-4 right-4 p-1.5 rounded-md bg-white/10 hover:bg-white/20 transition-colors"
+          className="absolute top-4 right-4 p-1.5 rounded-lg bg-white/8 hover:bg-white/14 text-white/60 hover:text-white transition-colors z-10"
           aria-label="Close menu"
         >
-          <X className="h-5 w-5" />
+          <X className="h-4 w-4" />
         </button>
-
-        {sidebarContent(false)}
+        {content(false)}
       </div>
 
-      {/* Desktop Sidebar */}
+      {/* ── Desktop Sidebar ─────────────────────────────────────── */}
       <div
-        className={`hidden lg:flex h-screen bg-sidebar text-white flex-col relative transition-all duration-300 ease-in-out ${
-          isCollapsed ? 'w-20' : 'w-64'
+        className={`hidden lg:flex h-screen bg-[#0f172a] flex-col relative flex-shrink-0 transition-all duration-300 ease-out ${
+          collapsed ? 'w-[72px]' : 'w-[260px]'
         }`}
       >
-        {/* Collapse Toggle Button */}
+        {/* Collapse toggle */}
         <button
-          onClick={toggleSidebar}
-          className="absolute -right-3 top-8 bg-sidebar border-2 border-white/20 rounded-full p-1 hover:bg-white/10 transition-colors z-10"
+          onClick={() => setCollapsed(!collapsed)}
+          className="absolute -right-3 top-[72px] z-10 w-6 h-6 rounded-full bg-[#0f172a] border border-white/15 flex items-center justify-center text-white/50 hover:text-white hover:border-white/30 transition-all duration-150 shadow-md"
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          {isCollapsed ? (
-            <ChevronRight className="h-4 w-4" />
+          {collapsed ? (
+            <ChevronRight className="h-3 w-3" />
           ) : (
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-3 w-3" />
           )}
         </button>
 
-        {sidebarContent(isCollapsed)}
+        {content(collapsed)}
       </div>
     </>
   );
@@ -251,22 +269,37 @@ interface NavButtonProps {
 
 function NavButton({ icon, label, isActive, isCollapsed, onClick }: NavButtonProps) {
   return (
-    <Button
-      variant={isActive ? 'default' : 'ghost'}
-      className={`w-full text-white hover:bg-white/10 transition-all duration-300 ${
-        isCollapsed ? 'justify-center px-2' : 'justify-start'
-      }`}
+    <button
       onClick={onClick}
       title={isCollapsed ? label : undefined}
+      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 group relative ${
+        isCollapsed ? 'justify-center' : ''
+      } ${
+        isActive
+          ? 'bg-white/12 text-white shadow-sm'
+          : 'text-white/55 hover:bg-white/7 hover:text-white/85'
+      }`}
     >
-      <span className={isCollapsed ? '' : 'mr-3'}>{icon}</span>
+      {/* Active indicator */}
+      {isActive && (
+        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-primary-400 rounded-r-full" />
+      )}
+
+      {/* Icon wrapper */}
       <span
-        className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${
-          isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
+        className={`flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-lg transition-all duration-150 ${
+          isActive
+            ? 'bg-primary-500/20 text-primary-300'
+            : 'text-white/55 group-hover:text-white/80'
         }`}
       >
-        {label}
+        {icon}
       </span>
-    </Button>
+
+      {/* Label */}
+      {!isCollapsed && (
+        <span className="truncate leading-none">{label}</span>
+      )}
+    </button>
   );
 }

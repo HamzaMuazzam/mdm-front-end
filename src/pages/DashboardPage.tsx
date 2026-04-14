@@ -3,6 +3,7 @@ import { useLocation, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { BottomNav } from '@/components/layout/BottomNav';
 import { UserManagement } from '@/components/features/users/UserManagement';
 import { DeviceManagement } from '@/components/features/devices/DeviceManagement';
 import { SubscriptionsManagement } from '@/components/features/subscriptions/SubscriptionsManagement';
@@ -14,154 +15,185 @@ import { AppManagement } from '@/components/features/app-management/AppManagemen
 import { FileManagerPage } from '@/components/features/file-manager/FileManagerPage';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { usePermissionsQuery } from '@/hooks/usePermissions';
+import type { TabKey } from '@/lib/theme';
 
-type TabType = 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager';
+// ─── Terminology Map (old → new display names) ──────────────────────────────
+// overview       ← analytics
+// team           ← users
+// devices        ← devices
+// plans          ← subscriptions
+// profiles       ← configuration
+// access-control ← security-groups
+// app-deploy     ← app-update
+// app-store      ← app-management
+// file-transfer  ← file-manager
 
-interface LocationState {
-  activeTab?: TabType;
+const ALL_TABS: TabKey[] = [
+  'overview',
+  'team',
+  'devices',
+  'plans',
+  'profiles',
+  'access-control',
+  'app-deploy',
+  'app-store',
+  'file-transfer',
+];
+
+const TAB_LABELS: Record<TabKey, string> = {
+  overview: 'Overview',
+  team: 'Team',
+  devices: 'Device Hub',
+  plans: 'Plans',
+  profiles: 'Device Profiles',
+  'access-control': 'Access Control',
+  'app-deploy': 'App Deploy',
+  'app-store': 'App Store',
+  'file-transfer': 'File Transfer',
+};
+
+// Tabs that use full-height layout (no extra bottom padding for content)
+const FULL_HEIGHT_TABS: TabKey[] = ['devices', 'team', 'access-control', 'app-store', 'file-transfer'];
+
+function isValidTab(value: string | null): value is TabKey {
+  return ALL_TABS.includes(value as TabKey);
 }
 
-function isTabType(value: string | null): value is TabType {
-  return (
-    value === 'analytics' ||
-    value === 'users' ||
-    value === 'devices' ||
-    value === 'subscriptions' ||
-    value === 'configuration' ||
-    value === 'security-groups' ||
-    value === 'app-update' ||
-    value === 'app-management' ||
-    value === 'file-manager'
-  );
+interface LocationState {
+  activeTab?: TabKey;
 }
 
 export function DashboardPage() {
   const queryClient = useQueryClient();
-  // Fetch user permissions on every page load/refresh
   usePermissionsQuery();
+
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const locationState = location.state as LocationState | null;
   const tabFromQuery = searchParams.get('tab');
 
-  const getDefaultTab = (): TabType => {
-    if (isTabType(tabFromQuery)) {
-      return tabFromQuery;
-    }
-    if (locationState?.activeTab) {
-      return locationState.activeTab;
-    }
-    return 'analytics';
+  const getDefaultTab = (): TabKey => {
+    if (isValidTab(tabFromQuery)) return tabFromQuery;
+    if (locationState?.activeTab) return locationState.activeTab;
+    return 'overview';
   };
 
-  const [activeTab, setActiveTab] = useState<TabType>(getDefaultTab());
+  const [activeTab, setActiveTab] = useState<TabKey>(getDefaultTab());
 
-  // Sync tab from querystring changes
+  // Sync tab from URL query param changes
   useEffect(() => {
-    if (isTabType(tabFromQuery) && tabFromQuery !== activeTab) {
+    if (isValidTab(tabFromQuery) && tabFromQuery !== activeTab) {
       setActiveTab(tabFromQuery);
     }
   }, [tabFromQuery, activeTab]);
 
-  // If URL tab is invalid, normalize it to default tab
+  // Normalize invalid query param
   useEffect(() => {
-    if (tabFromQuery && !isTabType(tabFromQuery)) {
-      const nextParams = new URLSearchParams(searchParams);
-      nextParams.set('tab', 'analytics');
-      setSearchParams(nextParams, { replace: true });
+    if (tabFromQuery && !isValidTab(tabFromQuery)) {
+      const next = new URLSearchParams(searchParams);
+      next.set('tab', 'overview');
+      setSearchParams(next, { replace: true });
     }
   }, [tabFromQuery, searchParams, setSearchParams]);
 
-  // Support existing navigate(..., { state: { activeTab } }) flows by moving state into query param
+  // Support navigate(..., { state: { activeTab } }) flows
   useEffect(() => {
     if (locationState?.activeTab && tabFromQuery !== locationState.activeTab) {
       setActiveTab(locationState.activeTab);
-      const nextParams = new URLSearchParams(searchParams);
-      nextParams.set('tab', locationState.activeTab);
-      setSearchParams(nextParams, { replace: true });
+      const next = new URLSearchParams(searchParams);
+      next.set('tab', locationState.activeTab);
+      setSearchParams(next, { replace: true });
     }
   }, [locationState, tabFromQuery, searchParams, setSearchParams]);
 
-  const handleTabChange = (tab: TabType) => {
+  const handleTabChange = (tab: TabKey) => {
     setActiveTab(tab);
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.set('tab', tab);
-    setSearchParams(nextParams, { replace: true });
+    const next = new URLSearchParams(searchParams);
+    next.set('tab', tab);
+    setSearchParams(next, { replace: true });
 
-    // Invalidate queries to refresh data on each tab click
-    if (tab === 'analytics') {
-      queryClient.invalidateQueries({ queryKey: ['deviceAnalytics'] });
-    } else if (tab === 'users') {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-    } else if (tab === 'devices') {
-      queryClient.invalidateQueries({ queryKey: ['devices'] });
-    } else if (tab === 'subscriptions') {
-      queryClient.invalidateQueries({ queryKey: ['userPlans'] });
-    } else if (tab === 'configuration') {
-      queryClient.invalidateQueries({ queryKey: ['parentConfiguration'] });
-    } else if (tab === 'security-groups') {
-      queryClient.invalidateQueries({ queryKey: ['security-groups'] });
-    } else if (tab === 'app-management') {
-      queryClient.invalidateQueries({ queryKey: ['app-management'] });
-    } else if (tab === 'file-manager') {
-      queryClient.invalidateQueries({ queryKey: ['fileManagerCommands'] });
-      queryClient.invalidateQueries({ queryKey: ['fileEvents'] });
-    }
+    // Invalidate relevant query caches
+    const invalidations: Record<TabKey, string[]> = {
+      overview: ['deviceAnalytics'],
+      team: ['users'],
+      devices: ['devices'],
+      plans: ['userPlans'],
+      profiles: ['parentConfiguration'],
+      'access-control': ['security-groups'],
+      'app-deploy': [],
+      'app-store': ['app-management'],
+      'file-transfer': ['fileManagerCommands', 'fileEvents'],
+    };
+
+    invalidations[tab]?.forEach((key) =>
+      queryClient.invalidateQueries({ queryKey: [key] })
+    );
   };
 
+  const isFullHeight = FULL_HEIGHT_TABS.includes(activeTab);
+  const contentClass = isFullHeight
+    ? 'h-full p-4 sm:p-5 lg:p-6'
+    : 'p-4 sm:p-5 lg:p-6 pb-10';
+
   return (
-    <DashboardLayout
-      sidebar={(mobileProps) => (
-        <Sidebar activeTab={activeTab} onTabChange={handleTabChange} {...mobileProps} />
-      )}
-    >
-      <div className={activeTab === 'devices' || activeTab === 'users' || activeTab === 'security-groups' || activeTab === 'app-management' || activeTab === 'file-manager' ? 'h-full p-4 sm:p-6 lg:p-8' : 'p-4 sm:p-6 lg:p-8 pb-10'}>
-        {activeTab === 'analytics' && (
-          <ErrorBoundary moduleName="Analytics">
-            <AnalyticsDashboard />
-          </ErrorBoundary>
+    <>
+      <DashboardLayout
+        sidebar={(mobileProps) => (
+          <Sidebar activeTab={activeTab} onTabChange={handleTabChange} {...mobileProps} />
         )}
-        {activeTab === 'users' && (
-          <ErrorBoundary moduleName="User Management">
-            <UserManagement />
-          </ErrorBoundary>
-        )}
-        {activeTab === 'subscriptions' && (
-          <ErrorBoundary moduleName="Subscriptions">
-            <SubscriptionsManagement />
-          </ErrorBoundary>
-        )}
-        {activeTab === 'devices' && (
-          <ErrorBoundary moduleName="Device Management">
-            <DeviceManagement />
-          </ErrorBoundary>
-        )}
-        {activeTab === 'configuration' && (
-          <ErrorBoundary moduleName="Configuration">
-            <ConfigurationManagement />
-          </ErrorBoundary>
-        )}
-        {activeTab === 'security-groups' && (
-          <ErrorBoundary moduleName="Security Groups">
-            <SecurityGroupManagement />
-          </ErrorBoundary>
-        )}
-        {activeTab === 'app-update' && (
-          <ErrorBoundary moduleName="Application Update">
-            <AppUpdateManagement />
-          </ErrorBoundary>
-        )}
-        {activeTab === 'app-management' && (
-          <ErrorBoundary moduleName="App Management">
-            <AppManagement />
-          </ErrorBoundary>
-        )}
-        {activeTab === 'file-manager' && (
-          <ErrorBoundary moduleName="File Manager">
-            <FileManagerPage />
-          </ErrorBoundary>
-        )}
-      </div>
-    </DashboardLayout>
+        pageTitle={TAB_LABELS[activeTab]}
+      >
+        <div className={contentClass}>
+          {activeTab === 'overview' && (
+            <ErrorBoundary moduleName="Overview">
+              <AnalyticsDashboard />
+            </ErrorBoundary>
+          )}
+          {activeTab === 'team' && (
+            <ErrorBoundary moduleName="Team">
+              <UserManagement />
+            </ErrorBoundary>
+          )}
+          {activeTab === 'plans' && (
+            <ErrorBoundary moduleName="Plans">
+              <SubscriptionsManagement />
+            </ErrorBoundary>
+          )}
+          {activeTab === 'devices' && (
+            <ErrorBoundary moduleName="Device Hub">
+              <DeviceManagement />
+            </ErrorBoundary>
+          )}
+          {activeTab === 'profiles' && (
+            <ErrorBoundary moduleName="Device Profiles">
+              <ConfigurationManagement />
+            </ErrorBoundary>
+          )}
+          {activeTab === 'access-control' && (
+            <ErrorBoundary moduleName="Access Control">
+              <SecurityGroupManagement />
+            </ErrorBoundary>
+          )}
+          {activeTab === 'app-deploy' && (
+            <ErrorBoundary moduleName="App Deploy">
+              <AppUpdateManagement />
+            </ErrorBoundary>
+          )}
+          {activeTab === 'app-store' && (
+            <ErrorBoundary moduleName="App Store">
+              <AppManagement />
+            </ErrorBoundary>
+          )}
+          {activeTab === 'file-transfer' && (
+            <ErrorBoundary moduleName="File Transfer">
+              <FileManagerPage />
+            </ErrorBoundary>
+          )}
+        </div>
+      </DashboardLayout>
+
+      {/* Mobile bottom navigation */}
+      <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
+    </>
   );
 }
