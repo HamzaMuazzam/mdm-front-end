@@ -15,7 +15,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        sans: ['Manrope', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        heading: ['Space Grotesk', 'Manrope', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'Fira Code', 'Consolas', 'monospace'],
       },
       colors: {
@@ -97,15 +98,15 @@ export default {
         lg: "0.75rem",
         xl: "1rem",
         "2xl": "1.25rem",
-        "3xl": "1.5rem",
+        "3xl": "1.75rem",
         full: "9999px",
       },
       boxShadow: {
-        soft: "0 1px 3px 0 rgba(0,0,0,0.06), 0 1px 2px -1px rgba(0,0,0,0.04)",
-        card: "0 4px 16px -2px rgba(0,0,0,0.08), 0 2px 6px -2px rgba(0,0,0,0.04)",
-        elevated: "0 10px 30px -4px rgba(0,0,0,0.12), 0 4px 10px -4px rgba(0,0,0,0.06)",
-        float: "0 24px 64px -8px rgba(0,0,0,0.18), 0 8px 24px -6px rgba(0,0,0,0.08)",
-        "glow-primary": "0 0 0 3px rgba(99,102,241,0.22)",
+        soft: "0 8px 24px rgba(15,23,42,0.06)",
+        card: "0 24px 60px -26px rgba(15,23,42,0.22), 0 8px 20px -12px rgba(15,23,42,0.12)",
+        elevated: "0 28px 90px -32px rgba(15,23,42,0.28), 0 12px 30px -18px rgba(15,23,42,0.15)",
+        float: "0 36px 90px -28px rgba(15,23,42,0.35), 0 12px 30px -18px rgba(15,23,42,0.18)",
+        "glow-primary": "0 0 0 4px rgba(15,118,110,0.16)",
         "glow-success": "0 0 0 3px rgba(16,185,129,0.22)",
         "glow-danger": "0 0 0 3px rgba(239,68,68,0.22)",
         "inner-sm": "inset 0 1px 3px rgba(0,0,0,0.07)",
