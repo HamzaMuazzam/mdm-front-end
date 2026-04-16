@@ -112,6 +112,8 @@ export function DeviceManagement() {
       try {
         const user = JSON.parse(userStr);
         const code = user.userCode || '';
+        console.log(user);
+        console.log(code);
         setUserCode(code);
         if (code) {
           QRCode.toDataURL(code, {
