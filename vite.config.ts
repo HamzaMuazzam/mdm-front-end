@@ -34,7 +34,7 @@ export default defineConfig(({ mode }) => {
       hmr: {
         protocol: isLocal ? 'ws' : 'wss',
         host: env.VITE_SERVER_HOST,
-        port: 5173,
+        port: 8084,
       },
       cors: {
         origin: '*',
