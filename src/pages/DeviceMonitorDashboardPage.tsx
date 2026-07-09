@@ -28,7 +28,7 @@ const percentFormatter = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 1,
 });
 
-const appUsagePalette = ['#06b6d4', '#3b82f6', '#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+const appUsagePalette = ['#2563eb', '#0ea5e9', '#16a34a', '#d97706', '#64748b', '#dc2626', '#2563eb'];
 
 function formatDateBoundaryForApi(value: string, boundary: 'start' | 'end'): string {
   if (!value) {
@@ -120,10 +120,10 @@ function formatShortDate(value: string): string {
 function FeatureBadge({ label, enabled }: { label: string; enabled: boolean }) {
   return (
     <div
-      className={`rounded-xl border px-4 py-3 ${
+      className={`rounded-lg border px-4 py-3 ${
         enabled
-          ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300'
-          : 'border-border bg-muted text-muted-foreground'
+          ? 'border-green-200 bg-green-50 text-green-700'
+          : 'border-gray-200 bg-gray-50 text-gray-500'
       }`}
     >
       <p className="text-xs uppercase tracking-wide">{label}</p>
@@ -141,14 +141,14 @@ interface TopMetricProps {
 
 function TopMetric({ title, value, helper, icon }: TopMetricProps) {
   return (
-    <Card className="shadow-md">
+    <Card className="shadow-sm">
       <CardContent className="flex items-center justify-between p-4">
         <div>
           <p className="text-xs uppercase tracking-wide text-muted-foreground">{title}</p>
-          <p className="mt-1 text-2xl font-bold text-foreground">{value}</p>
-          <p className="text-xs text-muted-foreground">{helper}</p>
+          <p className="mt-1 text-2xl font-semibold text-gray-900">{value}</p>
+          <p className="text-xs text-gray-500">{helper}</p>
         </div>
-        <div className="rounded-lg bg-muted p-2 text-foreground">{icon}</div>
+        <div className="rounded-md bg-blue-50 p-2 text-blue-600">{icon}</div>
       </CardContent>
     </Card>
   );
@@ -165,7 +165,7 @@ function CompactStatCard({ label, value, colorClass }: CompactStatCardProps) {
     <Card className="shadow-sm">
       <CardContent className="p-3">
         <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
-        <p className={`mt-1 text-xl font-bold ${colorClass}`}>{value}</p>
+        <p className={`mt-1 text-xl font-semibold ${colorClass}`}>{value}</p>
       </CardContent>
     </Card>
   );
@@ -261,7 +261,7 @@ export function DeviceMonitorDashboardPage() {
       rows.push({
         label: 'Other Apps',
         value: otherTotal,
-        color: '#94a3b8',
+        color: '#64748b',
       });
     }
 
@@ -336,7 +336,7 @@ export function DeviceMonitorDashboardPage() {
 
   if (!device || !numericDeviceId) {
     return (
-      <div className="min-h-screen bg-background p-4 sm:p-8">
+      <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
         <Card className="mx-auto max-w-2xl border border-destructive/20 bg-destructive/10">
           <CardContent className="p-6">
             <h2 className="text-xl font-semibold text-destructive">Device not found</h2>
@@ -351,8 +351,8 @@ export function DeviceMonitorDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-20 border-b border-border bg-background/80 backdrop-blur-md">
+    <div className="min-h-screen bg-gray-50">
+      <header className="sticky top-0 z-20 border-b border-gray-200 bg-white">
         <div className="px-4 sm:px-6">
           {/* Row 1: breadcrumb + device info (md) + refresh */}
           <div className="flex items-center justify-between gap-3 h-12 sm:h-14">
@@ -382,7 +382,7 @@ export function DeviceMonitorDashboardPage() {
             <Input type="date" value={from} onChange={(event) => setFrom(event.target.value)} className="flex-1 min-w-[130px] sm:flex-none sm:w-[180px]" />
             <Input type="date" value={to} onChange={(event) => setTo(event.target.value)} className="flex-1 min-w-[130px] sm:flex-none sm:w-[180px]" />
             <select
-              className="flex-1 min-w-[90px] sm:flex-none sm:w-[120px] flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              className="flex-1 min-w-[90px] sm:flex-none sm:w-[120px] flex h-9 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               value={size}
               onChange={(event) => setSize(Number(event.target.value))}
             >
@@ -399,20 +399,20 @@ export function DeviceMonitorDashboardPage() {
         <div className="mb-8 grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,700px)] xl:items-center">
           <div className="min-w-0">
             <div className="flex items-center gap-4">
-              <div className="rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 p-3 shadow-lg shadow-cyan-500/25">
-                <Activity className="h-8 w-8 text-white" />
+              <div className="rounded-md bg-blue-50 p-3">
+                <Activity className="h-8 w-8 text-blue-600" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-foreground">Device Monitor Dashboard</h1>
+                <h1 className="text-xl font-semibold text-gray-900">Device Monitor Dashboard</h1>
                 <p className="mt-1 text-sm text-muted-foreground">Live operational state and app usage analytics for this device</p>
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <CompactStatCard label="WiFi Data" value={stateData ? formatBytes(stateData.totalWifiDataBytes) : '-'} colorClass="text-sky-700" />
-            <CompactStatCard label="Mobile Data" value={stateData ? formatBytes(stateData.totalMobileDataBytes) : '-'} colorClass="text-teal-700" />
-            <CompactStatCard label="Last Sync" value={stateData ? formatDateTime(stateData.lastStateSyncTime) : '-'} colorClass="text-foreground" />
+            <CompactStatCard label="WiFi Data" value={stateData ? formatBytes(stateData.totalWifiDataBytes) : '-'} colorClass="text-gray-900" />
+            <CompactStatCard label="Mobile Data" value={stateData ? formatBytes(stateData.totalMobileDataBytes) : '-'} colorClass="text-gray-900" />
+            <CompactStatCard label="Last Sync" value={stateData ? formatDateTime(stateData.lastStateSyncTime) : '-'} colorClass="text-gray-900" />
           </div>
         </div>
 
@@ -461,9 +461,9 @@ export function DeviceMonitorDashboardPage() {
         </div>
 
         <div className="mt-6 grid gap-6 xl:grid-cols-3">
-          <Card className="shadow-md xl:col-span-2">
+          <Card className="shadow-sm xl:col-span-2">
             <CardHeader>
-              <CardTitle className="text-lg">Device Feature State</CardTitle>
+              <CardTitle className="text-base font-semibold text-gray-900">Device Feature State</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <FeatureBadge label="WiFi" enabled={stateData?.wifiEnabled ?? false} />
@@ -471,25 +471,25 @@ export function DeviceMonitorDashboardPage() {
               <FeatureBadge label="Bluetooth" enabled={stateData?.bluetoothEnabled ?? false} />
               <FeatureBadge label="GPS" enabled={stateData?.gpsEnabled ?? false} />
               <FeatureBadge label="Accessibility" enabled={stateData?.accessibilityEnabled ?? false} />
-              <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-blue-800">
+              <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-blue-700">
                 <p className="text-xs uppercase tracking-wide">Last Update</p>
                 <p className="mt-1 text-sm font-semibold">{stateData ? formatDateTime(stateData.lastUpdate) : '-'}</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="shadow-md">
+          <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle className="text-lg">Data Traffic Split</CardTitle>
+              <CardTitle className="text-base font-semibold text-gray-900">Data Traffic Split</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-4">
               <div
                 className="relative h-40 w-40 rounded-full"
                 style={{
-                  background: `conic-gradient(#0284c7 0 ${wifiPercent}%, #0f766e ${wifiPercent}% 100%)`,
+                  background: `conic-gradient(#2563eb 0 ${wifiPercent}%, #64748b ${wifiPercent}% 100%)`,
                 }}
               >
-                <div className="absolute inset-5 rounded-full bg-background shadow-inner" />
+                <div className="absolute inset-5 rounded-full bg-white shadow-inner" />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center">
                     <p className="text-xl font-bold text-foreground">{stateData ? formatBytes(totalDataBytes) : '-'}</p>
@@ -498,15 +498,15 @@ export function DeviceMonitorDashboardPage() {
                 </div>
               </div>
               <div className="grid w-full gap-2">
-                <div className="flex items-center justify-between rounded-md bg-sky-50 px-3 py-2 text-sm">
-                  <span className="font-medium text-sky-800">WiFi</span>
-                  <span className="text-sky-900">
+                <div className="flex items-center justify-between rounded-md bg-blue-50 px-3 py-2 text-sm">
+                  <span className="font-medium text-blue-700">WiFi</span>
+                  <span className="text-blue-700">
                     {stateData ? `${formatBytes(stateData.totalWifiDataBytes)} (${percentFormatter.format(wifiPercent)}%)` : '-'}
                   </span>
                 </div>
-                <div className="flex items-center justify-between rounded-md bg-teal-50 px-3 py-2 text-sm">
-                  <span className="font-medium text-teal-800">Mobile</span>
-                  <span className="text-teal-900">
+                <div className="flex items-center justify-between rounded-md bg-gray-100 px-3 py-2 text-sm">
+                  <span className="font-medium text-gray-700">Mobile</span>
+                  <span className="text-gray-700">
                     {stateData ? `${formatBytes(stateData.totalMobileDataBytes)} (${percentFormatter.format(mobilePercent)}%)` : '-'}
                   </span>
                 </div>
@@ -516,9 +516,9 @@ export function DeviceMonitorDashboardPage() {
         </div>
 
         <div className="mt-6 grid gap-6 xl:grid-cols-2">
-          <Card className="shadow-md">
+          <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle className="text-lg">Top App Usage</CardTitle>
+              <CardTitle className="text-base font-semibold text-gray-900">Top App Usage</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {isUsageLoading ? (
@@ -535,9 +535,9 @@ export function DeviceMonitorDashboardPage() {
                         <div className="truncate font-medium text-foreground">{app.appName}</div>
                         <div className="whitespace-nowrap text-muted-foreground">{formatDuration(app.foregroundTimeMillis)}</div>
                       </div>
-                      <div className="h-2 overflow-hidden rounded-full bg-muted">
+                      <div className="h-2 overflow-hidden rounded-full bg-gray-200">
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-600"
+                          className="h-full rounded-full bg-blue-600"
                           style={{ width: `${width}%` }}
                         />
                       </div>
@@ -548,47 +548,47 @@ export function DeviceMonitorDashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="shadow-md">
+          <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle className="text-lg">Quick Device Snapshot</CardTitle>
+              <CardTitle className="text-base font-semibold text-gray-900">Quick Device Snapshot</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-lg bg-muted p-3">
+              <div className="rounded-lg bg-gray-50 border border-gray-200 p-3">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Device</p>
                 <p className="mt-1 flex items-center gap-2 text-sm font-semibold text-foreground">
                   <Smartphone className="h-4 w-4" />
                   {device.model || '-'}
                 </p>
               </div>
-              <div className="rounded-lg bg-muted p-3">
+              <div className="rounded-lg bg-gray-50 border border-gray-200 p-3">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">User</p>
                 <p className="mt-1 flex items-center gap-2 text-sm font-semibold text-foreground">
                   <User className="h-4 w-4" />
                   {device.userName || '-'}
                 </p>
               </div>
-              <div className="rounded-lg bg-muted p-3">
+              <div className="rounded-lg bg-gray-50 border border-gray-200 p-3">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Connectivity</p>
                 <p className="mt-1 flex items-center gap-2 text-sm font-semibold text-foreground">
                   <Wifi className="h-4 w-4" />
                   {(stateData?.wifiEnabled ?? false) || (stateData?.mobileDataEnabled ?? false) ? 'Connected' : 'Disconnected'}
                 </p>
               </div>
-              <div className="rounded-lg bg-muted p-3">
+              <div className="rounded-lg bg-gray-50 border border-gray-200 p-3">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Sensors</p>
                 <p className="mt-1 flex items-center gap-2 text-sm font-semibold text-foreground">
                   <MapPin className="h-4 w-4" />
                   {stateData?.gpsEnabled ? 'GPS active' : 'GPS inactive'}
                 </p>
               </div>
-              <div className="rounded-lg bg-muted p-3">
+              <div className="rounded-lg bg-gray-50 border border-gray-200 p-3">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Bluetooth</p>
                 <p className="mt-1 flex items-center gap-2 text-sm font-semibold text-foreground">
                   <Bluetooth className="h-4 w-4" />
                   {stateData?.bluetoothEnabled ? 'On' : 'Off'}
                 </p>
               </div>
-              <div className="rounded-lg bg-muted p-3">
+              <div className="rounded-lg bg-gray-50 border border-gray-200 p-3">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Battery Health</p>
                 <p className="mt-1 flex items-center gap-2 text-sm font-semibold text-foreground">
                   <Gauge className="h-4 w-4" />
@@ -600,9 +600,9 @@ export function DeviceMonitorDashboardPage() {
         </div>
 
         <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
-          <Card className="shadow-md">
+          <Card className="shadow-sm">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Usage Analytics Graphs</CardTitle>
+              <CardTitle className="text-base font-semibold text-gray-900">Usage Analytics Graphs</CardTitle>
             </CardHeader>
             <CardContent>
               {isUsageLoading ? (
@@ -618,7 +618,7 @@ export function DeviceMonitorDashboardPage() {
                         background: `conic-gradient(${usageShareGradient || '#cbd5e1 0 100%'})`,
                       }}
                     >
-                      <div className="absolute inset-6 rounded-full bg-background shadow-inner" />
+                      <div className="absolute inset-6 rounded-full bg-white shadow-inner" />
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="text-center">
                           <p className="text-xs uppercase tracking-wide text-muted-foreground">Total Usage</p>
@@ -630,7 +630,7 @@ export function DeviceMonitorDashboardPage() {
 
                   <div className="space-y-2.5">
                     {usageShareData.map((item) => (
-                      <div key={item.label} className="rounded-lg bg-muted/50 px-3 py-2">
+                      <div key={item.label} className="rounded-lg bg-gray-50 px-3 py-2">
                         <div className="mb-1 flex items-center justify-between gap-2 text-sm">
                           <div className="flex min-w-0 items-center gap-2">
                             <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: item.color }} />
@@ -638,7 +638,7 @@ export function DeviceMonitorDashboardPage() {
                           </div>
                           <span className="whitespace-nowrap text-muted-foreground">{percentFormatter.format(item.percent)}%</span>
                         </div>
-                        <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                        <div className="h-1.5 overflow-hidden rounded-full bg-gray-200">
                           <div
                             className="h-full rounded-full"
                             style={{ width: `${Math.max(item.percent, 3)}%`, backgroundColor: item.color }}
@@ -653,9 +653,9 @@ export function DeviceMonitorDashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="shadow-md">
+          <Card className="shadow-sm">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Usage Insights</CardTitle>
+              <CardTitle className="text-base font-semibold text-gray-900">Usage Insights</CardTitle>
             </CardHeader>
             <CardContent>
               {isUsageLoading ? (
@@ -664,26 +664,26 @@ export function DeviceMonitorDashboardPage() {
                 <p className="text-sm text-muted-foreground">No data available to explain usage patterns.</p>
               ) : (
                 <div className="space-y-3">
-                  <div className="rounded-lg border border-border bg-muted/50 p-3">
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">Most Used App</p>
                     <p className="mt-1 text-sm font-semibold text-foreground">{topApp?.appName || '-'}</p>
                     <p className="text-xs text-muted-foreground">{topApp ? formatDuration(topApp.foregroundTimeMillis) : '-'}</p>
                   </div>
 
-                  <div className="rounded-lg border border-border bg-muted/50 p-3">
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">Top 3 Concentration</p>
                     <p className="mt-1 text-sm font-semibold text-foreground">{percentFormatter.format(topThreeUsagePercent)}%</p>
                     <p className="text-xs text-muted-foreground">of total foreground usage</p>
                   </div>
 
-                  <div className="rounded-lg border border-border bg-muted/50 p-3">
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">Average Usage Per App</p>
                     <p className="mt-1 text-sm font-semibold text-foreground">{formatDuration(avgUsagePerAppMillis)}</p>
                     <p className="text-xs text-muted-foreground">{numberFormatter.format(appUsageRows.length)} apps in current filter</p>
                   </div>
 
                   {hasUsageTrend && (
-                    <div className="rounded-lg border border-border bg-muted/50 p-3">
+                    <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
                       <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">Recent Trend</p>
                       <div className="flex h-20 items-end gap-1.5">
                         {usageTrendByDate.map((point, index) => {
@@ -692,7 +692,7 @@ export function DeviceMonitorDashboardPage() {
                           return (
                             <div key={`${point.date}-${index}`} className="flex min-w-0 flex-1 flex-col items-center gap-1">
                               <div
-                                className="w-full rounded-t bg-gradient-to-t from-cyan-600 to-blue-500"
+                                className="w-full rounded-t bg-blue-600"
                                 style={{ height: `${heightPercent}%` }}
                                 title={`${formatShortDate(point.date)}: ${formatDuration(point.value)}`}
                               />
@@ -709,10 +709,10 @@ export function DeviceMonitorDashboardPage() {
           </Card>
         </div>
 
-        <Card className="mt-6 shadow-md">
+        <Card className="mt-6 shadow-sm">
           <CardHeader>
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <CardTitle className="text-lg">App Usage History</CardTitle>
+              <CardTitle className="text-base font-semibold text-gray-900">App Usage History</CardTitle>
               <div className="flex items-center gap-2">
                 <Button
                   size="sm"
@@ -760,7 +760,7 @@ export function DeviceMonitorDashboardPage() {
                 <div className="hidden sm:block overflow-x-auto">
                   <table className="w-full min-w-[720px]">
                     <thead>
-                      <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
+                      <tr className="border-b border-gray-200 bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
                         <th className="px-3 py-2">App</th>
                         <th className="px-3 py-2">Package</th>
                         <th className="px-3 py-2">Foreground Time</th>

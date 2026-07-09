@@ -44,10 +44,10 @@ interface FileManagerExplorerProps {
 function StatusBadge({ status }: { status: FileCommandResponse['status'] | null }) {
   if (!status) return null;
   const map = {
-    PENDING:   { color: 'text-yellow-500 dark:text-yellow-400', icon: <Clock className="h-3 w-3" />,                            label: 'Pending' },
-    SENT:      { color: 'text-blue-500 dark:text-blue-400',     icon: <RefreshCw className="h-3 w-3 animate-spin" />,           label: 'Waiting…' },
-    COMPLETED: { color: 'text-green-600 dark:text-green-400',   icon: <CheckCircle className="h-3 w-3" />,                      label: 'Done' },
-    FAILED:    { color: 'text-red-500 dark:text-red-400',       icon: <AlertCircle className="h-3 w-3" />,                      label: 'Failed' },
+    PENDING:   { color: 'text-amber-700',  icon: <Clock className="h-3 w-3" />,                            label: 'Pending' },
+    SENT:      { color: 'text-blue-700',   icon: <RefreshCw className="h-3 w-3 animate-spin" />,           label: 'Waiting…' },
+    COMPLETED: { color: 'text-green-700',  icon: <CheckCircle className="h-3 w-3" />,                      label: 'Done' },
+    FAILED:    { color: 'text-red-700',    icon: <AlertCircle className="h-3 w-3" />,                      label: 'Failed' },
   } as const;
   const s = map[status];
   return (
@@ -72,14 +72,14 @@ function FileRow({ node, isSelected, onSelect, onEnter }: FileRowProps) {
       onClick={() => { onSelect(); if (node.isDirectory) onEnter(); }}
       className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer select-none transition-colors group ${
         isSelected
-          ? 'bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-200'
-          : 'hover:bg-black/5 dark:hover:bg-white/5 text-foreground/80'
+          ? 'bg-blue-50 text-blue-700'
+          : 'hover:bg-gray-50 text-gray-700'
       }`}
     >
       {node.isDirectory ? (
-        <Folder className={`h-4 w-4 shrink-0 transition-colors ${isSelected ? 'text-yellow-600 dark:text-yellow-300' : 'text-yellow-500 dark:text-yellow-400 group-hover:text-yellow-500 dark:group-hover:text-yellow-300'}`} />
+        <Folder className={`h-4 w-4 shrink-0 transition-colors ${isSelected ? 'text-blue-600' : 'text-blue-600 group-hover:text-blue-600'}`} />
       ) : (
-        <FileText className={`h-4 w-4 shrink-0 ${isSelected ? 'text-blue-500 dark:text-blue-300' : 'text-muted-foreground/70'}`} />
+        <FileText className={`h-4 w-4 shrink-0 ${isSelected ? 'text-blue-600' : 'text-gray-500'}`} />
       )}
 
       <span className="flex-1 text-sm truncate font-medium">
@@ -88,21 +88,21 @@ function FileRow({ node, isSelected, onSelect, onEnter }: FileRowProps) {
 
       {!node.isDirectory && (
         <>
-          <span className="text-xs text-muted-foreground/50 shrink-0 uppercase">
+          <span className="text-xs text-gray-500 shrink-0 uppercase">
             {node.extension || '—'}
           </span>
-          <span className="text-xs text-muted-foreground/70 shrink-0 w-16 text-right">
+          <span className="text-xs text-gray-500 shrink-0 w-16 text-right">
             {formatSize(node.size)}
           </span>
         </>
       )}
 
-      <span className="text-xs text-muted-foreground/50 shrink-0 w-24 text-right hidden sm:block">
+      <span className="text-xs text-gray-500 shrink-0 w-24 text-right hidden sm:block">
         {new Date(node.lastModified).toLocaleDateString()}
       </span>
 
       {node.isDirectory && (
-        <ChevronRight className={`h-3.5 w-3.5 shrink-0 transition-colors ${isSelected ? 'text-blue-500 dark:text-blue-400' : 'text-muted-foreground/50'}`} />
+        <ChevronRight className={`h-3.5 w-3.5 shrink-0 transition-colors ${isSelected ? 'text-blue-600' : 'text-gray-400'}`} />
       )}
     </div>
   );
@@ -424,7 +424,7 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
       <div className="flex items-center gap-1">
         <button
           className={`text-sm px-3 py-1.5 rounded-md transition-colors ${
-            activeSection === 'explorer' ? 'bg-blue-600 text-white' : 'text-muted-foreground hover:text-foreground'
+            activeSection === 'explorer' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-500 hover:text-gray-700'
           }`}
           onClick={() => setActiveSection('explorer')}
         >
@@ -432,7 +432,7 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
         </button>
         <button
           className={`text-sm px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-colors ${
-            activeSection === 'events' ? 'bg-blue-600 text-white' : 'text-muted-foreground hover:text-foreground'
+            activeSection === 'events' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-500 hover:text-gray-700'
           }`}
           onClick={() => setActiveSection('events')}
         >
@@ -446,13 +446,13 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
       ) : (
         <>
           {/* ── Breadcrumb / navigation bar ─────────────────────────────── */}
-          <div className="flex items-center gap-1.5 bg-black/5 dark:bg-white/5 border border-border rounded-lg px-3 py-2 min-h-[40px]">
+          <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-lg px-3 py-2 min-h-[40px]">
             {/* Back */}
             <button
               onClick={handleBack}
               disabled={pathHistory.length === 0 || isLoading}
               title="Go back"
-              className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-black/10 dark:hover:bg-white/10 disabled:opacity-25 disabled:cursor-not-allowed transition-colors shrink-0"
+              className="p-1 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-25 disabled:cursor-not-allowed transition-colors shrink-0"
             >
               <ArrowLeft className="h-4 w-4" />
             </button>
@@ -462,24 +462,24 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
               onClick={handleHome}
               disabled={isLoading || (!hasLoaded && currentPath === '')}
               title="Root storage"
-              className="p-1 rounded text-muted-foreground hover:text-blue-500 dark:hover:text-blue-400 hover:bg-black/10 dark:hover:bg-white/10 disabled:opacity-25 disabled:cursor-not-allowed transition-colors shrink-0"
+              className="p-1 rounded-md text-gray-500 hover:text-blue-600 hover:bg-gray-100 disabled:opacity-25 disabled:cursor-not-allowed transition-colors shrink-0"
             >
               <Home className="h-4 w-4" />
             </button>
 
             {/* Separator */}
-            <div className="w-px h-4 bg-border shrink-0" />
+            <div className="w-px h-4 bg-gray-200 shrink-0" />
 
             {/* Breadcrumb segments — scrollable so long paths are never clipped */}
             {breadcrumbs.length === 0 ? (
-              <span className="text-xs text-muted-foreground/50 italic">Root</span>
+              <span className="text-xs text-gray-400 italic">Root</span>
             ) : (
               <div ref={breadcrumbRef} className="flex items-center gap-0.5 overflow-x-auto scrollbar-none min-w-0 flex-1">
                 {breadcrumbs.map((crumb, i) => (
                   <div key={crumb.path} className="flex items-center gap-0.5 shrink-0">
-                    {i > 0 && <ChevronRight className="h-3 w-3 text-muted-foreground/50 shrink-0" />}
+                    {i > 0 && <ChevronRight className="h-3 w-3 text-gray-400 shrink-0" />}
                     {i === breadcrumbs.length - 1 ? (
-                      <span className="text-xs font-mono text-foreground font-medium whitespace-nowrap" title={crumb.path}>
+                      <span className="text-xs font-mono text-gray-900 font-medium whitespace-nowrap" title={crumb.path}>
                         {crumb.label}
                       </span>
                     ) : (
@@ -487,7 +487,7 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
                         onClick={() => handleBreadcrumbNav(crumb.path)}
                         disabled={isLoading}
                         title={crumb.path}
-                        className="text-xs font-mono text-blue-500 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 whitespace-nowrap disabled:opacity-50 transition-colors"
+                        className="text-xs font-mono text-blue-600 hover:text-blue-700 whitespace-nowrap disabled:opacity-50 transition-colors"
                       >
                         {crumb.label}
                       </button>
@@ -500,13 +500,13 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
             {/* Status indicator */}
             <div className="ml-auto shrink-0">
               {activeTransferId !== null && (
-                <span className="flex items-center gap-1.5 text-xs text-purple-500 dark:text-purple-400">
+                <span className="flex items-center gap-1.5 text-xs text-blue-600">
                   <RefreshCw className="h-3 w-3 animate-spin" />
                   Transferring…
                 </span>
               )}
               {activeTransferId === null && isLoading && (
-                <span className="flex items-center gap-1.5 text-xs text-blue-500 dark:text-blue-400">
+                <span className="flex items-center gap-1.5 text-xs text-blue-600">
                   <RefreshCw className="h-3 w-3 animate-spin" />
                   Loading…
                 </span>
@@ -524,7 +524,7 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
               <Button
                 size="sm"
                 variant="outline"
-                className="border-border text-foreground/80 hover:text-foreground hover:bg-black/10 dark:hover:bg-white/10"
+                className="border-gray-300 bg-white text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                 onClick={handleRefresh}
                 disabled={isLoading}
               >
@@ -532,13 +532,13 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
                 Refresh
               </Button>
 
-              <div className="h-8 w-px bg-border self-center" />
+              <div className="h-8 w-px bg-gray-200 self-center" />
 
               {/* Selection-dependent actions */}
               <Button
                 size="sm"
                 variant="ghost"
-                className="text-foreground/80 hover:text-foreground hover:bg-black/10 dark:hover:bg-white/10"
+                className="text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                 disabled={!selectedNode || selectedNode.isDirectory || isLoading}
                 onClick={handleDownload}
                 title="Save file to disk"
@@ -550,31 +550,31 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
               <Button
                 size="sm"
                 variant="ghost"
-                className="text-foreground/80 hover:text-blue-500 dark:hover:text-blue-300 hover:bg-blue-500/10"
+                className="text-gray-700 hover:text-blue-700 hover:bg-blue-50"
                 disabled={!selectedNode || selectedNode.isDirectory || isLoading}
                 onClick={handleView}
                 title="Open file in browser (PDF, image, video, text…)"
               >
-                <Eye className="h-3.5 w-3.5 mr-1.5 text-blue-500 dark:text-blue-400" />
+                <Eye className="h-3.5 w-3.5 mr-1.5 text-blue-600" />
                 View
               </Button>
 
               <Button
                 size="sm"
                 variant="ghost"
-                className="text-foreground/80 hover:text-red-500 dark:hover:text-red-300 hover:bg-red-500/10"
+                className="text-gray-700 hover:text-red-700 hover:bg-red-50"
                 disabled={!selectedNode || isLoading}
                 onClick={handleDelete}
                 title="Delete selected"
               >
-                <Trash2 className="h-3.5 w-3.5 mr-1.5 text-red-500 dark:text-red-400" />
+                <Trash2 className="h-3.5 w-3.5 mr-1.5 text-red-600" />
                 Delete
               </Button>
 
               <Button
                 size="sm"
                 variant="ghost"
-                className="text-foreground/80 hover:text-foreground hover:bg-black/10 dark:hover:bg-white/10"
+                className="text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                 disabled={!selectedNode || isLoading}
                 onClick={() => {
                   const opening = !showMoveInput;
@@ -595,27 +595,27 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
               <Button
                 size="sm"
                 variant="ghost"
-                className="text-foreground/80 hover:text-green-600 dark:hover:text-green-300 hover:bg-green-500/10"
+                className="text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                 disabled={isLoading}
                 onClick={() => { setShowUploadPanel(!showUploadPanel); setShowMoveInput(false); }}
               >
-                <Upload className="h-3.5 w-3.5 mr-1.5 text-green-600 dark:text-green-400" />
+                <Upload className="h-3.5 w-3.5 mr-1.5 text-gray-500" />
                 Upload
               </Button>
 
               {/* Move panel */}
               {showMoveInput && moveSource && (
-                <div className="w-full flex flex-col gap-2 mt-1 p-3 bg-black/5 dark:bg-white/5 rounded-lg border border-blue-500/30">
+                <div className="w-full flex flex-col gap-2 mt-1 p-3 bg-blue-50 rounded-lg border border-blue-200">
                   {/* Source file */}
                   <div className="flex items-center gap-2 text-xs">
-                    <span className="text-muted-foreground/70 shrink-0">Moving:</span>
-                    <span className="font-mono text-yellow-600 dark:text-yellow-300 truncate">{moveSource.path}</span>
+                    <span className="text-gray-500 shrink-0">Moving:</span>
+                    <span className="font-mono text-gray-900 truncate">{moveSource.path}</span>
                   </div>
                   {/* Destination row */}
                   <div className="flex gap-2 items-center">
-                    <span className="text-xs text-muted-foreground shrink-0">To:</span>
+                    <span className="text-xs text-gray-500 shrink-0">To:</span>
                     <Input
-                      className="h-8 text-sm flex-1 bg-background border-border text-foreground placeholder:text-muted-foreground"
+                      className="h-9 text-sm flex-1 rounded-md bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-primary"
                       placeholder="Navigate into a folder or type path…"
                       value={moveDest}
                       onChange={(e) => setMoveDest(e.target.value)}
@@ -625,18 +625,18 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
                       size="sm"
                       onClick={handleMove}
                       disabled={!moveDest.trim() || isLoading}
-                      className="bg-blue-600 hover:bg-blue-700 text-white shrink-0"
+                      className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm shrink-0"
                     >
                       Move here
                     </Button>
                     <button
                       onClick={cancelMove}
-                      className="text-muted-foreground/70 hover:text-foreground/80 transition-colors shrink-0"
+                      className="text-gray-400 hover:text-gray-600 transition-colors shrink-0"
                     >
                       <X className="h-4 w-4" />
                     </button>
                   </div>
-                  <p className="text-xs text-blue-500/60 dark:text-blue-400/60">
+                  <p className="text-xs text-blue-700">
                     Navigate into a folder — it will appear in the "To:" field automatically.
                   </p>
                 </div>
@@ -644,27 +644,27 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
 
               {/* Upload panel */}
               {showUploadPanel && (
-                <div className="w-full flex gap-2 items-center mt-1 p-2 bg-black/5 dark:bg-white/5 rounded-lg border border-border">
-                  <Upload className="h-4 w-4 text-green-600 dark:text-green-400 shrink-0" />
+                <div className="w-full flex gap-2 items-center mt-1 p-2 bg-gray-50 rounded-lg border border-gray-200">
+                  <Upload className="h-4 w-4 text-gray-500 shrink-0" />
                   <input
                     type="file"
-                    className="text-sm text-foreground/80 flex-1 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-blue-600 file:text-white file:text-xs cursor-pointer"
+                    className="text-sm text-gray-700 flex-1 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:bg-blue-600 file:text-white file:text-xs cursor-pointer"
                     onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
                   />
-                  <span className="text-xs text-muted-foreground/70 shrink-0 truncate max-w-[140px]">
+                  <span className="text-xs text-gray-500 shrink-0 truncate max-w-[140px]">
                     → {currentPath || '/storage/emulated/0'}
                   </span>
                   <Button
                     size="sm"
                     onClick={handleUpload}
                     disabled={!uploadFile || isLoading}
-                    className="bg-green-600 hover:bg-green-700 text-white"
+                    className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
                   >
                     Upload
                   </Button>
                   <button
                     onClick={() => { setShowUploadPanel(false); setUploadFile(null); }}
-                    className="text-muted-foreground/70 hover:text-foreground/80 transition-colors"
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -675,17 +675,17 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
 
           {/* ── Selected file info strip ─────────────────────────────────── */}
           {selectedNode && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-black/5 dark:bg-white/5 px-3 py-1.5 rounded-lg border border-border">
+            <div className="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 px-3 py-1.5 rounded-md border border-gray-200">
               {selectedNode.isDirectory
-                ? <Folder className="h-3.5 w-3.5 text-yellow-500 dark:text-yellow-400 shrink-0" />
-                : <FileText className="h-3.5 w-3.5 text-blue-500 dark:text-blue-300 shrink-0" />}
+                ? <Folder className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                : <FileText className="h-3.5 w-3.5 text-gray-500 shrink-0" />}
               <span className="font-mono truncate flex-1">{selectedNode.path}</span>
               {!selectedNode.isDirectory && (
-                <span className="shrink-0 text-muted-foreground/70">{formatSize(selectedNode.size)}</span>
+                <span className="shrink-0 text-gray-500">{formatSize(selectedNode.size)}</span>
               )}
               <button
                 onClick={() => setSelectedNode(null)}
-                className="shrink-0 text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                className="shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -694,13 +694,13 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
 
           {/* ── File list ────────────────────────────────────────────────── */}
           {!hasLoaded ? (
-            <div className="flex flex-col items-center justify-center flex-1 border border-dashed border-border rounded-xl text-muted-foreground/50 gap-3">
+            <div className="flex flex-col items-center justify-center flex-1 border border-dashed border-gray-300 rounded-lg text-gray-400 gap-3">
               <HardDrive className="h-10 w-10 opacity-20" />
               <p className="text-sm">Browse the device's storage</p>
               <Button
                 onClick={handleLoadRoot}
                 disabled={isLoading}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
               >
                 {isLoading
                   ? <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />Loading…</>
@@ -709,9 +709,9 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
               </Button>
             </div>
           ) : (
-            <Card className="bg-card border border-border flex-1 overflow-auto">
+            <Card className="bg-white border border-gray-200 rounded-lg shadow-sm flex-1 overflow-auto">
               {/* Column headers */}
-              <div className="flex items-center gap-3 px-4 py-2 border-b border-border/50 text-xs text-muted-foreground/50 uppercase tracking-wide">
+              <div className="flex items-center gap-3 px-4 py-2 bg-gray-50 border-b border-gray-200 text-xs text-gray-500 uppercase tracking-wide">
                 <span className="w-4 shrink-0" />
                 <span className="flex-1">Name</span>
                 <span className="hidden sm:block w-12 text-right shrink-0">Type</span>
@@ -721,11 +721,11 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
               </div>
 
               {fileItems.length === 0 ? (
-                <div className="flex items-center justify-center h-32 text-muted-foreground/50 text-sm">
+                <div className="flex items-center justify-center h-32 text-gray-400 text-sm">
                   This folder is empty
                 </div>
               ) : (
-                <div className="divide-y divide-border/50">
+                <div className="divide-y divide-gray-100">
                   {fileItems.map((item) => (
                     <FileRow
                       key={item.path}
@@ -749,35 +749,35 @@ export function FileManagerExplorer({ deviceUuid, deviceName }: FileManagerExplo
 
 function EventsPanel({ events }: { events: import('@/types/file-manager.types').FileEventResponse[] }) {
   const typeStyle: Record<string, string> = {
-    CREATED:  'text-green-600 dark:text-green-400 bg-green-400/10 border-green-400/20',
-    DELETED:  'text-red-500 dark:text-red-400 bg-red-400/10 border-red-400/20',
-    MODIFIED: 'text-blue-500 dark:text-blue-400 bg-blue-400/10 border-blue-400/20',
+    CREATED:  'text-green-700 bg-green-50 border-green-200',
+    DELETED:  'text-red-700 bg-red-50 border-red-200',
+    MODIFIED: 'text-blue-700 bg-blue-50 border-blue-200',
   };
 
   return (
-    <Card className="bg-card border border-border flex-1 overflow-auto">
+    <Card className="bg-white border border-gray-200 rounded-lg shadow-sm flex-1 overflow-auto">
       <div className="p-4">
-        <h3 className="text-sm font-semibold text-foreground/80 mb-3 flex items-center gap-2">
-          <Activity className="h-4 w-4 text-blue-500 dark:text-blue-400" />
+        <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+          <Activity className="h-4 w-4 text-blue-600" />
           Real-time File System Events
-          <span className="ml-auto text-xs text-muted-foreground/50 font-normal">auto-refreshes every 15s</span>
+          <span className="ml-auto text-xs text-gray-500 font-normal">auto-refreshes every 15s</span>
         </h3>
         {events.length === 0 ? (
-          <div className="flex flex-col items-center py-10 text-muted-foreground/50">
+          <div className="flex flex-col items-center py-10 text-gray-400">
             <Activity className="h-8 w-8 mb-2 opacity-30" />
             <p className="text-sm">No events yet. Events appear when files change on the device.</p>
           </div>
         ) : (
           <div className="space-y-1">
             {events.map((ev) => (
-              <div key={ev.id} className="flex items-center gap-3 text-xs py-2 border-b border-border/50 last:border-0">
-                <span className={`px-1.5 py-0.5 rounded border text-xs font-medium shrink-0 ${typeStyle[ev.eventType] ?? 'text-muted-foreground bg-black/5 dark:bg-white/5 border-border'}`}>
+              <div key={ev.id} className="flex items-center gap-3 text-xs py-2 border-b border-gray-100 last:border-0">
+                <span className={`px-1.5 py-0.5 rounded border text-xs font-medium shrink-0 ${typeStyle[ev.eventType] ?? 'text-gray-700 bg-gray-100 border-gray-200'}`}>
                   {ev.eventType}
                 </span>
-                <span className="font-mono text-foreground/80 truncate flex-1" title={ev.filePath}>
+                <span className="font-mono text-gray-700 truncate flex-1" title={ev.filePath}>
                   {ev.filePath}
                 </span>
-                <span className="text-muted-foreground/70 shrink-0">
+                <span className="text-gray-500 shrink-0">
                   {new Date(ev.receivedAt).toLocaleTimeString()}
                 </span>
               </div>

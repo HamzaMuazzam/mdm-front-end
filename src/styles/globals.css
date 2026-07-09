@@ -5,47 +5,25 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 20% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 20% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 210 20% 96%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 20% 90%;
+    --input: 214 20% 87%;
+    --ring: 221 83% 53%;
+    --radius: 0.375rem;
   }
 }
 
@@ -54,31 +32,33 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
-    font-family: 'Segoe UI', Tahoma, sans-serif;
+    @apply bg-background text-foreground antialiased;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto,
+      'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px;
   }
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar — subtle, enterprise */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #888;
+  background: #d1d5db;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: #9ca3af;
 }
 
-/* Smooth animations */
+/* Smooth color transitions */
 * {
   transition-property: background-color, border-color, color, fill, stroke;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
@@ -99,62 +79,58 @@
   }
 }
 
+/* Fleet map — clean light styling */
 .all-devices-map-page .leaflet-container {
-  background: #020617;
-  font-family: 'Segoe UI', Tahoma, sans-serif;
-}
-
-.all-devices-map-page .leaflet-tile {
-  filter: saturate(1.05) contrast(1.02);
+  background: #e5e7eb;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
 }
 
 .all-devices-map-page .leaflet-control-zoom {
-  border: 0 !important;
-  border-radius: 1.25rem !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 6px !important;
   overflow: hidden;
-  box-shadow: 0 24px 45px rgba(15, 23, 42, 0.28);
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.1);
 }
 
 .all-devices-map-page .leaflet-control-zoom a {
-  width: 2.85rem;
-  height: 2.85rem;
-  line-height: 2.85rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  line-height: 2.25rem;
   border: 0 !important;
-  background: rgba(15, 23, 42, 0.78);
-  color: #f8fafc;
-  backdrop-filter: blur(18px);
+  background: #ffffff;
+  color: #374151;
 }
 
 .all-devices-map-page .leaflet-control-zoom a:hover {
-  background: rgba(30, 41, 59, 0.92);
+  background: #f3f4f6;
 }
 
 .all-devices-map-page .leaflet-control-attribution {
-  background: rgba(2, 6, 23, 0.72);
-  color: rgba(226, 232, 240, 0.8);
-  backdrop-filter: blur(18px);
-  border-top-left-radius: 1rem;
-  padding: 0.3rem 0.55rem;
+  background: rgba(255, 255, 255, 0.85);
+  color: #6b7280;
+  padding: 0.2rem 0.5rem;
 }
 
 .all-devices-map-page .leaflet-control-attribution a {
-  color: rgba(186, 230, 253, 0.95);
+  color: #2563eb;
 }
 
 .all-devices-map-page .leaflet-popup-content-wrapper {
-  border-radius: 1.25rem;
-  background: #0f172a;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.7);
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.12);
   padding: 0;
 }
 
 .all-devices-map-page .leaflet-popup-tip {
-  background: #0f172a;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
 }
 
 .all-devices-map-page .leaflet-popup-close-button {
-  color: rgba(148, 163, 184, 0.8) !important;
+  color: #9ca3af !important;
 }
 
 .all-devices-map-page .leaflet-popup-content {
@@ -181,7 +157,7 @@
   width: 38px;
   height: 38px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(37, 99, 235, 0.25);
   opacity: 0;
 }
 
@@ -197,24 +173,20 @@
   height: 38px;
   align-items: center;
   justify-content: center;
-  border-radius: 1rem;
-  border: 2px solid rgba(255, 255, 255, 0.88);
+  border-radius: 8px;
+  border: 2px solid #ffffff;
   background: var(--marker-color);
-  box-shadow:
-    0 18px 35px rgba(15, 23, 42, 0.34),
-    0 0 0 4px rgba(255, 255, 255, 0.12);
+  box-shadow: 0 2px 8px rgba(16, 24, 40, 0.25);
 }
 
 .all-devices-map-page .device-marker.is-selected .device-marker__bubble {
   transform: translateY(-2px) scale(1.04);
-  box-shadow:
-    0 22px 45px rgba(15, 23, 42, 0.4),
-    0 0 0 7px rgba(255, 255, 255, 0.14);
+  box-shadow: 0 4px 12px rgba(16, 24, 40, 0.3);
 }
 
 .all-devices-map-page .device-marker__bubble span {
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.04em;
   color: #fff;
 }
@@ -226,7 +198,7 @@
   height: 32px;
   background: var(--marker-color);
   clip-path: polygon(50% 100%, 0 0, 100% 0);
-  filter: drop-shadow(0 14px 18px rgba(15, 23, 42, 0.22));
+  filter: drop-shadow(0 4px 6px rgba(16, 24, 40, 0.18));
 }
 
 @media (max-width: 640px) {

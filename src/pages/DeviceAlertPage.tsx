@@ -61,10 +61,10 @@ const PRESETS = [
 function HistoryCard({ alert }: { alert: AlertRecord }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
+    <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
       <button
         type="button"
-        className="w-full flex items-start gap-3 px-4 py-3 text-left"
+        className="w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-gray-50"
         onClick={() => setOpen((v) => !v)}
       >
         <div className="flex-1 min-w-0">
@@ -77,7 +77,7 @@ function HistoryCard({ alert }: { alert: AlertRecord }) {
         </div>
       </button>
       {open && (
-        <div className="px-4 pb-4 space-y-2 text-sm border-t border-border bg-muted/30">
+        <div className="px-4 pb-4 space-y-2 text-sm border-t border-gray-100 bg-gray-50">
           {alert.message && (
             <p className="pt-3 text-muted-foreground">{alert.message}</p>
           )}
@@ -207,11 +207,11 @@ export function DeviceAlertPage() {
     <div className="flex flex-col h-screen bg-background">
 
       {/* ── sticky top header ────────────────────────────────────────────── */}
-      <header className="shrink-0 flex items-center gap-3 px-4 py-3 border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-20">
+      <header className="shrink-0 flex items-center gap-3 px-4 py-3 border-b border-gray-200 bg-white sticky top-0 z-20">
         <button
           type="button"
           onClick={() => navigate(ROUTES.DASHBOARD, { state: { activeTab: 'devices' } })}
-          className="flex items-center justify-center h-9 w-9 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+          className="flex items-center justify-center h-9 w-9 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-900"
           aria-label="Back"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -232,7 +232,7 @@ export function DeviceAlertPage() {
 
           {/* ── success banner ── */}
           {sentSuccess && lastAlert && (
-            <div className="flex items-start gap-3 p-4 rounded-xl bg-green-50 border border-green-200">
+            <div className="flex items-start gap-3 p-4 rounded-lg bg-green-50 border border-green-200">
               <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-green-800">Alarm sent!</p>
@@ -256,7 +256,7 @@ export function DeviceAlertPage() {
 
           {/* ── error banner ── */}
           {error && (
-            <div className="flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-200">
+            <div className="flex items-start gap-3 p-4 rounded-lg bg-red-50 border border-red-200">
               <XCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
               <p className="text-sm text-red-700">{error}</p>
             </div>
@@ -264,7 +264,7 @@ export function DeviceAlertPage() {
 
           {/* ── no-permission banner ── */}
           {!canSend && (
-            <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 border border-amber-200">
+            <div className="flex items-start gap-3 p-4 rounded-lg bg-amber-50 border border-amber-200">
               <Siren className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
               <p className="text-sm text-amber-800">You do not have permission to send alarms.</p>
             </div>
@@ -282,7 +282,7 @@ export function DeviceAlertPage() {
                   type="button"
                   onClick={() => applyPreset(p)}
                   disabled={!canSend}
-                  className="flex items-center gap-2 px-3 py-3 rounded-xl border border-border bg-card hover:bg-muted active:scale-95 transition-all text-left text-sm font-medium text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-3 py-3 rounded-md border border-gray-200 bg-white hover:bg-gray-50 transition-colors text-left text-sm font-medium text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {p.label}
                 </button>
@@ -302,7 +302,7 @@ export function DeviceAlertPage() {
               maxLength={200}
               disabled={!canSend}
               placeholder="Emergency Alert!"
-              className="w-full h-12 px-4 rounded-xl border border-border bg-card text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent disabled:opacity-50 transition-shadow"
+              className="w-full h-9 px-3 rounded-md border border-gray-300 bg-white text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 transition-shadow"
             />
           </section>
 
@@ -317,7 +317,7 @@ export function DeviceAlertPage() {
               onChange={(e) => setMessage(e.target.value)}
               disabled={!canSend}
               placeholder="Add a message for the child…"
-              className="w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground text-sm resize-none focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent disabled:opacity-50 transition-shadow"
+              className="w-full px-3 py-2 rounded-md border border-gray-300 bg-white text-gray-900 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 transition-shadow"
             />
           </section>
 
@@ -331,7 +331,7 @@ export function DeviceAlertPage() {
                 value={sound}
                 onChange={(e) => setSound(e.target.value)}
                 disabled={!canSend}
-                className="w-full h-12 px-3 rounded-xl border border-border bg-card text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-red-400 disabled:opacity-50 transition-shadow"
+                className="w-full h-9 px-3 rounded-md border border-gray-300 bg-white text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 transition-shadow"
               >
                 <option value="alarm_default">Default</option>
                 <option value="alarm_urgent">Urgent</option>
@@ -349,7 +349,7 @@ export function DeviceAlertPage() {
                 value={duration}
                 onChange={(e) => setDuration(Number(e.target.value))}
                 disabled={!canSend}
-                className="w-full h-12 px-4 rounded-xl border border-border bg-card text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-red-400 disabled:opacity-50 transition-shadow"
+                className="w-full h-9 px-3 rounded-md border border-gray-300 bg-white text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 transition-shadow"
               />
             </div>
           </section>
@@ -387,13 +387,13 @@ export function DeviceAlertPage() {
       </div>
 
       {/* ── fixed bottom send button ──────────────────────────────────────── */}
-      <div className="shrink-0 px-4 py-4 border-t border-border bg-background/95 backdrop-blur-sm">
+      <div className="shrink-0 px-4 py-4 border-t border-gray-200 bg-white">
         <div className="max-w-lg mx-auto">
           <button
             type="button"
             onClick={handleSend}
             disabled={!isReady}
-            className="w-full h-14 flex items-center justify-center gap-3 rounded-2xl bg-red-600 hover:bg-red-700 active:bg-red-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold text-base transition-all shadow-lg shadow-red-600/30 active:scale-[0.98]"
+            className="w-full h-14 flex items-center justify-center gap-3 rounded-md bg-red-600 hover:bg-red-700 active:bg-red-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold text-base transition-colors shadow-sm"
           >
             {sending
               ? <><Loader2 className="h-5 w-5 animate-spin" /> Sending alarm…</>

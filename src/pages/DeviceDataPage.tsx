@@ -53,25 +53,25 @@ function fmtDuration(seconds: number): string {
 type Tab = 'contacts' | 'sms' | 'calls';
 
 const TABS: { id: Tab; label: string; Icon: React.ElementType; color: string }[] = [
-  { id: 'contacts', label: 'Contacts', Icon: Users,         color: 'text-blue-400' },
-  { id: 'sms',      label: 'Messages', Icon: MessageSquare, color: 'text-violet-400' },
-  { id: 'calls',    label: 'Call Logs', Icon: Phone,        color: 'text-emerald-400' },
+  { id: 'contacts', label: 'Contacts', Icon: Users,         color: 'text-blue-700' },
+  { id: 'sms',      label: 'Messages', Icon: MessageSquare, color: 'text-blue-700' },
+  { id: 'calls',    label: 'Call Logs', Icon: Phone,        color: 'text-blue-700' },
 ];
 
 const SYNC_OPTIONS: { type: SyncType; label: string; desc: string; color: string }[] = [
-  { type: 'sync_contacts', label: 'Contacts',  desc: 'Phone book entries',  color: 'bg-blue-600/20 border-blue-600/40 text-blue-300 hover:bg-blue-600/30' },
-  { type: 'sync_sms',      label: 'Messages',  desc: 'SMS inbox & sent',    color: 'bg-violet-600/20 border-violet-600/40 text-violet-300 hover:bg-violet-600/30' },
-  { type: 'sync_calls',    label: 'Call Logs', desc: 'Incoming & outgoing', color: 'bg-emerald-600/20 border-emerald-600/40 text-emerald-300 hover:bg-emerald-600/30' },
-  { type: 'sync_all',      label: 'Sync All',  desc: 'Everything at once',  color: 'bg-slate-700 border-slate-600 text-slate-100 hover:bg-slate-600' },
+  { type: 'sync_contacts', label: 'Contacts',  desc: 'Phone book entries',  color: 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100' },
+  { type: 'sync_sms',      label: 'Messages',  desc: 'SMS inbox & sent',    color: 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100' },
+  { type: 'sync_calls',    label: 'Call Logs', desc: 'Incoming & outgoing', color: 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100' },
+  { type: 'sync_all',      label: 'Sync All',  desc: 'Everything at once',  color: 'bg-blue-600 border-blue-600 text-white hover:bg-blue-700' },
 ];
 
 function CallTypeIcon({ type }: { type: DeviceCallLog['callType'] }) {
   switch (type) {
-    case 'INCOMING':  return <PhoneIncoming  className="h-4 w-4 text-emerald-400" />;
-    case 'OUTGOING':  return <PhoneOutgoing  className="h-4 w-4 text-blue-400" />;
-    case 'MISSED':    return <PhoneMissed    className="h-4 w-4 text-red-400" />;
-    case 'REJECTED':  return <PhoneMissed    className="h-4 w-4 text-orange-400" />;
-    default:          return <PhoneCall      className="h-4 w-4 text-slate-500" />;
+    case 'INCOMING':  return <PhoneIncoming  className="h-4 w-4 text-green-600" />;
+    case 'OUTGOING':  return <PhoneOutgoing  className="h-4 w-4 text-blue-600" />;
+    case 'MISSED':    return <PhoneMissed    className="h-4 w-4 text-red-600" />;
+    case 'REJECTED':  return <PhoneMissed    className="h-4 w-4 text-amber-600" />;
+    default:          return <PhoneCall      className="h-4 w-4 text-gray-400" />;
   }
 }
 
@@ -80,13 +80,13 @@ function StatCard({ icon, label, value, sublabel, accent }: {
   icon: React.ReactNode; label: string; value: number; sublabel: string; accent: string;
 }) {
   return (
-      <div className={`flex-1 rounded-xl border ${accent} p-4 flex flex-col gap-1 min-w-0`}>
+      <div className={`flex-1 rounded-lg border ${accent} p-4 flex flex-col gap-1 min-w-0`}>
         <div className="flex items-center justify-between mb-1">
-          <span className="text-xs text-slate-400 font-medium">{label}</span>
+          <span className="text-xs text-gray-500 font-medium">{label}</span>
           {icon}
         </div>
-        <p className="text-2xl font-bold text-slate-100 tabular-nums leading-none">{value.toLocaleString()}</p>
-        <p className="text-[11px] text-slate-500 leading-tight">{sublabel}</p>
+        <p className="text-2xl font-semibold text-gray-900 tabular-nums leading-none">{value.toLocaleString()}</p>
+        <p className="text-[11px] text-gray-500 leading-tight">{sublabel}</p>
       </div>
   );
 }
@@ -97,21 +97,21 @@ function Pagination({ page, totalPages, onPage }: {
 }) {
   if (totalPages <= 1) return null;
   return (
-      <div className="flex items-center justify-center gap-3 py-4 border-t border-slate-800/60 mt-2">
+      <div className="flex items-center justify-center gap-3 py-4 border-t border-gray-100 mt-2">
         <button
             onClick={() => onPage(page - 1)}
             disabled={page === 0}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 text-xs disabled:opacity-30 hover:text-slate-100 hover:bg-slate-700 transition-colors"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-white border border-gray-300 text-gray-600 text-xs disabled:opacity-30 hover:text-gray-900 hover:bg-gray-50 transition-colors"
         >
           <ChevronLeft className="h-3.5 w-3.5" /> Prev
         </button>
-        <span className="text-xs text-slate-500 tabular-nums">
+        <span className="text-xs text-gray-500 tabular-nums">
         Page {page + 1} of {totalPages}
       </span>
         <button
             onClick={() => onPage(page + 1)}
             disabled={page >= totalPages - 1}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 text-xs disabled:opacity-30 hover:text-slate-100 hover:bg-slate-700 transition-colors"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-white border border-gray-300 text-gray-600 text-xs disabled:opacity-30 hover:text-gray-900 hover:bg-gray-50 transition-colors"
         >
           Next <ChevronRight className="h-3.5 w-3.5" />
         </button>
@@ -125,18 +125,18 @@ function SearchBar({ value, onChange, placeholder }: {
 }) {
   return (
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
         <input
             type="text"
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder ?? 'Search…'}
-            className="w-full h-10 pl-9 pr-9 rounded-xl bg-slate-800/80 border border-slate-700/60 text-sm text-slate-100
-                   placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500 focus:border-slate-500 transition-all"
+            className="w-full h-9 pl-9 pr-9 rounded-md bg-white border border-gray-300 text-sm text-gray-900
+                   placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary transition-all"
         />
         {value && (
             <button onClick={() => onChange('')} className="absolute right-3 top-1/2 -translate-y-1/2">
-              <X className="h-4 w-4 text-slate-500 hover:text-slate-300" />
+              <X className="h-4 w-4 text-gray-400 hover:text-gray-600" />
             </button>
         )}
       </div>
@@ -149,12 +149,12 @@ function EmptyState({ icon, title, description }: {
 }) {
   return (
       <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
-        <div className="h-14 w-14 rounded-full bg-slate-800/80 border border-slate-700/50 flex items-center justify-center text-slate-600">
+        <div className="h-14 w-14 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-400">
           {icon}
         </div>
         <div>
-          <p className="text-sm font-medium text-slate-400">{title}</p>
-          <p className="text-xs text-slate-600 mt-1 max-w-xs">{description}</p>
+          <p className="text-sm font-medium text-gray-600">{title}</p>
+          <p className="text-xs text-gray-500 mt-1 max-w-xs">{description}</p>
         </div>
       </div>
   );
@@ -326,28 +326,28 @@ export function DeviceDataPage() {
 
   if (isLoading) {
     return (
-        <div className="flex h-screen items-center justify-center bg-slate-950">
-          <Loader2 className="h-8 w-8 animate-spin text-slate-600" />
+        <div className="flex h-screen items-center justify-center bg-gray-50">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
         </div>
     );
   }
 
   return (
-      <div className="min-h-screen bg-slate-950 text-slate-100">
+      <div className="min-h-screen bg-gray-50 text-gray-900">
 
         {/* ── sticky header ── */}
-        <div className="sticky top-0 z-20 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
+        <div className="sticky top-0 z-20 bg-white border-b border-gray-200">
           <div className="max-w-4xl mx-auto px-4 h-14 flex items-center gap-3">
             <button
                 type="button"
                 onClick={() => navigate(ROUTES.DASHBOARD, { state: { activeTab: 'devices' } })}
-                className="p-2 -ml-1 rounded-lg hover:bg-slate-800 transition-colors text-slate-400 hover:text-slate-100"
+                className="p-2 -ml-1 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-900"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
 
-            <div className="h-8 w-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center shrink-0">
-              <Database className="h-4 w-4 text-slate-400" />
+            <div className="h-8 w-8 rounded-md bg-blue-50 flex items-center justify-center shrink-0">
+              <Database className="h-4 w-4 text-blue-600" />
             </div>
 
             <div className="flex-1 min-w-0">
@@ -362,7 +362,7 @@ export function DeviceDataPage() {
                 onClick={refreshCurrentTab}
                 disabled={loading}
                 title="Refresh current data"
-                className="p-2 rounded-lg hover:bg-slate-800 transition-colors text-slate-500 hover:text-slate-200 disabled:opacity-40"
+                className="p-2 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700 disabled:opacity-40"
             >
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
@@ -381,29 +381,29 @@ export function DeviceDataPage() {
                 <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${[canReadContacts, canReadSms, canReadCalls].filter(Boolean).length}, minmax(0, 1fr))` }}>
                   {canReadContacts && (
                     <StatCard
-                        icon={<Users className="h-4 w-4 text-blue-400" />}
+                        icon={<Users className="h-4 w-4 text-blue-600" />}
                         label="Contacts"
                         value={stats.contactCount}
                         sublabel="saved contacts"
-                        accent="bg-blue-950/30 border-blue-900/40"
+                        accent="bg-white border-gray-200 shadow-sm"
                     />
                   )}
                   {canReadSms && (
                     <StatCard
-                        icon={<MessageSquare className="h-4 w-4 text-violet-400" />}
+                        icon={<MessageSquare className="h-4 w-4 text-blue-600" />}
                         label="Messages"
                         value={stats.smsCount}
                         sublabel="SMS records"
-                        accent="bg-violet-950/30 border-violet-900/40"
+                        accent="bg-white border-gray-200 shadow-sm"
                     />
                   )}
                   {canReadCalls && (
                     <StatCard
-                        icon={<Phone className="h-4 w-4 text-emerald-400" />}
+                        icon={<Phone className="h-4 w-4 text-blue-600" />}
                         label="Call Logs"
                         value={stats.callLogCount}
                         sublabel="call records"
-                        accent="bg-emerald-950/30 border-emerald-900/40"
+                        accent="bg-white border-gray-200 shadow-sm"
                     />
                   )}
                 </div>
@@ -412,12 +412,12 @@ export function DeviceDataPage() {
 
           {/* ── sync section ── */}
           {canSyncAny && visibleSyncOptions.length > 0 && (
-              <section className="rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden">
+              <section className="rounded-lg bg-white border border-gray-200 shadow-sm overflow-hidden">
                 {/* header */}
-                <div className="px-5 pt-5 pb-4 border-b border-slate-800">
+                <div className="px-5 pt-5 pb-4 border-b border-gray-200">
                   <div className="flex items-start gap-3">
-                    <div className="h-9 w-9 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center shrink-0 mt-0.5">
-                      <Download className="h-4 w-4 text-slate-300" />
+                    <div className="h-9 w-9 rounded-md bg-blue-50 flex items-center justify-center shrink-0 mt-0.5">
+                      <Download className="h-4 w-4 text-blue-600" />
                     </div>
                     <div className="flex-1">
                       <h2 className="text-sm font-semibold text-slate-100">Request Data Sync</h2>
@@ -430,7 +430,7 @@ export function DeviceDataPage() {
                 </div>
 
                 {/* info banner */}
-                <div className="px-5 py-3 bg-slate-800/40 border-b border-slate-800 flex items-start gap-2.5">
+                <div className="px-5 py-3 bg-gray-50 border-b border-gray-200 flex items-start gap-2.5">
                   <Info className="h-4 w-4 text-slate-500 shrink-0 mt-0.5" />
                   <p className="text-xs text-slate-500 leading-relaxed">
                     <span className="text-slate-400 font-medium">How it works: </span>
@@ -449,7 +449,7 @@ export function DeviceDataPage() {
                             type="button"
                             onClick={() => handleSync(type)}
                             disabled={!!syncing}
-                            className={`flex flex-col items-center gap-2 p-4 rounded-xl border text-center
+                            className={`flex flex-col items-center gap-2 p-4 rounded-md border text-center
                                 transition-all disabled:opacity-50 cursor-pointer ${color}`}
                         >
                           {syncing === type ? (
@@ -469,9 +469,9 @@ export function DeviceDataPage() {
 
                   {/* sync feedback */}
                   {syncDone && (
-                      <div className="mt-3 flex items-center gap-2 rounded-xl bg-green-950/50 border border-green-900/50 px-4 py-2.5">
-                        <CheckCircle2 className="h-4 w-4 text-green-400 shrink-0" />
-                        <p className="text-sm text-green-300">
+                      <div className="mt-3 flex items-center gap-2 rounded-md bg-green-50 border border-green-200 px-4 py-2.5">
+                        <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
+                        <p className="text-sm text-green-700">
                           Sync request sent! The device will upload its data shortly.
                           Press the refresh button above to see new data.
                         </p>
@@ -483,10 +483,10 @@ export function DeviceDataPage() {
 
           {/* ── error ── */}
           {error && (
-              <div className="flex items-center gap-2.5 rounded-xl bg-red-950/50 border border-red-900/50 px-4 py-3">
-                <X className="h-4 w-4 text-red-400 shrink-0" />
-                <p className="text-sm text-red-300">{error}</p>
-                <button onClick={() => setError(null)} className="ml-auto text-red-500 hover:text-red-300">
+              <div className="flex items-center gap-2.5 rounded-md bg-red-50 border border-red-200 px-4 py-3">
+                <X className="h-4 w-4 text-red-600 shrink-0" />
+                <p className="text-sm text-red-700">{error}</p>
+                <button onClick={() => setError(null)} className="ml-auto text-red-500 hover:text-red-700">
                   <X className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -494,10 +494,10 @@ export function DeviceDataPage() {
 
           {/* ── data section ── */}
           {canReadAny ? (
-              <section className="rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden">
+              <section className="rounded-lg bg-white border border-gray-200 shadow-sm overflow-hidden">
 
                 {/* tab bar */}
-                <div className="border-b border-slate-800">
+                <div className="border-b border-gray-200">
                   <div className="flex">
                     {visibleTabs.map((tab) => {
                       const count = tab.id === 'contacts' ? stats?.contactCount
@@ -511,15 +511,15 @@ export function DeviceDataPage() {
                               className={`flex-1 flex items-center justify-center gap-2 py-3.5 px-2 text-sm font-medium
                                   border-b-2 transition-all
                                   ${activeTab === tab.id
-                                  ? `border-slate-400 ${tab.color}`
-                                  : 'border-transparent text-slate-500 hover:text-slate-400 hover:border-slate-700'
+                                  ? `border-blue-600 ${tab.color}`
+                                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                               }`}
                           >
                             <tab.Icon className="h-4 w-4 shrink-0" />
                             <span className="hidden xs:inline sm:inline">{tab.label}</span>
                             {count != null && count > 0 && (
                                 <span className={`hidden sm:inline text-[10px] px-1.5 py-0.5 rounded-full
-                                         ${activeTab === tab.id ? 'bg-slate-700 text-slate-300' : 'bg-slate-800 text-slate-500'}`}>
+                                         ${activeTab === tab.id ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>
                           {count > 9999 ? '9999+' : count.toLocaleString()}
                         </span>
                             )}
@@ -566,11 +566,11 @@ export function DeviceDataPage() {
                         <div className="space-y-2 mt-2">
                           {filteredContacts.map((c) => (
                               <div key={c.id}
-                                   className="flex items-center gap-3 rounded-xl bg-slate-800/50 border border-slate-700/40 px-4 py-3
-                                   hover:bg-slate-800/80 transition-colors">
-                                <div className="h-10 w-10 rounded-full bg-blue-600/20 border border-blue-700/30
+                                   className="flex items-center gap-3 rounded-lg bg-white border border-gray-200 px-4 py-3
+                                   hover:bg-gray-50 transition-colors">
+                                <div className="h-10 w-10 rounded-full bg-blue-50 border border-blue-200
                                         flex items-center justify-center shrink-0">
-                          <span className="text-sm font-bold text-blue-400">
+                          <span className="text-sm font-semibold text-blue-600">
                             {c.name.charAt(0).toUpperCase()}
                           </span>
                                 </div>
@@ -610,14 +610,14 @@ export function DeviceDataPage() {
                         <div className="space-y-2 mt-2">
                           {filteredSms.map((s) => (
                               <div key={s.id}
-                                   className="rounded-xl bg-slate-800/50 border border-slate-700/40 px-4 py-3
-                                   hover:bg-slate-800/80 transition-colors">
+                                   className="rounded-lg bg-white border border-gray-200 px-4 py-3
+                                   hover:bg-gray-50 transition-colors">
                                 <div className="flex items-center justify-between mb-1.5 gap-2">
                                   <div className="flex items-center gap-2 min-w-0">
                             <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold
                                              ${s.smsType === 'INBOX'
-                                ? 'bg-violet-900/50 text-violet-300 border border-violet-800/50'
-                                : 'bg-blue-900/50 text-blue-300 border border-blue-800/50'}`}>
+                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                : 'bg-gray-100 text-gray-700 border border-gray-200'}`}>
                               {s.smsType === 'INBOX' ? 'Received' : 'Sent'}
                             </span>
                                     <p className="text-sm font-semibold text-slate-200 font-mono truncate">{s.address}</p>
@@ -655,9 +655,9 @@ export function DeviceDataPage() {
                         <div className="space-y-2 mt-2">
                           {filteredCalls.map((c) => (
                               <div key={c.id}
-                                   className="flex items-center gap-3 rounded-xl bg-slate-800/50 border border-slate-700/40 px-4 py-3
-                                   hover:bg-slate-800/80 transition-colors">
-                                <div className="h-10 w-10 rounded-full bg-slate-700/60 border border-slate-600/40
+                                   className="flex items-center gap-3 rounded-lg bg-white border border-gray-200 px-4 py-3
+                                   hover:bg-gray-50 transition-colors">
+                                <div className="h-10 w-10 rounded-full bg-gray-100 border border-gray-200
                                         flex items-center justify-center shrink-0">
                                   <CallTypeIcon type={c.callType} />
                                 </div>
@@ -668,10 +668,10 @@ export function DeviceDataPage() {
                                   <p className={`font-mono truncate ${c.name ? 'text-xs text-slate-500 mt-0' : 'text-sm font-semibold text-slate-100'}`}>{c.phoneNumber}</p>
                                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                             <span className={`text-[11px] font-medium ${
-                                c.callType === 'INCOMING' ? 'text-emerald-400' :
-                                    c.callType === 'OUTGOING' ? 'text-blue-400'    :
-                                        c.callType === 'MISSED'   ? 'text-red-400'     :
-                                            c.callType === 'REJECTED' ? 'text-orange-400'  : 'text-slate-500'
+                                c.callType === 'INCOMING' ? 'text-green-600' :
+                                    c.callType === 'OUTGOING' ? 'text-blue-600'    :
+                                        c.callType === 'MISSED'   ? 'text-red-600'     :
+                                            c.callType === 'REJECTED' ? 'text-amber-600'  : 'text-gray-500'
                             }`}>
                               {c.callType.charAt(0) + c.callType.slice(1).toLowerCase()}
                             </span>
@@ -692,7 +692,7 @@ export function DeviceDataPage() {
                 </div>
               </section>
           ) : (
-              <div className="rounded-2xl bg-slate-900 border border-slate-800 py-16 text-center">
+              <div className="rounded-lg bg-white border border-gray-200 shadow-sm py-16 text-center">
                 <p className="text-sm text-slate-500">You do not have permission to view device data.</p>
               </div>
           )}

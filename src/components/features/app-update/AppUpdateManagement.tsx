@@ -45,11 +45,11 @@ function formatDateTime(raw: string): string {
 
 function TypeBadge({ type }: { type: UpdateType }) {
   return type === 'CRITICAL' ? (
-    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400">
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
       <AlertTriangle className="h-3 w-3" />CRITICAL
     </span>
   ) : (
-    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400">
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-200">
       <Zap className="h-3 w-3" />NORMAL
     </span>
   );
@@ -57,8 +57,8 @@ function TypeBadge({ type }: { type: UpdateType }) {
 
 function StatusBadge({ isActive }: { isActive: boolean }) {
   return isActive ? (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400">
-      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />Active
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-200">
+      <span className="w-1.5 h-1.5 rounded-full bg-green-500" />Active
     </span>
   ) : (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-muted text-muted-foreground">
@@ -176,27 +176,27 @@ export function AppUpdateManagement() {
       {/* ── Header + Platform Toggle ─────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-xl shadow-lg shadow-violet-500/20">
-            <Package className="h-6 w-6 text-white" />
+          <div className="p-2.5 bg-blue-50 rounded-md">
+            <Package className="h-6 w-6 text-blue-600" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-foreground">Application Update</h2>
+            <h2 className="text-xl font-semibold text-gray-900">Application Update</h2>
             <p className="text-xs text-muted-foreground mt-0.5">Manage and distribute app versions</p>
           </div>
         </div>
 
         {/* Platform Pills */}
-        <div className="flex gap-2 p-1 bg-muted rounded-xl w-fit">
+        <div className="flex gap-2 p-1 bg-gray-100 rounded-lg w-fit">
           {PLATFORMS.map((p) => (
             <button
               key={p}
               onClick={() => setPlatform(p)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold transition-all ${
                 platform === p
                   ? p === 'ANDROID'
-                    ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/30'
-                    : 'bg-blue-500 text-white shadow-sm shadow-blue-500/30'
-                  : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'bg-blue-50 text-blue-700'
+                  : 'text-gray-500 hover:text-gray-700'
               }`}
             >
               {p === 'ANDROID' ? <Smartphone className="h-4 w-4" /> : <Tablet className="h-4 w-4" />}
@@ -214,8 +214,8 @@ export function AppUpdateManagement() {
           <Card className="border shadow-sm overflow-hidden">
             <CardHeader className="pb-3 border-b border-border bg-muted/30">
               <CardTitle className="flex items-center gap-2 text-base font-semibold text-foreground">
-                <div className="p-1.5 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-lg">
-                  <Upload className="h-4 w-4 text-white" />
+                <div className="p-1.5 bg-blue-50 rounded-md">
+                  <Upload className="h-4 w-4 text-blue-600" />
                 </div>
                 Upload New Update
               </CardTitle>
@@ -240,7 +240,7 @@ export function AppUpdateManagement() {
                   <select
                     value={updateType}
                     onChange={(e) => setUpdateType(e.target.value as UpdateType)}
-                    className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
+                    className="w-full h-9 rounded-md border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
                   >
                     {UPDATE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
                   </select>
@@ -256,17 +256,17 @@ export function AppUpdateManagement() {
                   value={releaseNotes}
                   onChange={(e) => setReleaseNotes(e.target.value)}
                   placeholder="Describe what's new in this release..."
-                  className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none text-foreground"
+                  className="w-full rounded-md border border-gray-300 bg-white px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none text-foreground"
                 />
               </div>
 
               {/* File Drop Area */}
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-border rounded-xl p-6 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all group"
+                className="border-2 border-dashed border-gray-300 bg-gray-50 rounded-lg p-6 text-center cursor-pointer hover:border-blue-400 transition-all group"
               >
-                <div className="w-12 h-12 bg-muted group-hover:bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-3 transition-colors">
-                  <FileArchive className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
+                <div className="w-12 h-12 bg-gray-100 group-hover:bg-blue-50 rounded-md flex items-center justify-center mx-auto mb-3 transition-colors">
+                  <FileArchive className="h-6 w-6 text-muted-foreground group-hover:text-blue-600 transition-colors" />
                 </div>
                 <p className="text-sm font-medium text-foreground">
                   Click to select {platform === 'ANDROID' ? 'APK' : 'IPA'} file
@@ -284,10 +284,10 @@ export function AppUpdateManagement() {
               </div>
 
               {selectedFile && (
-                <div className="flex items-center justify-between bg-muted/50 border border-border rounded-xl px-4 py-3">
+                <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-md px-4 py-3">
                   <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-lg flex items-center justify-center shrink-0">
-                      <FileArchive className="h-4 w-4 text-white" />
+                    <div className="w-8 h-8 bg-blue-50 rounded-md flex items-center justify-center shrink-0">
+                      <FileArchive className="h-4 w-4 text-blue-600" />
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{selectedFile.name}</p>
@@ -296,7 +296,7 @@ export function AppUpdateManagement() {
                   </div>
                   <button
                     onClick={() => { setSelectedFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                    className="ml-3 p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-muted-foreground hover:text-red-500 transition-colors shrink-0"
+                    className="ml-3 p-1.5 rounded-md hover:bg-red-50 text-muted-foreground hover:text-red-600 transition-colors shrink-0"
                   >
                     <XCircle className="h-4 w-4" />
                   </button>
@@ -304,10 +304,10 @@ export function AppUpdateManagement() {
               )}
 
               {uploadMsg && (
-                <div className={`flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium ${
+                <div className={`flex items-center gap-2 rounded-md px-4 py-3 text-sm font-medium ${
                   uploadMsg.ok
-                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                    : 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                    ? 'bg-green-50 text-green-700 border border-green-200'
+                    : 'bg-red-50 text-red-700 border border-red-200'
                 }`}>
                   {uploadMsg.ok ? <CheckCircle className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
                   {uploadMsg.text}
@@ -317,7 +317,7 @@ export function AppUpdateManagement() {
               <Button
                 onClick={handleUpload}
                 disabled={uploading}
-                className="w-full bg-gradient-to-r from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700 text-white"
+                className="w-full bg-primary hover:bg-primary-hover text-white shadow-sm"
               >
                 {uploading ? (
                   <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />Uploading...</>
@@ -332,28 +332,28 @@ export function AppUpdateManagement() {
         {/* Latest Update Card */}
         <Card className={`border shadow-sm overflow-hidden ${!canUpload ? 'lg:col-span-2' : ''}`}>
           {/* Status-stripe header */}
-          <div className={`px-5 pt-4 pb-3 border-b border-border ${
+          <div className={`px-5 pt-4 pb-3 border-b border-gray-200 ${
             latest?.isActive
-              ? 'bg-emerald-50/60 dark:bg-emerald-900/20'
+              ? 'bg-green-50'
               : latest
-              ? 'bg-muted/40'
-              : 'bg-muted/40'
+              ? 'bg-gray-50'
+              : 'bg-gray-50'
           }`}>
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-xl ${
+                <div className={`p-2 rounded-md ${
                   platform === 'ANDROID'
-                    ? 'bg-gradient-to-br from-emerald-500 to-teal-600'
-                    : 'bg-gradient-to-br from-blue-500 to-indigo-600'
-                } shadow-sm`}>
-                  {platform === 'ANDROID' ? <Smartphone className="h-5 w-5 text-white" /> : <Tablet className="h-5 w-5 text-white" />}
+                    ? 'bg-blue-50'
+                    : 'bg-blue-50'
+                }`}>
+                  {platform === 'ANDROID' ? <Smartphone className="h-5 w-5 text-blue-600" /> : <Tablet className="h-5 w-5 text-blue-600" />}
                 </div>
                 <div>
                   <p className="font-semibold text-foreground text-base">Latest Update</p>
                   <p className="text-xs text-muted-foreground">{platform}</p>
                 </div>
               </div>
-              <button onClick={loadLatest} disabled={latestLoading} className="p-2 rounded-lg hover:bg-muted transition-colors">
+              <button onClick={loadLatest} disabled={latestLoading} className="p-2 rounded-md hover:bg-gray-100 transition-colors">
                 <RefreshCw className={`h-4 w-4 text-muted-foreground ${latestLoading ? 'animate-spin' : ''}`} />
               </button>
             </div>
@@ -368,11 +368,11 @@ export function AppUpdateManagement() {
             ) : latest ? (
               <div className="space-y-4">
                 {/* Version hero */}
-                <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/30 border border-border">
-                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${
-                    platform === 'ANDROID' ? 'from-emerald-500 to-teal-600' : 'from-blue-500 to-indigo-600'
-                  } flex items-center justify-center shadow-md shrink-0`}>
-                    <span className="text-white font-bold text-xl">v{latest.versionCode}</span>
+                <div className="flex items-center gap-4 p-4 rounded-lg bg-gray-50 border border-gray-200">
+                  <div className={`w-14 h-14 rounded-lg ${
+                    platform === 'ANDROID' ? 'bg-blue-50' : 'bg-blue-50'
+                  } flex items-center justify-center shrink-0`}>
+                    <span className="text-blue-700 font-semibold text-xl">v{latest.versionCode}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -385,22 +385,22 @@ export function AppUpdateManagement() {
 
                 {/* Detail tiles */}
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-xl bg-muted/50 border border-border p-3">
+                  <div className="rounded-md bg-gray-50 border border-gray-200 p-3">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">File Size</p>
                     <p className="font-semibold text-foreground text-sm">{formatFileSize(latest.fileSize)}</p>
                   </div>
-                  <div className="rounded-xl bg-muted/50 border border-border p-3">
+                  <div className="rounded-md bg-gray-50 border border-gray-200 p-3">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Platform</p>
                     <p className="font-semibold text-foreground text-sm">{platform}</p>
                   </div>
                   {latest.releaseNotes && (
-                    <div className="col-span-2 rounded-xl bg-muted/50 border border-border p-3">
+                    <div className="col-span-2 rounded-md bg-gray-50 border border-gray-200 p-3">
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Release Notes</p>
                       <p className="text-sm text-foreground">{latest.releaseNotes}</p>
                     </div>
                   )}
                   {latest.checksum && (
-                    <div className="col-span-2 rounded-xl bg-muted/50 border border-border p-3">
+                    <div className="col-span-2 rounded-md bg-gray-50 border border-gray-200 p-3">
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Checksum</p>
                       <p className="text-xs font-mono text-muted-foreground break-all">{latest.checksum}</p>
                     </div>
@@ -411,7 +411,7 @@ export function AppUpdateManagement() {
                   <Button
                     onClick={handleNotify}
                     disabled={notifying}
-                    className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white"
+                    className="w-full bg-primary hover:bg-primary-hover text-white shadow-sm"
                   >
                     {notifying ? (
                       <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />Sending…</>
@@ -421,10 +421,10 @@ export function AppUpdateManagement() {
                   </Button>
 
                   {notifyMsg && (
-                    <div className={`flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium ${
+                    <div className={`flex items-center gap-2 rounded-md px-4 py-3 text-sm font-medium ${
                       notifyMsg.ok
-                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                        : 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                        ? 'bg-green-50 text-green-700 border border-green-200'
+                        : 'bg-red-50 text-red-700 border border-red-200'
                     }`}>
                       {notifyMsg.ok ? <CheckCircle className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
                       {notifyMsg.text}
@@ -434,7 +434,7 @@ export function AppUpdateManagement() {
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-10">
-                <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mb-3">
+                <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mb-3">
                   {platform === 'ANDROID' ? <Smartphone className="h-8 w-8 text-muted-foreground" /> : <Tablet className="h-8 w-8 text-muted-foreground" />}
                 </div>
                 <p className="font-medium text-foreground mb-1">No update found</p>
@@ -450,8 +450,8 @@ export function AppUpdateManagement() {
         {/* History header */}
         <div className="px-5 py-4 border-b border-border bg-muted/30 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="p-1.5 bg-gradient-to-br from-slate-500 to-slate-700 rounded-lg">
-              <Clock className="h-4 w-4 text-white" />
+            <div className="p-1.5 bg-blue-50 rounded-md">
+              <Clock className="h-4 w-4 text-blue-600" />
             </div>
             <div>
               <p className="font-semibold text-foreground text-base">Update History</p>
@@ -461,7 +461,7 @@ export function AppUpdateManagement() {
           <button
             onClick={() => loadHistory(page)}
             disabled={historyLoading}
-            className="p-2 rounded-lg hover:bg-muted transition-colors"
+            className="p-2 rounded-md hover:bg-gray-100 transition-colors"
           >
             <RefreshCw className={`h-4 w-4 text-muted-foreground ${historyLoading ? 'animate-spin' : ''}`} />
           </button>
@@ -475,7 +475,7 @@ export function AppUpdateManagement() {
             </div>
           ) : history.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-14 px-4">
-              <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mb-3">
+              <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mb-3">
                 <Clock className="h-8 w-8 text-muted-foreground" />
               </div>
               <p className="font-medium text-foreground mb-1">No History Found</p>
@@ -486,22 +486,22 @@ export function AppUpdateManagement() {
               {/* ── Mobile: beautiful cards ──────────────────── */}
               <div className="flex flex-col gap-3 p-4 md:hidden">
                 {history.map((item) => {
-                  const accentClass = item.isActive ? 'border-l-emerald-500' : 'border-l-border';
+                  const accentClass = item.isActive ? 'border-l-green-500' : 'border-l-gray-200';
                   const avatarGradient = item.type === 'CRITICAL'
-                    ? 'from-red-500 to-rose-600'
+                    ? 'bg-red-50 text-red-700'
                     : platform === 'ANDROID'
-                    ? 'from-emerald-500 to-teal-600'
-                    : 'from-blue-500 to-indigo-600';
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'bg-blue-50 text-blue-700';
 
                   return (
                     <div
                       key={item.id}
-                      className={`rounded-xl border border-border border-l-4 ${accentClass} bg-card shadow-sm overflow-hidden`}
+                      className={`rounded-lg border border-gray-200 border-l-4 ${accentClass} bg-white shadow-sm overflow-hidden`}
                     >
                       {/* Card header */}
                       <div className="flex items-start gap-3 p-4 pb-3">
-                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${avatarGradient} flex items-center justify-center shrink-0 shadow-sm`}>
-                          <span className="text-white font-bold text-sm leading-none">v{item.versionCode}</span>
+                        <div className={`w-12 h-12 rounded-md ${avatarGradient} flex items-center justify-center shrink-0`}>
+                          <span className="font-semibold text-sm leading-none">v{item.versionCode}</span>
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-wrap items-center gap-1.5">
@@ -564,7 +564,7 @@ export function AppUpdateManagement() {
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-border bg-muted/40">
+                    <tr className="border-b border-gray-200 bg-gray-50">
                       <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Version</th>
                       <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</th>
                       <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
@@ -576,17 +576,17 @@ export function AppUpdateManagement() {
                   </thead>
                   <tbody className="divide-y divide-border">
                     {history.map((item) => (
-                      <tr key={item.id} className="group hover:bg-muted/40 transition-colors">
+                      <tr key={item.id} className="group hover:bg-gray-50 transition-colors">
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-2.5">
-                            <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${
+                            <div className={`w-9 h-9 rounded-md ${
                               item.type === 'CRITICAL'
-                                ? 'from-red-500 to-rose-600'
+                                ? 'bg-red-50 text-red-700'
                                 : platform === 'ANDROID'
-                                ? 'from-emerald-500 to-teal-600'
-                                : 'from-blue-500 to-indigo-600'
+                                ? 'bg-blue-50 text-blue-700'
+                                : 'bg-blue-50 text-blue-700'
                             } flex items-center justify-center shrink-0`}>
-                              <span className="text-white font-bold text-xs">v{item.versionCode}</span>
+                              <span className="font-semibold text-xs">v{item.versionCode}</span>
                             </div>
                             <span className="font-semibold text-foreground">v{item.versionCode}</span>
                           </div>
@@ -604,7 +604,7 @@ export function AppUpdateManagement() {
                           <button
                             onClick={() => handleDownload(item)}
                             disabled={downloadingId === item.id}
-                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg hover:bg-primary/10 text-primary transition-colors disabled:opacity-50"
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-blue-50 text-primary transition-colors disabled:opacity-50"
                             title="Download"
                           >
                             {downloadingId === item.id

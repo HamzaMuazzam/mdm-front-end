@@ -60,10 +60,10 @@ export function ForgotPasswordPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 sm:px-0 p-4">
-        <Card className="w-full max-w-md mx-auto">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 sm:px-0 p-4">
+        <Card className="w-full max-w-md mx-auto bg-white border border-gray-200 rounded-lg shadow-sm">
           <CardHeader className="text-center px-6 sm:px-8 pt-6 sm:pt-8">
-            <CardTitle className="text-xl sm:text-2xl text-success">Password Reset Successful!</CardTitle>
+            <CardTitle className="text-xl font-semibold text-green-700">Password Reset Successful!</CardTitle>
             <CardDescription>Redirecting to login...</CardDescription>
           </CardHeader>
         </Card>
@@ -72,10 +72,10 @@ export function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 sm:px-0 p-4">
-      <Card className="w-full max-w-md mx-auto">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 sm:px-0 p-4">
+      <Card className="w-full max-w-md mx-auto bg-white border border-gray-200 rounded-lg shadow-sm">
         <CardHeader className="text-center px-6 sm:px-8 pt-6 sm:pt-8">
-          <CardTitle className="text-xl sm:text-2xl">Reset Password</CardTitle>
+          <CardTitle className="text-xl font-semibold text-gray-900">Reset Password</CardTitle>
           <CardDescription>
             {step === 1 ? 'Enter your email to receive OTP' : 'Enter OTP and new password'}
           </CardDescription>
@@ -84,7 +84,7 @@ export function ForgotPasswordPage() {
           {step === 1 ? (
             <form onSubmit={form1.handleSubmit(onSendOtp)} className="space-y-4">
               {error && (
-                <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md text-center">
+                <div className="p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md text-center">
                   {error}
                 </div>
               )}
@@ -102,7 +102,7 @@ export function ForgotPasswordPage() {
               </Button>
 
               <div className="text-center text-sm">
-                <Link to={ROUTES.LOGIN} className="text-primary hover:underline">
+                <Link to={ROUTES.LOGIN} className="text-sm text-blue-600 hover:text-blue-700 hover:underline">
                   Back to Login
                 </Link>
               </div>
@@ -110,7 +110,7 @@ export function ForgotPasswordPage() {
           ) : (
             <form onSubmit={form2.handleSubmit(onResetPassword)} className="space-y-4">
               {error && (
-                <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md text-center">
+                <div className="p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md text-center">
                   {error}
                 </div>
               )}

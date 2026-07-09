@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDeviceAnalyticsQuery } from '@/hooks/useDevices';
 import type { DashboardPlanAnalytics, DashboardTrendPoint } from '@/types/device.types';
+import { IntegrityFleetCard } from './IntegrityFleetCard';
 
 const numberFormatter = new Intl.NumberFormat('en-US');
 const percentFormatter = new Intl.NumberFormat('en-US', {
@@ -49,14 +50,14 @@ interface MetricCardProps {
 
 function MetricCard({ title, value, description, icon }: MetricCardProps) {
   return (
-    <Card className="border-0 bg-white/85 shadow-lg backdrop-blur-sm">
+    <Card className="bg-white border border-gray-200 rounded-lg shadow-sm">
       <CardHeader className="pb-2">
-        <CardDescription className="text-slate-600">{title}</CardDescription>
-        <CardTitle className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900">{value}</CardTitle>
+        <CardDescription className="text-xs text-gray-500">{title}</CardDescription>
+        <CardTitle className="text-2xl font-semibold text-gray-900">{value}</CardTitle>
       </CardHeader>
       <CardContent className="flex items-center justify-between pt-2">
-        <p className="text-sm text-slate-500">{description}</p>
-        <div className="rounded-xl bg-slate-100 p-2 text-slate-700">{icon}</div>
+        <p className="text-xs text-gray-500">{description}</p>
+        <div className="rounded-md bg-blue-50 p-2 text-blue-600">{icon}</div>
       </CardContent>
     </Card>
   );
@@ -73,9 +74,9 @@ function RingChart({ label, value, color, helperText }: RingChartProps) {
   const clampedValue = clampPercentage(value);
 
   return (
-    <Card className="border-0 bg-white/85 shadow-lg backdrop-blur-sm">
+    <Card className="bg-white border border-gray-200 rounded-lg shadow-sm">
       <CardHeader>
-        <CardDescription className="text-slate-600">{label}</CardDescription>
+        <CardDescription className="text-xs text-gray-500">{label}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col items-center gap-4">
         <div
@@ -84,14 +85,14 @@ function RingChart({ label, value, color, helperText }: RingChartProps) {
             background: `conic-gradient(${color} 0 ${clampedValue}%, #e2e8f0 ${clampedValue}% 100%)`,
           }}
         >
-          <div className="absolute inset-4 flex items-center justify-center rounded-full bg-white text-center shadow-inner">
+          <div className="absolute inset-4 flex items-center justify-center rounded-full bg-white text-center">
             <div>
-              <p className="text-3xl font-bold text-slate-900">{percentFormatter.format(clampedValue)}%</p>
-              <p className="text-xs uppercase tracking-wide text-slate-500">Current</p>
+              <p className="text-2xl font-semibold text-gray-900">{percentFormatter.format(clampedValue)}%</p>
+              <p className="text-xs uppercase tracking-wide text-gray-500">Current</p>
             </div>
           </div>
         </div>
-        <p className="text-sm text-slate-500">{helperText}</p>
+        <p className="text-sm text-gray-600">{helperText}</p>
       </CardContent>
     </Card>
   );
@@ -113,13 +114,13 @@ function StackedBarCard({ title, description, segments }: StackedBarProps) {
   const total = segments.reduce((sum, segment) => sum + segment.value, 0);
 
   return (
-    <Card className="border-0 bg-white/85 shadow-lg backdrop-blur-sm">
+    <Card className="bg-white border border-gray-200 rounded-lg shadow-sm">
       <CardHeader>
-        <CardTitle className="text-xl text-slate-900">{title}</CardTitle>
-        <CardDescription className="text-slate-600">{description}</CardDescription>
+        <CardTitle className="text-base font-semibold text-gray-900">{title}</CardTitle>
+        <CardDescription className="text-sm text-gray-500">{description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
-        <div className="h-4 overflow-hidden rounded-full bg-slate-200">
+        <div className="h-4 overflow-hidden rounded-full bg-gray-200">
           {total > 0 ? (
             <div className="flex h-full w-full">
               {segments.map((segment) => (
@@ -133,7 +134,7 @@ function StackedBarCard({ title, description, segments }: StackedBarProps) {
               ))}
             </div>
           ) : (
-            <div className="h-full w-full bg-slate-300" />
+            <div className="h-full w-full bg-gray-300" />
           )}
         </div>
 
@@ -142,12 +143,12 @@ function StackedBarCard({ title, description, segments }: StackedBarProps) {
             const percent = total > 0 ? (segment.value / total) * 100 : 0;
 
             return (
-              <div key={segment.label} className="flex items-center justify-between rounded-lg bg-slate-50 p-3">
+              <div key={segment.label} className="flex items-center justify-between rounded-md bg-gray-50 border border-gray-200 p-3">
                 <div className="flex items-center gap-2">
                   <span className="h-3 w-3 rounded-full" style={{ backgroundColor: segment.color }} />
-                  <p className="text-sm font-medium text-slate-700">{segment.label}</p>
+                  <p className="text-sm font-medium text-gray-600">{segment.label}</p>
                 </div>
-                <p className="text-sm font-semibold text-slate-900">
+                <p className="text-sm font-semibold text-gray-900">
                   {numberFormatter.format(segment.value)} ({percentFormatter.format(percent)}%)
                 </p>
               </div>
@@ -170,13 +171,13 @@ interface TrendChartProps {
 function TrendChart({ title, description, points, strokeColor, gradientStart }: TrendChartProps) {
   if (points.length === 0) {
     return (
-      <Card className="border-0 bg-white/85 shadow-lg backdrop-blur-sm">
+      <Card className="bg-white border border-gray-200 rounded-lg shadow-sm">
         <CardHeader>
-          <CardTitle className="text-xl text-slate-900">{title}</CardTitle>
-          <CardDescription className="text-slate-600">{description}</CardDescription>
+          <CardTitle className="text-base font-semibold text-gray-900">{title}</CardTitle>
+          <CardDescription className="text-sm text-gray-500">{description}</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">
+          <p className="rounded-lg border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">
             No trend data available for this period.
           </p>
         </CardContent>
@@ -206,13 +207,13 @@ function TrendChart({ title, description, points, strokeColor, gradientStart }: 
   const gradientId = `${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-gradient`;
 
   return (
-    <Card className="border-0 bg-white/85 shadow-lg backdrop-blur-sm">
+    <Card className="bg-white border border-gray-200 rounded-lg shadow-sm">
       <CardHeader>
-        <CardTitle className="text-xl text-slate-900">{title}</CardTitle>
-        <CardDescription className="text-slate-600">{description}</CardDescription>
+        <CardTitle className="text-base font-semibold text-gray-900">{title}</CardTitle>
+        <CardDescription className="text-sm text-gray-500">{description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="rounded-lg border border-slate-200 bg-white p-3">
+        <div className="rounded-lg border border-gray-200 bg-white p-3">
           <svg viewBox={`0 0 ${width} ${height}`} className="h-60 w-full">
             <defs>
               <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -244,7 +245,7 @@ function TrendChart({ title, description, points, strokeColor, gradientStart }: 
           </svg>
         </div>
 
-        <div className="grid gap-2 text-xs text-slate-500" style={{ gridTemplateColumns: `repeat(${points.length}, minmax(0, 1fr))` }}>
+        <div className="grid gap-2 text-xs text-gray-500" style={{ gridTemplateColumns: `repeat(${points.length}, minmax(0, 1fr))` }}>
           {points.map((point) => (
             <p key={`${title}-${point.date}`} className="text-center">
               {formatDateLabel(point.date)}
@@ -262,31 +263,31 @@ interface PlanAnalyticsCardProps {
 
 function PlanAnalyticsCard({ plan }: PlanAnalyticsCardProps) {
   return (
-    <Card className="border-0 bg-white/85 shadow-lg backdrop-blur-sm">
+    <Card className="bg-white border border-gray-200 rounded-lg shadow-sm">
       <CardHeader>
-        <CardTitle className="text-xl text-slate-900">Plan Analytics</CardTitle>
-        <CardDescription className="text-slate-600">Overview of subscription plans across your organization</CardDescription>
+        <CardTitle className="text-base font-semibold text-gray-900">Plan Analytics</CardTitle>
+        <CardDescription className="text-sm text-gray-500">Overview of subscription plans across your organization</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <div className="rounded-lg bg-slate-50 p-3">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Total Bought</p>
-          <p className="mt-1 text-2xl font-bold text-slate-900">{numberFormatter.format(plan.totalPlansBought)}</p>
+        <div className="rounded-md bg-gray-50 border border-gray-200 p-3">
+          <p className="text-xs uppercase tracking-wide text-gray-500">Total Bought</p>
+          <p className="mt-1 text-2xl font-semibold text-gray-900">{numberFormatter.format(plan.totalPlansBought)}</p>
         </div>
-        <div className="rounded-lg bg-emerald-50 p-3">
-          <p className="text-xs uppercase tracking-wide text-emerald-700">Active</p>
-          <p className="mt-1 text-2xl font-bold text-emerald-900">{numberFormatter.format(plan.activePlans)}</p>
+        <div className="rounded-md bg-gray-50 border border-gray-200 p-3">
+          <p className="text-xs uppercase tracking-wide text-gray-500">Active</p>
+          <p className="mt-1 text-2xl font-semibold text-gray-900">{numberFormatter.format(plan.activePlans)}</p>
         </div>
-        <div className="rounded-lg bg-rose-50 p-3">
-          <p className="text-xs uppercase tracking-wide text-rose-700">Expired</p>
-          <p className="mt-1 text-2xl font-bold text-rose-900">{numberFormatter.format(plan.expiredPlans)}</p>
+        <div className="rounded-md bg-gray-50 border border-gray-200 p-3">
+          <p className="text-xs uppercase tracking-wide text-gray-500">Expired</p>
+          <p className="mt-1 text-2xl font-semibold text-gray-900">{numberFormatter.format(plan.expiredPlans)}</p>
         </div>
-        <div className="rounded-lg bg-amber-50 p-3">
-          <p className="text-xs uppercase tracking-wide text-amber-700">Expiring This Week</p>
-          <p className="mt-1 text-2xl font-bold text-amber-900">{numberFormatter.format(plan.expiringThisWeek)}</p>
+        <div className="rounded-md bg-gray-50 border border-gray-200 p-3">
+          <p className="text-xs uppercase tracking-wide text-gray-500">Expiring This Week</p>
+          <p className="mt-1 text-2xl font-semibold text-gray-900">{numberFormatter.format(plan.expiringThisWeek)}</p>
         </div>
-        <div className="rounded-lg bg-orange-50 p-3">
-          <p className="text-xs uppercase tracking-wide text-orange-700">Expiring This Month</p>
-          <p className="mt-1 text-2xl font-bold text-orange-900">{numberFormatter.format(plan.expiringThisMonth)}</p>
+        <div className="rounded-md bg-gray-50 border border-gray-200 p-3">
+          <p className="text-xs uppercase tracking-wide text-gray-500">Expiring This Month</p>
+          <p className="mt-1 text-2xl font-semibold text-gray-900">{numberFormatter.format(plan.expiringThisMonth)}</p>
         </div>
       </CardContent>
     </Card>
@@ -296,13 +297,13 @@ function PlanAnalyticsCard({ plan }: PlanAnalyticsCardProps) {
 function AnalyticsSkeleton() {
   return (
     <div className="space-y-6">
-      <Card className="border-0 bg-slate-200/70">
+      <Card className="bg-gray-100 border border-gray-200 rounded-lg">
         <CardContent className="h-40 animate-pulse" />
       </Card>
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
         {Array.from({ length: 6 }).map((_, index) => (
-          <Card key={index} className="border-0 bg-slate-200/70">
+          <Card key={index} className="bg-gray-100 border border-gray-200 rounded-lg">
             <CardContent className="h-28 animate-pulse" />
           </Card>
         ))}
@@ -310,7 +311,7 @@ function AnalyticsSkeleton() {
 
       <div className="grid gap-6 xl:grid-cols-2">
         {Array.from({ length: 4 }).map((_, index) => (
-          <Card key={index} className="border-0 bg-slate-200/70">
+          <Card key={index} className="bg-gray-100 border border-gray-200 rounded-lg">
             <CardContent className="h-72 animate-pulse" />
           </Card>
         ))}
@@ -330,13 +331,13 @@ export function AnalyticsDashboard() {
     const errorMessage = error instanceof Error ? error.message : 'Unable to load analytics data.';
 
     return (
-      <Card className="border-0 bg-white/85 shadow-lg">
+      <Card className="bg-white border border-gray-200 rounded-lg shadow-sm">
         <CardHeader>
-          <CardTitle className="text-2xl text-slate-900">Analytics Dashboard</CardTitle>
-          <CardDescription className="text-slate-600">The analytics request failed. Retry after checking API reachability.</CardDescription>
+          <CardTitle className="text-xl font-semibold text-gray-900">Analytics Dashboard</CardTitle>
+          <CardDescription className="text-sm text-gray-500">The analytics request failed. Retry after checking API reachability.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-start gap-4">
-          <p className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{errorMessage}</p>
+          <p className="rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">{errorMessage}</p>
           <Button onClick={() => refetch()}>
             <RefreshCw className="mr-2 h-4 w-4" />
             Retry
@@ -356,20 +357,20 @@ export function AnalyticsDashboard() {
 
   return (
     <div className="space-y-6">
-      <Card className="overflow-hidden border-0 shadow-xl">
-        <div className="relative bg-gradient-to-br from-slate-900 via-blue-900 to-cyan-700 px-6 py-7 text-white">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.28),transparent_42%)]" />
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.08),transparent_50%)]" />
+      <Card className="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm">
+        <div className="relative bg-white px-6 py-7">
+          <div className="pointer-events-none absolute inset-0 hidden" />
+          <div className="pointer-events-none absolute inset-0 hidden" />
           <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="space-y-2">
-              <p className="text-sm uppercase tracking-[0.18em] text-cyan-100">Device Analytics</p>
-              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold">Operations Pulse</h2>
-              <p className="text-sm text-cyan-100">Generated at {formatDateTime(generatedAt)}</p>
+              <p className="text-xs uppercase tracking-wide text-gray-500">Device Analytics</p>
+              <h2 className="text-xl font-semibold text-gray-900">Operations Pulse</h2>
+              <p className="text-sm text-gray-600">Generated at {formatDateTime(generatedAt)}</p>
             </div>
 
             <Button
               variant="outline"
-              className="border-white/40 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+              className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900"
               onClick={() => refetch()}
               disabled={isFetching}
             >
@@ -419,6 +420,7 @@ export function AnalyticsDashboard() {
             icon={<CalendarClock className="h-5 w-5" />}
           />
         )}
+        <IntegrityFleetCard />
       </div>
 
       <div className={`grid gap-4 sm:gap-6 ${hasSubscription ? 'grid-cols-1 lg:grid-cols-3' : 'grid-cols-1'}`}>
@@ -426,39 +428,39 @@ export function AnalyticsDashboard() {
           <RingChart
             label="Subscription Utilization"
             value={subscription!.utilizationPercent}
-            color="#1d4ed8"
+            color="#2563eb"
             helperText={`${numberFormatter.format(subscription!.devicesInUse)} devices currently assigned`}
           />
         )}
         <RingChart
           label="Connectivity Ratio"
           value={connectivity.onlinePercent}
-          color="#0891b2"
+          color="#0ea5e9"
           helperText={`${numberFormatter.format(connectivity.onlineDevices)} online out of ${numberFormatter.format(devices.totalDevicesAdded)}`}
         />
         {hasSubscription && (
-          <Card className="border-0 bg-white/85 shadow-lg backdrop-blur-sm">
+          <Card className="bg-white border border-gray-200 rounded-lg shadow-sm">
             <CardHeader>
-              <CardTitle className="text-xl text-slate-900">Subscription Snapshot</CardTitle>
-              <CardDescription className="text-slate-600">Current package and capacity details</CardDescription>
+              <CardTitle className="text-base font-semibold text-gray-900">Subscription Snapshot</CardTitle>
+              <CardDescription className="text-sm text-gray-500">Current package and capacity details</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
-              <div className="rounded-lg bg-slate-50 p-3">
-                <p className="text-xs uppercase tracking-wide text-slate-500">Package</p>
-                <p className="mt-1 text-base font-semibold text-slate-900">{subscription!.subscriptionName}</p>
+              <div className="rounded-md bg-gray-50 border border-gray-200 p-3">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Package</p>
+                <p className="mt-1 text-base font-semibold text-gray-900">{subscription!.subscriptionName}</p>
               </div>
-              <div className="rounded-lg bg-slate-50 p-3">
-                <p className="text-xs uppercase tracking-wide text-slate-500">Expires</p>
-                <p className="mt-1 text-base font-semibold text-slate-900">{formatDateTime(subscription!.packageExpiryDate)}</p>
+              <div className="rounded-md bg-gray-50 border border-gray-200 p-3">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Expires</p>
+                <p className="mt-1 text-base font-semibold text-gray-900">{formatDateTime(subscription!.packageExpiryDate)}</p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-lg bg-emerald-50 p-3">
-                  <p className="text-xs uppercase tracking-wide text-emerald-700">In Use</p>
-                  <p className="mt-1 text-lg font-bold text-emerald-900">{numberFormatter.format(subscription!.devicesInUse)}</p>
+                <div className="rounded-md bg-gray-50 border border-gray-200 p-3">
+                  <p className="text-xs uppercase tracking-wide text-gray-500">In Use</p>
+                  <p className="mt-1 text-lg font-semibold text-gray-900">{numberFormatter.format(subscription!.devicesInUse)}</p>
                 </div>
-                <div className="rounded-lg bg-blue-50 p-3">
+                <div className="rounded-md bg-blue-50 border border-blue-200 p-3">
                   <p className="text-xs uppercase tracking-wide text-blue-700">Available</p>
-                  <p className="mt-1 text-lg font-bold text-blue-900">{numberFormatter.format(subscription!.devicesRemaining)}</p>
+                  <p className="mt-1 text-lg font-semibold text-blue-900">{numberFormatter.format(subscription!.devicesRemaining)}</p>
                 </div>
               </div>
             </CardContent>
@@ -474,14 +476,14 @@ export function AnalyticsDashboard() {
           description="Daily count of newly enrolled devices"
           points={enrollmentTrendLast7Days}
           strokeColor="#2563eb"
-          gradientStart="#60a5fa"
+          gradientStart="#2563eb"
         />
         <TrendChart
           title="Sync Trend (Last 7 Days)"
           description="Daily count of devices synced"
           points={syncTrendLast7Days}
-          strokeColor="#0f766e"
-          gradientStart="#2dd4bf"
+          strokeColor="#0ea5e9"
+          gradientStart="#0ea5e9"
         />
       </div>
 
@@ -490,21 +492,21 @@ export function AnalyticsDashboard() {
           title="Device State Distribution"
           description="How your current fleet is split by state"
           segments={[
-            { label: 'Active', value: devices.activeDevices, color: '#10b981' },
-            { label: 'Inactive', value: devices.inactiveDevices, color: '#f59e0b' },
+            { label: 'Active', value: devices.activeDevices, color: '#16a34a' },
+            { label: 'Inactive', value: devices.inactiveDevices, color: '#d97706' },
             { label: 'Verified', value: devices.verifiedDevices, color: '#0ea5e9' },
-            { label: 'Unverified', value: devices.unverifiedDevices, color: '#ef4444' },
+            { label: 'Unverified', value: devices.unverifiedDevices, color: '#dc2626' },
           ]}
         />
         <StackedBarCard
           title="Connectivity & Sync Health"
           description="Operational view of online and sync quality"
           segments={[
-            { label: 'Online', value: connectivity.onlineDevices, color: '#22c55e' },
+            { label: 'Online', value: connectivity.onlineDevices, color: '#16a34a' },
             { label: 'Offline', value: connectivity.offlineDevices, color: '#64748b' },
-            { label: 'Synced (24h)', value: sync.syncedInLast24Hours, color: '#06b6d4' },
-            { label: 'Never Synced', value: sync.neverSyncedDevices, color: '#f97316' },
-            { label: 'Stale Sync', value: sync.staleSyncDevices, color: '#ef4444' },
+            { label: 'Synced (24h)', value: sync.syncedInLast24Hours, color: '#0ea5e9' },
+            { label: 'Never Synced', value: sync.neverSyncedDevices, color: '#d97706' },
+            { label: 'Stale Sync', value: sync.staleSyncDevices, color: '#dc2626' },
           ]}
         />
       </div>
@@ -518,29 +520,29 @@ export function AnalyticsDashboard() {
             { label: 'Inactive Users', value: users.inactiveUsers, color: '#dc2626' },
           ]}
         />
-        <Card className="border-0 bg-white/85 shadow-lg backdrop-blur-sm">
+        <Card className="bg-white border border-gray-200 rounded-lg shadow-sm">
           <CardHeader>
-            <CardTitle className="text-xl text-slate-900">User Snapshot</CardTitle>
-            <CardDescription className="text-slate-600">Current user counts from analytics service</CardDescription>
+            <CardTitle className="text-base font-semibold text-gray-900">User Snapshot</CardTitle>
+            <CardDescription className="text-sm text-gray-500">Current user counts from analytics service</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-lg bg-slate-50 p-3">
-              <p className="text-xs uppercase tracking-wide text-slate-500">Total</p>
-              <p className="mt-2 flex items-center gap-2 text-xl font-bold text-slate-900">
+            <div className="rounded-md bg-gray-50 border border-gray-200 p-3">
+              <p className="text-xs uppercase tracking-wide text-gray-500">Total</p>
+              <p className="mt-2 flex items-center gap-2 text-xl font-semibold text-gray-900">
                 <UserRound className="h-4 w-4" />
                 {numberFormatter.format(users.totalUsersAdded)}
               </p>
             </div>
-            <div className="rounded-lg bg-emerald-50 p-3">
-              <p className="text-xs uppercase tracking-wide text-emerald-700">Active</p>
-              <p className="mt-2 flex items-center gap-2 text-xl font-bold text-emerald-900">
+            <div className="rounded-md bg-gray-50 border border-gray-200 p-3">
+              <p className="text-xs uppercase tracking-wide text-gray-500">Active</p>
+              <p className="mt-2 flex items-center gap-2 text-xl font-semibold text-gray-900">
                 <UserCheck className="h-4 w-4" />
                 {numberFormatter.format(users.activeUsers)}
               </p>
             </div>
-            <div className="rounded-lg bg-rose-50 p-3">
-              <p className="text-xs uppercase tracking-wide text-rose-700">Inactive</p>
-              <p className="mt-2 flex items-center gap-2 text-xl font-bold text-rose-900">
+            <div className="rounded-md bg-gray-50 border border-gray-200 p-3">
+              <p className="text-xs uppercase tracking-wide text-gray-500">Inactive</p>
+              <p className="mt-2 flex items-center gap-2 text-xl font-semibold text-gray-900">
                 <UserX className="h-4 w-4" />
                 {numberFormatter.format(users.inactiveUsers)}
               </p>

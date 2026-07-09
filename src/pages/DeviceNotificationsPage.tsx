@@ -96,10 +96,10 @@ export function DeviceNotificationsPage() {
   if (!device || !numericDeviceId) {
     return (
       <div className="min-h-screen bg-background p-4 sm:p-8">
-        <Card className="mx-auto max-w-2xl border border-destructive/20 bg-destructive/10">
+        <Card className="mx-auto max-w-2xl border border-red-200 bg-red-50 rounded-lg shadow-sm">
           <CardContent className="p-6">
-            <h2 className="text-xl font-semibold text-destructive">Device not found</h2>
-            <p className="mt-2 text-sm text-destructive/80">The selected device could not be loaded.</p>
+            <h2 className="text-xl font-semibold text-red-700">Device not found</h2>
+            <p className="mt-2 text-sm text-red-700">The selected device could not be loaded.</p>
             <Button className="mt-4" onClick={handleBack}>
               Back To Devices
             </Button>
@@ -111,7 +111,7 @@ export function DeviceNotificationsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-20 border-b border-border bg-background/80 backdrop-blur-md">
+      <header className="sticky top-0 z-20 border-b border-gray-200 bg-white">
         <div className="px-4 sm:px-6">
           <div className="flex items-center justify-between gap-3 h-12 sm:h-14">
             <nav className="flex items-center space-x-2 text-sm min-w-0">
@@ -152,7 +152,7 @@ export function DeviceNotificationsPage() {
             <Input type="date" value={to} onChange={(event) => setTo(event.target.value)} className="flex-1 min-w-[130px] sm:flex-none sm:w-[180px]" />
             <div className="relative flex-1 min-w-[130px] sm:flex-none sm:w-[160px]">
               <select
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                className="flex h-9 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 value={priority}
                 onChange={(event) => setPriority(event.target.value as NotificationPriority | 'ALL')}
               >
@@ -171,7 +171,7 @@ export function DeviceNotificationsPage() {
               className="flex-1 min-w-[180px]"
             />
             <select
-              className="flex-1 min-w-[90px] sm:flex-none sm:w-[120px] flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              className="flex-1 min-w-[90px] sm:flex-none sm:w-[120px] flex h-9 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               value={size}
               onChange={(event) => setSize(Number(event.target.value))}
             >
@@ -186,16 +186,16 @@ export function DeviceNotificationsPage() {
 
       <main className="px-4 py-8 sm:px-6 pb-10">
         <div className="mb-6 flex items-center gap-4">
-          <div className="rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 p-3 shadow-lg shadow-orange-500/25">
-            <Bell className="h-8 w-8 text-white" />
+          <div className="rounded-md bg-blue-50 p-3">
+            <Bell className="h-8 w-8 text-blue-600" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Notification History</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Full captured notifications for this device.</p>
+            <h1 className="text-xl font-semibold text-gray-900">Notification History</h1>
+            <p className="mt-1 text-sm text-gray-600">Full captured notifications for this device.</p>
           </div>
         </div>
 
-        <Card className="shadow-md">
+        <Card className="bg-white border border-gray-200 rounded-lg shadow-sm">
           <CardHeader>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <CardTitle className="text-lg">Notifications</CardTitle>
@@ -232,18 +232,18 @@ export function DeviceNotificationsPage() {
                 </div>
                 <div className="hidden sm:block overflow-x-auto">
                   <table className="w-full">
-                    <thead className="bg-muted/50">
+                    <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-4 py-3 text-left text-sm font-medium">App</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium">Title</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium">Message</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium">Priority</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium">Time</th>
+                        <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-gray-500 font-medium">App</th>
+                        <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-gray-500 font-medium">Title</th>
+                        <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-gray-500 font-medium">Message</th>
+                        <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-gray-500 font-medium">Priority</th>
+                        <th className="px-4 py-3 text-left text-xs uppercase tracking-wide text-gray-500 font-medium">Time</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border">
+                    <tbody className="divide-y divide-gray-100">
                       {notifications.map((item) => (
-                        <tr key={item.id} className="hover:bg-muted/40">
+                        <tr key={item.id} className="hover:bg-gray-50">
                           <td className="px-4 py-3 text-sm">
                             <p className="font-medium text-foreground">{item.appName || 'Unknown'}</p>
                             <p className="text-xs font-mono text-muted-foreground">{item.packageName}</p>
@@ -251,7 +251,7 @@ export function DeviceNotificationsPage() {
                           <td className="px-4 py-3 text-sm text-foreground">{item.title || '-'}</td>
                           <td className="px-4 py-3 text-sm text-muted-foreground whitespace-pre-wrap break-words max-w-[480px]">{item.message || '-'}</td>
                           <td className="px-4 py-3 text-sm">
-                            <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-semibold uppercase text-foreground">
+                            <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold uppercase text-gray-700">
                               {item.priority}
                             </span>
                           </td>

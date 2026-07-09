@@ -151,12 +151,12 @@ export function DeviceTimeRangePage() {
   return (
     <div className="min-h-screen bg-page-bg pb-16">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-3 flex items-center gap-3">
-        <button type="button" onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-muted transition-colors">
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3">
+        <button type="button" onClick={() => navigate(-1)} className="p-2 rounded-md hover:bg-gray-100 transition-colors">
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div className="flex-1 min-w-0">
-          <h1 className="font-semibold text-base truncate">Usage Time Range</h1>
+          <h1 className="font-semibold text-base text-gray-900 truncate">Usage Time Range</h1>
           {device && (
             <p className="text-xs text-muted-foreground truncate">
               {(device as { model?: string }).model ?? deviceId}
@@ -167,7 +167,7 @@ export function DeviceTimeRangePage() {
           type="button"
           onClick={handleRefresh}
           disabled={loading}
-          className="p-2 rounded-lg hover:bg-muted transition-colors"
+          className="p-2 rounded-md hover:bg-gray-100 transition-colors"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
         </button>
@@ -177,10 +177,10 @@ export function DeviceTimeRangePage() {
 
         {/* Status banner */}
         {record ? (
-          <div className={`flex items-center gap-3 rounded-xl border px-4 py-3 ${
+          <div className={`flex items-center gap-3 rounded-lg border px-4 py-3 ${
             record.enabled
-              ? 'bg-green-50 border-green-200 text-green-800'
-              : 'bg-amber-50 border-amber-200 text-amber-800'
+              ? 'bg-green-50 border-green-200 text-green-700'
+              : 'bg-amber-50 border-amber-200 text-amber-700'
           }`}>
             {record.enabled
               ? <ShieldCheck className="h-5 w-5 shrink-0" />
@@ -208,7 +208,7 @@ export function DeviceTimeRangePage() {
           </div>
         ) : (
           !loading && (
-            <div className="flex items-center gap-3 rounded-xl border border-dashed border-border px-4 py-3 text-muted-foreground">
+            <div className="flex items-center gap-3 rounded-lg border border-dashed border-gray-300 bg-white px-4 py-3 text-gray-500">
               <Clock className="h-5 w-5 shrink-0" />
               <p className="text-sm">No time range configured. Set one below.</p>
             </div>
@@ -217,21 +217,21 @@ export function DeviceTimeRangePage() {
 
         {/* Toast messages */}
         {successMsg && (
-          <div className="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-green-800 text-sm">
+          <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-700 text-sm">
             <ShieldCheck className="h-4 w-4 shrink-0" />
             {successMsg}
           </div>
         )}
         {error && (
-          <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-800 text-sm">
+          <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">
             <AlertTriangle className="h-4 w-4 shrink-0" />
             {error}
           </div>
         )}
 
         {/* Config form */}
-        <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-          <h2 className="font-medium text-sm flex items-center gap-2">
+        <div className="rounded-lg border border-gray-200 bg-white shadow-sm p-5 space-y-4">
+          <h2 className="font-semibold text-sm text-gray-900 flex items-center gap-2">
             <Clock className="h-4 w-4" /> Configure Time Range
           </h2>
 
@@ -244,7 +244,7 @@ export function DeviceTimeRangePage() {
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full h-9 rounded-md border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
             <div>
@@ -255,7 +255,7 @@ export function DeviceTimeRangePage() {
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full h-9 rounded-md border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
           </div>
@@ -274,7 +274,7 @@ export function DeviceTimeRangePage() {
             <select
               value={timezone}
               onChange={(e) => setTimezone(e.target.value)}
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full h-9 rounded-md border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             >
               {COMMON_TIMEZONES.map((tz) => (
                 <option key={tz} value={tz}>
@@ -291,10 +291,10 @@ export function DeviceTimeRangePage() {
             <button
               type="button"
               onClick={() => setEnabled((v) => !v)}
-              className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+              className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
                 enabled
-                  ? 'border-green-300 bg-green-50 text-green-800 hover:bg-green-100'
-                  : 'border-border bg-muted text-muted-foreground hover:bg-muted/80'
+                  ? 'border-green-200 bg-green-50 text-green-700 hover:bg-green-100'
+                  : 'border-gray-200 bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
               {enabled ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
@@ -310,7 +310,7 @@ export function DeviceTimeRangePage() {
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2.5 text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 rounded-md bg-primary text-white shadow-sm px-4 py-2.5 text-sm font-medium hover:bg-primary-hover disabled:opacity-50 transition-colors"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               {saving ? 'Saving…' : 'Save & Push to Device'}
@@ -321,7 +321,7 @@ export function DeviceTimeRangePage() {
                 type="button"
                 onClick={handleRemove}
                 disabled={removing}
-                className="flex items-center gap-2 rounded-lg border border-red-300 bg-red-50 text-red-700 px-4 py-2.5 text-sm font-medium hover:bg-red-100 disabled:opacity-50 transition-colors"
+                className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 text-red-700 px-4 py-2.5 text-sm font-medium hover:bg-red-100 disabled:opacity-50 transition-colors"
               >
                 {removing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                 {removing ? 'Removing…' : 'Remove'}
@@ -332,9 +332,9 @@ export function DeviceTimeRangePage() {
 
         {/* Audit info */}
         {record && (
-          <div className="rounded-xl border border-border bg-card px-5 py-4 space-y-2">
-            <h2 className="font-medium text-sm">Audit</h2>
-            <div className="grid grid-cols-2 gap-y-1 text-xs text-muted-foreground">
+          <div className="rounded-lg border border-gray-200 bg-white shadow-sm px-5 py-4 space-y-2">
+            <h2 className="font-semibold text-sm text-gray-900">Audit</h2>
+            <div className="grid grid-cols-2 gap-y-1 text-xs text-gray-500">
               <span>Created</span>
               <span className="text-foreground text-right">{fmt(record.createdAt)}</span>
               <span>Last updated</span>
@@ -346,8 +346,8 @@ export function DeviceTimeRangePage() {
         )}
 
         {/* Info card */}
-        <div className="rounded-xl border border-border bg-muted/30 px-5 py-4 space-y-2 text-xs text-muted-foreground">
-          <p className="font-medium text-foreground text-sm">How it works</p>
+        <div className="rounded-lg border border-gray-200 bg-gray-50 px-5 py-4 space-y-2 text-xs text-gray-500">
+          <p className="font-semibold text-gray-900 text-sm">How it works</p>
           <ul className="space-y-1 list-disc list-inside">
             <li>During the allowed window the device PIN is removed and the screen is accessible.</li>
             <li>Outside the allowed window the device is locked with the stored PIN.</li>

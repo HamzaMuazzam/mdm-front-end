@@ -99,6 +99,42 @@ export interface DeviceConfiguration {
   isDeviceAdminCodeEnabled: boolean;
   allowToAccessSensitiveSettings: boolean;
   devicePassword?: string | null;
+  // Root / compromise detection policy
+  rootDetectionEnabled?: boolean;
+  rootDetectionLockOnCompromise?: boolean;
+  rootDetectionWipeOnCompromise?: boolean;
+  rootDetectionMinSeverityForAction?: string;
+  rootDetectionScanIntervalMinutes?: number;
+  // OS Upgrade (System Update) policy
+  systemUpdatePolicyType?: SystemUpdatePolicyType | null;
+  maintenanceWindowStart?: number | null;
+  maintenanceWindowEnd?: number | null;
+  freezePeriodStart?: string | null;
+  freezePeriodEnd?: string | null;
+}
+
+export type SystemUpdatePolicyType = 'AUTOMATIC' | 'WINDOWED' | 'POSTPONED' | 'FREEZE';
+
+/** Payload for the unified per-device / bulk policy apply endpoint. */
+export interface ApplyDevicePolicyRequest {
+  deviceUuids: string[];
+  rootDetectionEnabled?: boolean | null;
+  rootDetectionLockOnCompromise?: boolean | null;
+  rootDetectionWipeOnCompromise?: boolean | null;
+  rootDetectionMinSeverityForAction?: string | null;
+  rootDetectionScanIntervalMinutes?: number | null;
+  systemUpdatePolicyType?: SystemUpdatePolicyType | null;
+  maintenanceWindowStart?: number | null;
+  maintenanceWindowEnd?: number | null;
+  freezePeriodStart?: string | null;
+  freezePeriodEnd?: string | null;
+  clearSystemUpdatePolicy?: boolean;
+}
+
+export interface ApplyPolicyResult {
+  deviceUuid: string;
+  success: boolean;
+  message: string;
 }
 
 export interface DeviceApplication {
@@ -341,4 +377,16 @@ export interface UpdateDeviceConfigurationRequest {
   isDeviceAdminCodeEnabled?: boolean;
   allowToAccessSensitiveSettings?: boolean;
   devicePassword?: string;
+  // Root / compromise detection policy
+  rootDetectionEnabled?: boolean;
+  rootDetectionLockOnCompromise?: boolean;
+  rootDetectionWipeOnCompromise?: boolean;
+  rootDetectionMinSeverityForAction?: string;
+  rootDetectionScanIntervalMinutes?: number;
+  // OS Upgrade (System Update) policy
+  systemUpdatePolicyType?: SystemUpdatePolicyType | null;
+  maintenanceWindowStart?: number | null;
+  maintenanceWindowEnd?: number | null;
+  freezePeriodStart?: string | null;
+  freezePeriodEnd?: string | null;
 }

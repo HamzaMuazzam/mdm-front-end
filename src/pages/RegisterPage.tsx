@@ -47,16 +47,16 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 sm:px-0 p-4">
-      <Card className="w-full max-w-md mx-auto">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 sm:px-0 p-4">
+      <Card className="w-full max-w-md mx-auto bg-white border border-gray-200 rounded-lg shadow-sm">
         <CardHeader className="text-center px-6 sm:px-8 pt-6 sm:pt-8">
-          <CardTitle className="text-2xl sm:text-3xl">Create Account</CardTitle>
+          <CardTitle className="text-xl font-semibold text-gray-900">Create Account</CardTitle>
           <CardDescription>Register for TW MDM Portal</CardDescription>
         </CardHeader>
         <CardContent className="px-6 sm:px-8 pb-6 sm:pb-8">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {error && (
-              <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md text-center">
+              <div className="p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md text-center">
                 {error}
               </div>
             )}
@@ -99,7 +99,7 @@ export function RegisterPage() {
 
             <div className="text-center text-sm">
               Already have an account?{' '}
-              <Link to={ROUTES.LOGIN} className="text-primary hover:underline">
+              <Link to={ROUTES.LOGIN} className="text-sm text-blue-600 hover:text-blue-700 hover:underline">
                 Sign In
               </Link>
             </div>

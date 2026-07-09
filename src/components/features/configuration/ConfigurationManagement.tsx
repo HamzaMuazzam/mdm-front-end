@@ -71,6 +71,16 @@ export function ConfigurationManagement() {
         deviceAdminCode: config.deviceAdminCode || '',
         isDeviceAdminCodeEnabled: config.isDeviceAdminCodeEnabled,
         allowToAccessSensitiveSettings: config.allowToAccessSensitiveSettings,
+        rootDetectionEnabled: config.rootDetectionEnabled ?? true,
+        rootDetectionLockOnCompromise: config.rootDetectionLockOnCompromise ?? true,
+        rootDetectionWipeOnCompromise: config.rootDetectionWipeOnCompromise ?? false,
+        rootDetectionMinSeverityForAction: config.rootDetectionMinSeverityForAction ?? 'CRITICAL',
+        rootDetectionScanIntervalMinutes: config.rootDetectionScanIntervalMinutes ?? 15,
+        systemUpdatePolicyType: config.systemUpdatePolicyType ?? null,
+        maintenanceWindowStart: config.maintenanceWindowStart ?? null,
+        maintenanceWindowEnd: config.maintenanceWindowEnd ?? null,
+        freezePeriodStart: config.freezePeriodStart ?? null,
+        freezePeriodEnd: config.freezePeriodEnd ?? null,
       });
       setIsBackgroundImageEnabled(!!config.backgroundImageUrl);
     }
@@ -165,6 +175,16 @@ export function ConfigurationManagement() {
         deviceAdminCode: config.deviceAdminCode || '',
         isDeviceAdminCodeEnabled: config.isDeviceAdminCodeEnabled,
         allowToAccessSensitiveSettings: config.allowToAccessSensitiveSettings,
+        rootDetectionEnabled: config.rootDetectionEnabled ?? true,
+        rootDetectionLockOnCompromise: config.rootDetectionLockOnCompromise ?? true,
+        rootDetectionWipeOnCompromise: config.rootDetectionWipeOnCompromise ?? false,
+        rootDetectionMinSeverityForAction: config.rootDetectionMinSeverityForAction ?? 'CRITICAL',
+        rootDetectionScanIntervalMinutes: config.rootDetectionScanIntervalMinutes ?? 15,
+        systemUpdatePolicyType: config.systemUpdatePolicyType ?? null,
+        maintenanceWindowStart: config.maintenanceWindowStart ?? null,
+        maintenanceWindowEnd: config.maintenanceWindowEnd ?? null,
+        freezePeriodStart: config.freezePeriodStart ?? null,
+        freezePeriodEnd: config.freezePeriodEnd ?? null,
       });
       setIsBackgroundImageEnabled(!!config.backgroundImageUrl);
     }
@@ -192,10 +212,10 @@ export function ConfigurationManagement() {
         {/* Header */}
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6">
           <div>
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">
+            <h1 className="text-xl font-semibold text-gray-900">
               {activeTab === 'configuration' ? 'Default Configuration' : 'Settings'}
             </h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="text-sm text-gray-600 mt-1">
               {activeTab === 'configuration'
                 ? 'Manage the default parent configuration for all devices'
                 : 'Manage application settings and preferences'}
@@ -230,23 +250,23 @@ export function ConfigurationManagement() {
         </div>
 
 
-        <Card>
-          <CardHeader className="border-b">
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
+        <Card className="bg-white border border-gray-200 rounded-lg shadow-sm">
+          <CardHeader className="border-b border-gray-200">
+            <CardTitle className="flex items-center gap-2 text-base font-semibold text-gray-900">
+              <Settings className="h-5 w-5 text-blue-600" />
               {config.configName}
-              {isEditMode && <span className="text-sm font-normal text-muted-foreground">(Editing)</span>}
+              {isEditMode && <span className="text-sm font-normal text-gray-500">(Editing)</span>}
             </CardTitle>
             {config.description && !isEditMode && (
-              <p className="text-sm text-muted-foreground">{config.description}</p>
+              <p className="text-sm text-gray-500">{config.description}</p>
             )}
           </CardHeader>
           <CardContent className="p-4 sm:p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               {/* General Settings */}
               <div className="space-y-4">
-                <div className="flex items-center gap-2 text-lg font-semibold border-b pb-2">
-                  <Smartphone className="h-5 w-5 text-blue-500" />
+                <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">
+                  <Smartphone className="h-5 w-5 text-blue-600" />
                   General Settings
                 </div>
                 <ConfigEditItem
@@ -283,8 +303,8 @@ export function ConfigurationManagement() {
 
               {/* Connectivity Settings */}
               <div className="space-y-4">
-                <div className="flex items-center gap-2 text-lg font-semibold border-b pb-2">
-                  <Wifi className="h-5 w-5 text-green-500" />
+                <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">
+                  <Wifi className="h-5 w-5 text-blue-600" />
                   Connectivity
                 </div>
                 <ConfigEditItem
@@ -327,8 +347,8 @@ export function ConfigurationManagement() {
 
               {/* Location & Tracking */}
               <div className="space-y-4">
-                <div className="flex items-center gap-2 text-lg font-semibold border-b pb-2">
-                  <MapPin className="h-5 w-5 text-red-500" />
+                <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">
+                  <MapPin className="h-5 w-5 text-blue-600" />
                   Location & Tracking
                 </div>
                 <ConfigEditItem
@@ -360,8 +380,8 @@ export function ConfigurationManagement() {
 
               {/* Notifications */}
               <div className="space-y-4">
-                <div className="flex items-center gap-2 text-lg font-semibold border-b pb-2">
-                  <Bell className="h-5 w-5 text-yellow-500" />
+                <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">
+                  <Bell className="h-5 w-5 text-blue-600" />
                   Notifications
                 </div>
                 <ConfigEditItem
@@ -393,8 +413,8 @@ export function ConfigurationManagement() {
 
               {/* Display Settings */}
               <div className="space-y-4">
-                <div className="flex items-center gap-2 text-lg font-semibold border-b pb-2">
-                  <Monitor className="h-5 w-5 text-purple-500" />
+                <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">
+                  <Monitor className="h-5 w-5 text-blue-600" />
                   Display Settings
                 </div>
                 <ConfigEditItem
@@ -439,11 +459,11 @@ export function ConfigurationManagement() {
                 />
                 
                 {/* Background Image URL */}
-                <div className={`py-2 border-b border-dashed border-muted last:border-0 ${isEditMode ? 'flex justify-between items-center' : 'grid grid-cols-2'}`}>
-                  <span className="text-sm text-muted-foreground flex items-center">Background Image</span>
+                <div className={`py-2 border-b border-dashed border-gray-200 last:border-0 ${isEditMode ? 'flex justify-between items-center' : 'grid grid-cols-2'}`}>
+                  <span className="text-sm text-gray-500 flex items-center">Background Image</span>
                   {!isEditMode ? (
                     <div className="flex items-center justify-end gap-2">
-                       <span className="text-sm font-medium text-right truncate max-w-[200px]">
+                       <span className="text-sm font-medium text-gray-900 text-right truncate max-w-[200px]">
                          {config.backgroundImageUrl ? config.backgroundImageUrl : 'Not Set'}
                        </span>
                        {config.backgroundImageUrl && (
@@ -471,7 +491,7 @@ export function ConfigurationManagement() {
                             }}
                             className="sr-only peer"
                           />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                        </label>
 
                        {isBackgroundImageEnabled && (
@@ -481,7 +501,7 @@ export function ConfigurationManagement() {
                              value={formData.backgroundImageUrl || ''}
                              onChange={(e) => handleInputChange('backgroundImageUrl', e.target.value)}
                              placeholder="Image URL"
-                             className="h-8 w-48 rounded-md border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                             className="h-8 w-48 rounded-md border border-gray-300 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                            />
                            {formData.backgroundImageUrl && (
                              <Button
@@ -528,8 +548,8 @@ export function ConfigurationManagement() {
 
               {/* Security & Controls */}
               <div className="space-y-4">
-                <div className="flex items-center gap-2 text-lg font-semibold border-b pb-2">
-                  <Lock className="h-5 w-5 text-orange-500" />
+                <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">
+                  <Lock className="h-5 w-5 text-blue-600" />
                   Security & Controls
                 </div>
                 <ConfigEditItem
@@ -592,8 +612,8 @@ export function ConfigurationManagement() {
 
               {/* Volume Settings */}
               <div className="space-y-4">
-                <div className="flex items-center gap-2 text-lg font-semibold border-b pb-2">
-                  <Bell className="h-5 w-5 text-pink-500" />
+                <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">
+                  <Bell className="h-5 w-5 text-blue-600" />
                   Volume Settings
                 </div>
                 <ConfigEditItem
@@ -608,9 +628,9 @@ export function ConfigurationManagement() {
                   label="Volume Level"
                   value={
                     <div className="flex items-center gap-2">
-                      <div className="w-32 bg-gray-200 rounded-full h-2 dark:bg-gray-700">
+                      <div className="w-32 bg-gray-200 rounded-full h-2">
                         <div
-                          className="bg-primary h-2 rounded-full"
+                          className="bg-blue-600 h-2 rounded-full"
                           style={{ width: `${config.volumePercentage}%` }}
                         />
                       </div>
@@ -626,8 +646,8 @@ export function ConfigurationManagement() {
 
               {/* Permissions */}
               <div className="space-y-4 md:col-span-2">
-                <div className="flex items-center gap-2 text-lg font-semibold border-b pb-2">
-                  <Lock className="h-5 w-5 text-indigo-500" />
+                <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">
+                  <Lock className="h-5 w-5 text-blue-600" />
                   Application Permissions
                 </div>
                 <ConfigEditItem
@@ -638,6 +658,115 @@ export function ConfigurationManagement() {
                   onChange={(v) => handleInputChange('applicationPermissionGranterTypeId', parseInt(v))}
                   type="select"
                   options={permissionGranters.map(granter => ({ value: granter.id.toString(), label: granter.title }))}
+                />
+              </div>
+
+              {/* Root / Compromise Detection Policy */}
+              <div className="space-y-4 md:col-span-2">
+                <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">
+                  <Lock className="h-5 w-5 text-blue-600" />
+                  Root / Compromise Detection
+                </div>
+                <ConfigEditItem
+                  label="Enable Root / Compromise Detection"
+                  value={<BooleanBadge value={config.rootDetectionEnabled ?? true} />}
+                  editValue={formData.rootDetectionEnabled}
+                  isEditMode={isEditMode}
+                  onChange={(v) => handleInputChange('rootDetectionEnabled', v)}
+                  type="checkbox"
+                />
+                <ConfigEditItem
+                  label="Lock Device on Compromise"
+                  value={<BooleanBadge value={config.rootDetectionLockOnCompromise ?? true} />}
+                  editValue={formData.rootDetectionLockOnCompromise}
+                  isEditMode={isEditMode}
+                  onChange={(v) => handleInputChange('rootDetectionLockOnCompromise', v)}
+                  type="checkbox"
+                />
+                <ConfigEditItem
+                  label="Wipe Device on CRITICAL Compromise"
+                  value={<BooleanBadge value={config.rootDetectionWipeOnCompromise ?? false} />}
+                  editValue={formData.rootDetectionWipeOnCompromise}
+                  isEditMode={isEditMode}
+                  onChange={(v) => handleInputChange('rootDetectionWipeOnCompromise', v)}
+                  type="checkbox"
+                />
+                <ConfigEditItem
+                  label="Min Severity for Action"
+                  value={config.rootDetectionMinSeverityForAction ?? 'CRITICAL'}
+                  editValue={formData.rootDetectionMinSeverityForAction ?? 'CRITICAL'}
+                  isEditMode={isEditMode}
+                  onChange={(v) => handleInputChange('rootDetectionMinSeverityForAction', v)}
+                  type="select"
+                  options={[
+                    { value: 'LOW', label: 'Low' },
+                    { value: 'MEDIUM', label: 'Medium' },
+                    { value: 'HIGH', label: 'High' },
+                    { value: 'CRITICAL', label: 'Critical' },
+                  ]}
+                />
+                <ConfigEditItem
+                  label="Scan Interval (minutes)"
+                  value={config.rootDetectionScanIntervalMinutes ?? 15}
+                  editValue={formData.rootDetectionScanIntervalMinutes != null ? formData.rootDetectionScanIntervalMinutes.toString() : ''}
+                  isEditMode={isEditMode}
+                  onChange={(v) => handleInputChange('rootDetectionScanIntervalMinutes', v === '' ? null : parseInt(v))}
+                  type="number"
+                />
+              </div>
+
+              {/* OS Upgrade (System Update) Policy */}
+              <div className="space-y-4 md:col-span-2">
+                <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">
+                  <RefreshCw className="h-5 w-5 text-blue-600" />
+                  OS Upgrade Policy
+                </div>
+                <ConfigEditItem
+                  label="System Update Policy"
+                  value={config.systemUpdatePolicyType || 'Unmanaged (user-controlled)'}
+                  editValue={formData.systemUpdatePolicyType ?? ''}
+                  isEditMode={isEditMode}
+                  onChange={(v) => handleInputChange('systemUpdatePolicyType', v === '' ? null : v)}
+                  type="select"
+                  options={[
+                    { value: '', label: 'Unmanaged (user-controlled)' },
+                    { value: 'AUTOMATIC', label: 'Automatic' },
+                    { value: 'WINDOWED', label: 'Windowed (daily maintenance window)' },
+                    { value: 'POSTPONED', label: 'Postponed' },
+                    { value: 'FREEZE', label: 'Freeze (auto outside freeze window)' },
+                  ]}
+                />
+                <ConfigEditItem
+                  label="Maintenance Window Start (minutes from midnight)"
+                  value={config.maintenanceWindowStart ?? '—'}
+                  editValue={formData.maintenanceWindowStart != null ? formData.maintenanceWindowStart.toString() : ''}
+                  isEditMode={isEditMode}
+                  onChange={(v) => handleInputChange('maintenanceWindowStart', v === '' ? null : parseInt(v))}
+                  type="number"
+                />
+                <ConfigEditItem
+                  label="Maintenance Window End (minutes from midnight)"
+                  value={config.maintenanceWindowEnd ?? '—'}
+                  editValue={formData.maintenanceWindowEnd != null ? formData.maintenanceWindowEnd.toString() : ''}
+                  isEditMode={isEditMode}
+                  onChange={(v) => handleInputChange('maintenanceWindowEnd', v === '' ? null : parseInt(v))}
+                  type="number"
+                />
+                <ConfigEditItem
+                  label="Freeze Period Start"
+                  value={config.freezePeriodStart ?? '—'}
+                  editValue={formData.freezePeriodStart ?? ''}
+                  isEditMode={isEditMode}
+                  onChange={(v) => handleInputChange('freezePeriodStart', v === '' ? null : v)}
+                  type="date"
+                />
+                <ConfigEditItem
+                  label="Freeze Period End"
+                  value={config.freezePeriodEnd ?? '—'}
+                  editValue={formData.freezePeriodEnd ?? ''}
+                  isEditMode={isEditMode}
+                  onChange={(v) => handleInputChange('freezePeriodEnd', v === '' ? null : v)}
+                  type="date"
                 />
               </div>
             </div>
@@ -653,9 +782,9 @@ export function ConfigurationManagement() {
 // Helper Components
 function ConfigItem({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-2 py-2 border-b border-dashed border-muted last:border-0">
-      <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="text-sm font-medium text-right">{value}</span>
+    <div className="grid grid-cols-2 py-2 border-b border-dashed border-gray-200 last:border-0">
+      <span className="text-sm text-gray-500">{label}</span>
+      <span className="text-sm font-medium text-gray-900 text-right">{value}</span>
     </div>
   );
 }
@@ -666,30 +795,30 @@ interface ConfigEditItemProps {
   editValue: string | boolean | undefined;
   isEditMode: boolean;
   onChange: (value: any) => void;
-  type: 'text' | 'number' | 'checkbox' | 'select' | 'color' | 'range';
+  type: 'text' | 'number' | 'checkbox' | 'select' | 'color' | 'range' | 'date';
   options?: { value: string; label: string }[];
 }
 
 function ConfigEditItem({ label, value, editValue, isEditMode, onChange, type, options }: ConfigEditItemProps) {
   if (!isEditMode) {
     return (
-      <div className="grid grid-cols-2 py-2 border-b border-dashed border-muted last:border-0">
-        <span className="text-sm text-muted-foreground">{label}</span>
-        <span className="text-sm font-medium text-right">{value}</span>
+      <div className="grid grid-cols-2 py-2 border-b border-dashed border-gray-200 last:border-0">
+        <span className="text-sm text-gray-500">{label}</span>
+        <span className="text-sm font-medium text-gray-900 text-right">{value}</span>
       </div>
     );
   }
 
   return (
-    <div className="flex justify-between items-center py-2 border-b border-dashed border-muted last:border-0">
-      <span className="text-sm text-muted-foreground">{label}</span>
+    <div className="flex justify-between items-center py-2 border-b border-dashed border-gray-200 last:border-0">
+      <span className="text-sm text-gray-500">{label}</span>
       <div className="flex items-center gap-2">
         {type === 'text' && (
           <input
             type="text"
             value={editValue as string}
             onChange={(e) => onChange(e.target.value)}
-            className="h-8 w-48 rounded-md border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+            className="h-8 w-48 rounded-md border border-gray-300 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
         )}
         {type === 'number' && (
@@ -697,7 +826,7 @@ function ConfigEditItem({ label, value, editValue, isEditMode, onChange, type, o
             type="number"
             value={editValue as string}
             onChange={(e) => onChange(e.target.value)}
-            className="h-8 w-24 rounded-md border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+            className="h-8 w-24 rounded-md border border-gray-300 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
         )}
         {type === 'checkbox' && (
@@ -708,14 +837,14 @@ function ConfigEditItem({ label, value, editValue, isEditMode, onChange, type, o
               onChange={(e) => onChange(e.target.checked)}
               className="sr-only peer"
             />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
           </label>
         )}
         {type === 'select' && options && (
           <select
             value={editValue as string}
             onChange={(e) => onChange(e.target.value)}
-            className="h-8 w-48 rounded-md border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+            className="h-8 w-48 rounded-md border border-gray-300 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           >
             {options.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -724,19 +853,27 @@ function ConfigEditItem({ label, value, editValue, isEditMode, onChange, type, o
             ))}
           </select>
         )}
+        {type === 'date' && (
+          <input
+            type="date"
+            value={editValue as string}
+            onChange={(e) => onChange(e.target.value)}
+            className="h-8 w-48 rounded-md border border-gray-300 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+        )}
         {type === 'color' && (
           <div className="flex items-center gap-2">
             <input
               type="color"
               value={editValue as string}
               onChange={(e) => onChange(e.target.value)}
-              className="h-8 w-8 rounded border border-input cursor-pointer"
+              className="h-8 w-8 rounded-md border border-gray-300 cursor-pointer"
             />
             <input
               type="text"
               value={editValue as string}
               onChange={(e) => onChange(e.target.value)}
-              className="h-8 w-24 rounded-md border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+              className="h-8 w-24 rounded-md border border-gray-300 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
         )}
@@ -748,7 +885,7 @@ function ConfigEditItem({ label, value, editValue, isEditMode, onChange, type, o
               max="100"
               value={editValue as string}
               onChange={(e) => onChange(e.target.value)}
-              className="w-32 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+              className="w-32 h-2 bg-gray-200 rounded-full appearance-none cursor-pointer accent-blue-600"
             />
             <span className="text-sm w-12">{editValue}%</span>
           </div>
@@ -763,8 +900,8 @@ function BooleanBadge({ value }: { value: boolean }) {
     <span
       className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
         value
-          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-          : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
+          ? 'bg-green-50 text-green-700 border border-green-200'
+          : 'bg-gray-100 text-gray-700'
       }`}
     >
       {value ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
@@ -779,8 +916,8 @@ function StateBadge({ value }: { value: string }) {
     <span
       className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
         isAny
-          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-          : 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+          ? 'bg-blue-50 text-blue-700 border border-blue-200'
+          : 'bg-gray-100 text-gray-700'
       }`}
     >
       {value}

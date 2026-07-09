@@ -38,16 +38,16 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 sm:px-0 p-4">
-      <Card className="w-full max-w-md mx-auto">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 sm:px-0 p-4">
+      <Card className="w-full max-w-md mx-auto bg-white border border-gray-200 rounded-lg shadow-sm">
         <CardHeader className="text-center px-6 sm:px-8 pt-6 sm:pt-8">
-          <CardTitle className="text-2xl sm:text-3xl">TW MDM Portal</CardTitle>
+          <CardTitle className="text-xl font-semibold text-gray-900">TW MDM Portal</CardTitle>
           <CardDescription>Sign in to your account</CardDescription>
         </CardHeader>
         <CardContent className="px-6 sm:px-8 pb-6 sm:pb-8">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {error && (
-              <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md text-center">
+              <div className="p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md text-center">
                 {error}
               </div>
             )}
@@ -85,12 +85,12 @@ export function LoginPage() {
             </Button>
 
             <div className="text-center space-y-2 text-sm">
-              <Link to={ROUTES.FORGOT_PASSWORD} className="text-primary hover:underline block">
+              <Link to={ROUTES.FORGOT_PASSWORD} className="text-sm text-blue-600 hover:text-blue-700 hover:underline block">
                 Forgot Password?
               </Link>
               <div>
                 Don't have an account?{' '}
-                <Link to={ROUTES.REGISTER} className="text-primary hover:underline">
+                <Link to={ROUTES.REGISTER} className="text-sm text-blue-600 hover:text-blue-700 hover:underline">
                   Register
                 </Link>
               </div>

@@ -54,12 +54,12 @@ function StatusBadge({ isActive }: { isActive: boolean }) {
     <span
       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
         isActive
-          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400'
+          ? 'bg-green-50 text-green-700 border border-green-200'
           : 'bg-muted text-muted-foreground'
       }`}
     >
       <span
-        className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-muted-foreground/50'}`}
+        className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-green-500' : 'bg-muted-foreground/50'}`}
       />
       {isActive ? 'Active' : 'Inactive'}
     </span>
@@ -68,15 +68,15 @@ function StatusBadge({ isActive }: { isActive: boolean }) {
 
 function CommandStatusBadge({ status }: { status: CommandStatus }) {
   const styles: Record<CommandStatus, string> = {
-    PENDING: 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400',
-    SENT:    'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400',
-    SUCCESS: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400',
-    FAILED:  'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400',
+    PENDING: 'bg-amber-50 text-amber-700 border border-amber-200',
+    SENT:    'bg-blue-50 text-blue-700 border border-blue-200',
+    SUCCESS: 'bg-green-50 text-green-700 border border-green-200',
+    FAILED:  'bg-red-50 text-red-700 border border-red-200',
   };
   const dots: Record<CommandStatus, string> = {
     PENDING: 'bg-amber-500',
     SENT:    'bg-blue-500',
-    SUCCESS: 'bg-emerald-500',
+    SUCCESS: 'bg-green-500',
     FAILED:  'bg-red-500',
   };
   return (
@@ -92,8 +92,8 @@ function CommandTypeBadge({ type }: { type: CommandType }) {
     <span
       className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
         type === 'INSTALL_APP'
-          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400'
-          : 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-400'
+          ? 'bg-blue-50 text-blue-700 border border-blue-200'
+          : 'bg-gray-100 text-gray-700 border border-gray-200'
       }`}
     >
       {type === 'INSTALL_APP' ? <PlayCircle className="h-3 w-3" /> : <Trash2 className="h-3 w-3" />}
@@ -106,15 +106,15 @@ function CommandTypeBadge({ type }: { type: CommandType }) {
 
 function StatPill({ label, value, color }: { label: string; value: number | string; color: 'blue' | 'green' | 'red' | 'yellow' | 'slate' }) {
   const cfg = {
-    blue:   'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
-    green:  'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800',
-    red:    'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800',
-    yellow: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800',
-    slate:  'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800/50 dark:text-slate-300 dark:border-slate-700',
+    blue:   'bg-blue-50 text-blue-700 border-blue-200',
+    green:  'bg-green-50 text-green-700 border-green-200',
+    red:    'bg-red-50 text-red-700 border-red-200',
+    yellow: 'bg-amber-50 text-amber-700 border-amber-200',
+    slate:  'bg-gray-50 text-gray-700 border-gray-200',
   };
   return (
-    <div className={`flex flex-col items-center justify-center rounded-xl border px-3 py-2 ${cfg[color]}`}>
-      <span className="text-xl font-bold leading-none">{value}</span>
+    <div className={`flex flex-col items-center justify-center rounded-lg border px-3 py-2 ${cfg[color]}`}>
+      <span className="text-xl font-semibold leading-none">{value}</span>
       <span className="text-[10px] font-medium mt-0.5 uppercase tracking-wide opacity-80">{label}</span>
     </div>
   );
@@ -161,7 +161,7 @@ function DeviceDropdown({ devices, selectedUuid, onSelect, placeholder = 'Select
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full h-10 flex items-center justify-between rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary hover:bg-muted/50 transition-colors"
+        className="w-full h-9 flex items-center justify-between rounded-md border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary hover:bg-gray-50 transition-colors"
       >
         <span className={selected ? 'text-foreground' : 'text-muted-foreground'}>
           {selected ? `${selected.deviceName} (${selected.deviceUuid})` : placeholder}
@@ -170,7 +170,7 @@ function DeviceDropdown({ devices, selectedUuid, onSelect, placeholder = 'Select
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full bg-popover border border-border rounded-xl shadow-2xl overflow-hidden">
+        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden">
           <div className="p-2 border-b border-border">
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -180,7 +180,7 @@ function DeviceDropdown({ devices, selectedUuid, onSelect, placeholder = 'Select
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search devices…"
-                className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full pl-8 pr-3 py-1.5 text-sm rounded-md border border-gray-300 bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
           </div>
@@ -286,14 +286,14 @@ function MultiDeviceDropdown({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full h-10 flex items-center justify-between rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary hover:bg-muted/50 transition-colors"
+        className="w-full h-9 flex items-center justify-between rounded-md border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary hover:bg-gray-50 transition-colors"
       >
         <span className={selectedCount > 0 ? 'text-foreground' : 'text-muted-foreground'}>{buttonLabel}</span>
         <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full bg-popover border border-border rounded-xl shadow-2xl overflow-hidden">
+        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden">
           {/* Search */}
           <div className="p-2 border-b border-border">
             <div className="relative">
@@ -304,7 +304,7 @@ function MultiDeviceDropdown({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search devices…"
-                className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full pl-8 pr-3 py-1.5 text-sm rounded-md border border-gray-300 bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
           </div>
@@ -313,7 +313,7 @@ function MultiDeviceDropdown({
             <button
               type="button"
               onClick={selectAll}
-              className="flex-1 text-xs font-semibold text-primary hover:bg-primary/5 py-1 rounded-lg transition-colors"
+              className="flex-1 text-xs font-semibold text-primary hover:bg-primary/5 py-1 rounded-md transition-colors"
             >
               Select All
             </button>
@@ -321,7 +321,7 @@ function MultiDeviceDropdown({
             <button
               type="button"
               onClick={deselectAll}
-              className="flex-1 text-xs font-semibold text-muted-foreground hover:bg-muted/50 py-1 rounded-lg transition-colors"
+              className="flex-1 text-xs font-semibold text-muted-foreground hover:bg-muted/50 py-1 rounded-md transition-colors"
             >
               Deselect All
             </button>
@@ -424,7 +424,7 @@ function AppDropdown({ apps, selectedId, onSelect, placeholder = 'Select app…'
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full h-10 flex items-center justify-between rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary hover:bg-muted/50 transition-colors"
+        className="w-full h-9 flex items-center justify-between rounded-md border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary hover:bg-gray-50 transition-colors"
       >
         <span className={selected ? 'text-foreground' : 'text-muted-foreground'}>
           {selected
@@ -435,7 +435,7 @@ function AppDropdown({ apps, selectedId, onSelect, placeholder = 'Select app…'
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full bg-popover border border-border rounded-xl shadow-2xl overflow-hidden">
+        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden">
           <div className="p-2 border-b border-border">
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -445,7 +445,7 @@ function AppDropdown({ apps, selectedId, onSelect, placeholder = 'Select app…'
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by package or version…"
-                className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full pl-8 pr-3 py-1.5 text-sm rounded-md border border-gray-300 bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
           </div>
@@ -471,11 +471,11 @@ function AppDropdown({ apps, selectedId, onSelect, placeholder = 'Select app…'
                     <span
                       className={`ml-2 shrink-0 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold ${
                         a.isActive
-                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400'
+                          ? 'bg-green-50 text-green-700 border border-green-200'
                           : 'bg-muted text-muted-foreground'
                       }`}
                     >
-                      <span className={`w-1.5 h-1.5 rounded-full ${a.isActive ? 'bg-emerald-500' : 'bg-muted-foreground/50'}`} />
+                      <span className={`w-1.5 h-1.5 rounded-full ${a.isActive ? 'bg-green-500' : 'bg-muted-foreground/50'}`} />
                       {a.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </div>
@@ -683,10 +683,10 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
           <Card className="border border-border shadow-sm">
             <CardHeader className="pb-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl shadow-lg shadow-indigo-500/20">
-                  <Upload className="h-5 w-5 text-white" />
+                <div className="p-2 bg-blue-50 rounded-md">
+                  <Upload className="h-5 w-5 text-blue-600" />
                 </div>
-                <CardTitle className="text-lg text-foreground">Upload APK</CardTitle>
+                <CardTitle className="text-base font-semibold text-gray-900">Upload APK</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -702,21 +702,21 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
                 {!selectedFile ? (
                   <div
                     onClick={() => fileInputRef.current?.click()}
-                    className="group border-2 border-dashed border-border rounded-xl p-4 sm:p-6 text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-500/5 transition-colors w-full"
+                    className="group border-2 border-dashed border-gray-300 bg-gray-50 rounded-lg p-4 sm:p-6 text-center cursor-pointer hover:border-blue-400 transition-colors w-full"
                   >
-                    <Upload className="h-8 w-8 text-muted-foreground group-hover:text-indigo-500 mx-auto mb-2 transition-colors" />
+                    <Upload className="h-8 w-8 text-muted-foreground group-hover:text-blue-600 mx-auto mb-2 transition-colors" />
                     <p className="text-sm font-medium text-foreground">Click to select APK / XAPK file</p>
                     <p className="text-xs text-muted-foreground mt-1">Supports .apk and .xapk — metadata will be auto-filled</p>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-between bg-muted/50 border border-border rounded-xl px-3 py-2.5 text-sm">
+                  <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-md px-3 py-2.5 text-sm">
                     <div className="flex items-center gap-2 min-w-0">
-                      <div className="p-1.5 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-lg shrink-0">
-                        <Package className="h-3.5 w-3.5 text-white" />
+                      <div className="p-1.5 bg-blue-50 rounded-md shrink-0">
+                        <Package className="h-3.5 w-3.5 text-blue-600" />
                       </div>
                       <span className="truncate text-foreground font-medium">{selectedFile.name}</span>
                       {parsingApk && (
-                        <span className="shrink-0 text-xs text-blue-500 animate-pulse">Reading…</span>
+                        <span className="shrink-0 text-xs text-blue-600">Reading…</span>
                       )}
                     </div>
                     <button
@@ -742,7 +742,7 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
                   <Label htmlFor="am-packageName" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
                     Package Name *
                     {parsedFields.has('packageName') && (
-                      <span className="text-xs normal-case font-normal text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-full">auto-filled</span>
+                      <span className="text-xs normal-case font-normal text-green-700 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded-full">auto-filled</span>
                     )}
                   </Label>
                   <Input
@@ -750,14 +750,14 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
                     placeholder="e.g. com.example.app"
                     value={packageName}
                     onChange={(e) => setPackageName(e.target.value)}
-                    className={parsedFields.has('packageName') ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50/40 dark:bg-emerald-900/10' : ''}
+                    className={parsedFields.has('packageName') ? 'border-green-300 bg-green-50/40' : ''}
                   />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="am-versionName" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
                     Version Name *
                     {parsedFields.has('versionName') && (
-                      <span className="text-xs normal-case font-normal text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-full">auto-filled</span>
+                      <span className="text-xs normal-case font-normal text-green-700 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded-full">auto-filled</span>
                     )}
                   </Label>
                   <Input
@@ -765,14 +765,14 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
                     placeholder="e.g. 1.0.0"
                     value={versionName}
                     onChange={(e) => setVersionName(e.target.value)}
-                    className={parsedFields.has('versionName') ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50/40 dark:bg-emerald-900/10' : ''}
+                    className={parsedFields.has('versionName') ? 'border-green-300 bg-green-50/40' : ''}
                   />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="am-versionCode" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
                     Version Code *
                     {parsedFields.has('versionCode') && (
-                      <span className="text-xs normal-case font-normal text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-full">auto-filled</span>
+                      <span className="text-xs normal-case font-normal text-green-700 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded-full">auto-filled</span>
                     )}
                   </Label>
                   <Input
@@ -781,14 +781,14 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
                     placeholder="e.g. 1"
                     value={versionCode}
                     onChange={(e) => setVersionCode(e.target.value)}
-                    className={parsedFields.has('versionCode') ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50/40 dark:bg-emerald-900/10' : ''}
+                    className={parsedFields.has('versionCode') ? 'border-green-300 bg-green-50/40' : ''}
                   />
                 </div>
                 <div className="space-y-1.5 col-span-1 sm:col-span-2">
                   <Label htmlFor="am-description" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
                     Description
                     {parsedFields.has('description') && (
-                      <span className="text-xs normal-case font-normal text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-full">auto-filled</span>
+                      <span className="text-xs normal-case font-normal text-green-700 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded-full">auto-filled</span>
                     )}
                   </Label>
                   <textarea
@@ -797,16 +797,16 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Optional app description…"
-                    className={`w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none${parsedFields.has('description') ? ' border-emerald-300 dark:border-emerald-700 bg-emerald-50/40 dark:bg-emerald-900/10' : ''}`}
+                    className={`w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none${parsedFields.has('description') ? ' border-green-300 bg-green-50/40' : ''}`}
                   />
                 </div>
               </div>
 
               {uploadMsg && (
-                <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium ${
+                <div className={`flex items-center gap-2 px-3 py-2.5 rounded-md text-sm font-medium ${
                   uploadMsg.ok
-                    ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
-                    : 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
+                    ? 'bg-green-50 text-green-700 border border-green-200'
+                    : 'bg-red-50 text-red-700 border border-red-200'
                 }`}>
                   {uploadMsg.ok ? <CheckCircle className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
                   {uploadMsg.text}
@@ -816,7 +816,7 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
               <Button
                 onClick={handleUpload}
                 disabled={uploading}
-                className="w-full bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white shadow-md"
+                className="w-full bg-primary hover:bg-primary-hover text-white shadow-sm"
               >
                 <Upload className="h-4 w-4 mr-2" />
                 {uploading ? 'Uploading…' : 'Upload App'}
@@ -830,10 +830,10 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
           <Card className={`border border-border shadow-sm ${!canUpload ? 'lg:col-span-2' : ''}`}>
             <CardHeader className="pb-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl shadow-lg shadow-indigo-500/20">
-                  <Package className="h-5 w-5 text-white" />
+                <div className="p-2 bg-blue-50 rounded-md">
+                  <Package className="h-5 w-5 text-blue-600" />
                 </div>
-                <CardTitle className="text-lg text-foreground">Library Overview</CardTitle>
+                <CardTitle className="text-base font-semibold text-gray-900">Library Overview</CardTitle>
               </div>
             </CardHeader>
             <CardContent>
@@ -857,10 +857,10 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
           <CardHeader className="pb-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="p-1.5 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-lg shadow-md shadow-indigo-500/20">
-                  <Package className="h-4 w-4 text-white" />
+                <div className="p-1.5 bg-blue-50 rounded-md">
+                  <Package className="h-4 w-4 text-blue-600" />
                 </div>
-                <CardTitle className="text-lg text-foreground">Managed Apps</CardTitle>
+                <CardTitle className="text-base font-semibold text-gray-900">Managed Apps</CardTitle>
               </div>
               <div className="flex items-center gap-2">
                 <Input
@@ -881,7 +881,7 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
                 <button
                   onClick={() => loadApps(page)}
                   disabled={loading}
-                  className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors"
+                  className="p-1.5 rounded-md hover:bg-gray-100 transition-colors"
                 >
                   <RefreshCw className={`h-4 w-4 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
                 </button>
@@ -911,11 +911,11 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
                     apps.map((app) => (
                       <div
                         key={app.id}
-                        className={`rounded-xl border border-border border-l-4 ${app.isActive ? 'border-l-emerald-500' : 'border-l-red-400'} bg-card shadow-sm overflow-hidden`}
+                        className={`rounded-lg border border-gray-200 border-l-4 ${app.isActive ? 'border-l-green-500' : 'border-l-red-400'} bg-card shadow-sm overflow-hidden`}
                       >
                         <div className="flex items-start gap-3 p-4 pb-3">
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shrink-0 shadow-sm">
-                            <span className="text-white font-bold text-sm">
+                          <div className="w-10 h-10 rounded-md bg-blue-50 flex items-center justify-center shrink-0">
+                            <span className="text-blue-700 font-semibold text-sm">
                               {(app.packageName || '?').charAt(0).toUpperCase()}
                             </span>
                           </div>
@@ -953,7 +953,7 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
                           <button
                             onClick={() => handleDownload(app)}
                             disabled={downloadingId === app.id}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-primary hover:bg-blue-50 transition-colors disabled:opacity-50"
                             title="Download APK"
                           >
                             {downloadingId === app.id ? (
@@ -973,7 +973,7 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-border bg-muted/40">
+                      <tr className="border-b border-gray-200 bg-gray-50">
                         <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Package</th>
                         <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Version</th>
                         <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Size</th>
@@ -992,7 +992,7 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
                         </tr>
                       ) : (
                         apps.map((app) => (
-                          <tr key={app.id} className="hover:bg-muted/40 transition-colors">
+                          <tr key={app.id} className="hover:bg-gray-50 transition-colors">
                             <td className="px-6 py-4">
                               <p className="font-medium text-foreground">{app.packageName}</p>
                               {app.description && (
@@ -1011,7 +1011,7 @@ function AppsLibraryTab({ canUpload, canRead }: AppsLibraryTabProps) {
                               <button
                                 onClick={() => handleDownload(app)}
                                 disabled={downloadingId === app.id}
-                                className="p-1.5 rounded-lg text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+                                className="p-1.5 rounded-md text-primary hover:bg-blue-50 transition-colors disabled:opacity-50"
                                 title="Download APK"
                               >
                                 {downloadingId === app.id ? (
@@ -1140,7 +1140,7 @@ function DeployTab({ devices, devicesLoading, apps, appsLoading }: DeployTabProp
     return (
       <div className="space-y-2">
         {results.map((result) => (
-          <div key={result.id} className="rounded-xl bg-muted/50 border border-border p-3 text-xs space-y-1.5 font-mono">
+          <div key={result.id} className="rounded-md bg-gray-50 border border-gray-200 p-3 text-xs space-y-1.5 font-mono">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Command ID</span>
               <span className="font-semibold text-foreground">#{result.id}</span>
@@ -1185,10 +1185,10 @@ function DeployTab({ devices, devicesLoading, apps, appsLoading }: DeployTabProp
         <Card className="border border-border shadow-sm">
           <CardHeader className="pb-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl shadow-lg shadow-blue-500/20">
-                <PlayCircle className="h-5 w-5 text-white" />
+              <div className="p-2 bg-blue-50 rounded-md">
+                <PlayCircle className="h-5 w-5 text-blue-600" />
               </div>
-              <CardTitle className="text-lg text-foreground">Remote Install</CardTitle>
+              <CardTitle className="text-base font-semibold text-gray-900">Remote Install</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -1212,10 +1212,10 @@ function DeployTab({ devices, devicesLoading, apps, appsLoading }: DeployTabProp
             </div>
 
             {installMsg && (
-              <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium ${
+              <div className={`flex items-center gap-2 px-3 py-2.5 rounded-md text-sm font-medium ${
                 installMsg.ok
-                  ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
-                  : 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
+                  ? 'bg-green-50 text-green-700 border border-green-200'
+                  : 'bg-red-50 text-red-700 border border-red-200'
               }`}>
                 {installMsg.ok ? <CheckCircle className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
                 {installMsg.text}
@@ -1226,7 +1226,7 @@ function DeployTab({ devices, devicesLoading, apps, appsLoading }: DeployTabProp
             <Button
               onClick={handleInstall}
               disabled={installing}
-              className="w-full bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white shadow-md"
+              className="w-full bg-primary hover:bg-primary-hover text-white shadow-sm"
             >
               <PlayCircle className="h-4 w-4 mr-2" />
               {installing ? 'Sending…' : 'Send Install Command'}
@@ -1238,10 +1238,10 @@ function DeployTab({ devices, devicesLoading, apps, appsLoading }: DeployTabProp
         <Card className="border border-border shadow-sm">
           <CardHeader className="pb-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl shadow-lg shadow-orange-500/20">
-                <Trash2 className="h-5 w-5 text-white" />
+              <div className="p-2 bg-blue-50 rounded-md">
+                <Trash2 className="h-5 w-5 text-blue-600" />
               </div>
-              <CardTitle className="text-lg text-foreground">Remote Uninstall</CardTitle>
+              <CardTitle className="text-base font-semibold text-gray-900">Remote Uninstall</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -1265,10 +1265,10 @@ function DeployTab({ devices, devicesLoading, apps, appsLoading }: DeployTabProp
             </div>
 
             {uninstallMsg && (
-              <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium ${
+              <div className={`flex items-center gap-2 px-3 py-2.5 rounded-md text-sm font-medium ${
                 uninstallMsg.ok
-                  ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
-                  : 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
+                  ? 'bg-green-50 text-green-700 border border-green-200'
+                  : 'bg-red-50 text-red-700 border border-red-200'
               }`}>
                 {uninstallMsg.ok ? <CheckCircle className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
                 {uninstallMsg.text}
@@ -1279,7 +1279,7 @@ function DeployTab({ devices, devicesLoading, apps, appsLoading }: DeployTabProp
             <Button
               onClick={handleUninstall}
               disabled={uninstalling}
-              className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white shadow-md"
+              className="w-full bg-red-600 hover:bg-red-700 text-white shadow-sm"
             >
               <Trash2 className="h-4 w-4 mr-2" />
               {uninstalling ? 'Sending…' : 'Send Uninstall Command'}
@@ -1292,10 +1292,10 @@ function DeployTab({ devices, devicesLoading, apps, appsLoading }: DeployTabProp
       <Card className="border border-border shadow-sm overflow-hidden">
         <CardHeader className="pb-4">
           <div className="flex items-center gap-3">
-            <div className="p-1.5 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-lg shadow-md shadow-indigo-500/20">
-              <Package className="h-4 w-4 text-white" />
+            <div className="p-1.5 bg-blue-50 rounded-md">
+              <Package className="h-4 w-4 text-blue-600" />
             </div>
-            <CardTitle className="text-lg text-foreground">Managed Apps Library</CardTitle>
+            <CardTitle className="text-base font-semibold text-gray-900">Managed Apps Library</CardTitle>
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -1312,14 +1312,14 @@ function DeployTab({ devices, devicesLoading, apps, appsLoading }: DeployTabProp
                   <div
                     key={app.id}
                     onClick={() => setInstallApp(app)}
-                    className={`rounded-xl border border-border border-l-4 ${app.isActive ? 'border-l-emerald-500' : 'border-l-red-400'} bg-card shadow-sm overflow-hidden cursor-pointer transition-colors ${
+                    className={`rounded-lg border border-gray-200 border-l-4 ${app.isActive ? 'border-l-green-500' : 'border-l-red-400'} bg-card shadow-sm overflow-hidden cursor-pointer transition-colors ${
                       installApp?.id === app.id ? 'ring-2 ring-primary/30' : ''
                     }`}
                     title="Click to select for install"
                   >
                     <div className="flex items-start gap-3 p-4 pb-3">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shrink-0 shadow-sm">
-                        <span className="text-white font-bold text-sm">
+                      <div className="w-10 h-10 rounded-md bg-blue-50 flex items-center justify-center shrink-0">
+                        <span className="text-blue-700 font-semibold text-sm">
                           {(app.packageName || '?').charAt(0).toUpperCase()}
                         </span>
                       </div>
@@ -1353,7 +1353,7 @@ function DeployTab({ devices, devicesLoading, apps, appsLoading }: DeployTabProp
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-border bg-muted/40">
+                    <tr className="border-b border-gray-200 bg-gray-50">
                       <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">ID</th>
                       <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Package</th>
                       <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Version</th>
@@ -1367,7 +1367,7 @@ function DeployTab({ devices, devicesLoading, apps, appsLoading }: DeployTabProp
                       <tr
                         key={app.id}
                         onClick={() => setInstallApp(app)}
-                        className={`hover:bg-muted/40 transition-colors cursor-pointer ${
+                        className={`hover:bg-gray-50 transition-colors cursor-pointer ${
                           installApp?.id === app.id ? 'bg-primary/5 ring-1 ring-inset ring-primary/20' : ''
                         }`}
                         title="Click to select for install"
@@ -1467,22 +1467,22 @@ function CommandsTab({ devices }: CommandsTabProps) {
       <CardHeader className="pb-4">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-br from-slate-500 to-slate-700 rounded-xl shadow-lg shadow-slate-500/20">
-              <History className="h-5 w-5 text-white" />
+            <div className="p-2 bg-blue-50 rounded-md">
+              <History className="h-5 w-5 text-blue-600" />
             </div>
-            <CardTitle className="text-lg text-foreground">Command History</CardTitle>
+            <CardTitle className="text-base font-semibold text-gray-900">Command History</CardTitle>
           </div>
           <div className="flex flex-col gap-2 sm:items-end">
             {/* Filter type selector — segmented control */}
-            <div className="flex bg-muted rounded-xl p-1 gap-0.5">
+            <div className="flex bg-gray-100 rounded-lg p-1 gap-0.5">
               {(['all', 'device', 'package'] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => handleFilterTypeChange(t)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
                     filterType === t
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
                   {t === 'all' ? 'All' : t === 'device' ? 'By Device' : 'By Package'}
@@ -1547,23 +1547,23 @@ function CommandsTab({ devices }: CommandsTabProps) {
               ) : (
                 commands.map((cmd) => {
                   const accentClass =
-                    cmd.status === 'SUCCESS' ? 'border-l-emerald-500' :
+                    cmd.status === 'SUCCESS' ? 'border-l-green-500' :
                     cmd.status === 'FAILED'  ? 'border-l-red-500' :
                     cmd.status === 'PENDING' ? 'border-l-amber-400' :
                     'border-l-blue-500';
                   const avatarGradient =
                     cmd.commandType === 'INSTALL_APP'
-                      ? 'from-blue-500 to-cyan-600'
-                      : 'from-orange-500 to-red-600';
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'bg-gray-100 text-gray-700';
 
                   return (
                     <div
                       key={cmd.id}
-                      className={`rounded-xl border border-border border-l-4 ${accentClass} bg-card shadow-sm overflow-hidden`}
+                      className={`rounded-lg border border-gray-200 border-l-4 ${accentClass} bg-card shadow-sm overflow-hidden`}
                     >
                       <div className="flex items-start gap-3 p-4 pb-3">
-                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${avatarGradient} flex items-center justify-center shrink-0 shadow-sm`}>
-                          <span className="text-white font-bold text-sm">
+                        <div className={`w-10 h-10 rounded-md ${avatarGradient} flex items-center justify-center shrink-0`}>
+                          <span className="font-semibold text-sm">
                             {(cmd.packageName || '?').charAt(0).toUpperCase()}
                           </span>
                         </div>
@@ -1600,7 +1600,7 @@ function CommandsTab({ devices }: CommandsTabProps) {
                         {cmd.errorMessage && (
                           <div className="col-span-2">
                             <span className="text-muted-foreground">Error</span>
-                            <p className="text-red-500 dark:text-red-400 truncate">{cmd.errorMessage}</p>
+                            <p className="text-red-600 truncate">{cmd.errorMessage}</p>
                           </div>
                         )}
                       </div>
@@ -1614,7 +1614,7 @@ function CommandsTab({ devices }: CommandsTabProps) {
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border bg-muted/40">
+                  <tr className="border-b border-gray-200 bg-gray-50">
                     <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">ID</th>
                     <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</th>
                     <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Device</th>
@@ -1635,7 +1635,7 @@ function CommandsTab({ devices }: CommandsTabProps) {
                     </tr>
                   ) : (
                     commands.map((cmd) => (
-                      <tr key={cmd.id} className="hover:bg-muted/40 transition-colors">
+                      <tr key={cmd.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4 font-mono text-muted-foreground">#{cmd.id}</td>
                         <td className="px-6 py-4"><CommandTypeBadge type={cmd.commandType} /></td>
                         <td className="px-6 py-4">
@@ -1647,7 +1647,7 @@ function CommandsTab({ devices }: CommandsTabProps) {
                         <td className="px-6 py-4"><CommandStatusBadge status={cmd.status} /></td>
                         <td className="px-6 py-4 text-muted-foreground truncate max-w-[140px]">{cmd.initiatedByEmail || '—'}</td>
                         <td className="px-6 py-4 text-muted-foreground whitespace-nowrap">{formatDate(cmd.sentAt)}</td>
-                        <td className="px-6 py-4 text-red-500 dark:text-red-400 text-xs max-w-[160px] truncate" title={cmd.errorMessage}>
+                        <td className="px-6 py-4 text-red-600 text-xs max-w-[160px] truncate" title={cmd.errorMessage}>
                           {cmd.errorMessage || '—'}
                         </td>
                       </tr>
@@ -1749,19 +1749,19 @@ export function AppManagement() {
   const tabs = allTabs.filter((t) => t.show);
 
   const tabGradients: Record<InnerTab, string> = {
-    apps:     'from-indigo-500 to-violet-600',
-    deploy:   'from-emerald-500 to-teal-600',
-    commands: 'from-slate-500 to-slate-700',
+    apps:     'bg-blue-50 text-blue-700',
+    deploy:   'bg-blue-50 text-blue-700',
+    commands: 'bg-blue-50 text-blue-700',
   };
 
   if (!canRead && !canUpload && !canDeploy) {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl shadow-lg shadow-indigo-500/20">
-            <Package className="h-6 w-6 text-white" />
+          <div className="p-2.5 bg-blue-50 rounded-md">
+            <Package className="h-6 w-6 text-blue-600" />
           </div>
-          <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">App Management</h2>
+          <h2 className="text-xl font-semibold text-gray-900">App Management</h2>
         </div>
         <Card className="border border-border shadow-sm">
           <CardContent>
@@ -1777,25 +1777,25 @@ export function AppManagement() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl shadow-lg shadow-indigo-500/20">
-            <Package className="h-6 w-6 text-white" />
+          <div className="p-2.5 bg-blue-50 rounded-md">
+            <Package className="h-6 w-6 text-blue-600" />
           </div>
           <div>
-            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">App Management</h2>
+            <h2 className="text-xl font-semibold text-gray-900">App Management</h2>
             <p className="text-xs text-muted-foreground mt-0.5">Upload, deploy, and monitor managed apps across devices</p>
           </div>
         </div>
 
         {/* Segmented tab control */}
-        <div className="flex bg-muted rounded-xl p-1 gap-0.5 self-start sm:self-auto">
+        <div className="flex bg-gray-100 rounded-lg p-1 gap-0.5 self-start sm:self-auto">
           {tabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+              className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-md text-sm font-semibold transition-all ${
                 activeTab === tab.key
-                  ? `bg-gradient-to-r ${tabGradients[tab.key]} text-white shadow-sm`
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? `${tabGradients[tab.key]}`
+                  : 'text-gray-500 hover:text-gray-700'
               }`}
             >
               {tab.icon}

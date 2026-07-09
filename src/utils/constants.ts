@@ -24,6 +24,8 @@ export const ROUTES = {
   ALL_DEVICES_MAP: '/devices/track-all',
   DEVICE_SOS: '/device/:deviceId/sos',
   DEVICE_TIME_RANGE: '/device/:deviceId/time-range',
+  DEVICE_SIM_CHANGES: '/device/:deviceId/sim-changes',
+  DEVICE_INTEGRITY: '/device/:deviceId/integrity',
 } as const;
 
 export const ERROR_MESSAGES = {

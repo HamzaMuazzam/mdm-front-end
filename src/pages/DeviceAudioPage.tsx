@@ -37,8 +37,8 @@ const AUDIO_STYLES = `
     100% { transform: scale(1.7); opacity: 0; }
   }
   @keyframes glow-breathe {
-    0%, 100% { box-shadow: 0 0 24px 4px var(--glow-color, #22c55e88); }
-    50%       { box-shadow: 0 0 48px 12px var(--glow-color, #22c55e55); }
+    0%, 100% { box-shadow: none; }
+    50%       { box-shadow: none; }
   }
   @keyframes fade-slide-up {
     from { opacity: 0; transform: translateY(8px); }
@@ -108,10 +108,10 @@ const BAR_DELAYS = Array.from({ length: BARS }, () => -(Math.random() * 1.0));
 function Waveform({ active, sending }: { active: boolean; sending: boolean }) {
   const isOn = active || sending;
   const color = sending
-    ? 'var(--blue-bar, #3b82f6)'
+    ? 'var(--blue-bar, #2563eb)'
     : active
-    ? 'var(--green-bar, #22c55e)'
-    : 'var(--idle-bar, #334155)';
+    ? 'var(--green-bar, #2563eb)'
+    : 'var(--idle-bar, #e5e7eb)';
 
   return (
     <div
@@ -136,10 +136,10 @@ function Waveform({ active, sending }: { active: boolean; sending: boolean }) {
 
 /* ─── pulsing icon ───────────────────────────────────────────────────────── */
 function PulsingIcon({ active, sending }: { active: boolean; sending: boolean }) {
-  const ringColor = sending ? '#3b82f688' : '#22c55e88';
-  const bgColor   = sending ? 'bg-blue-500/20' : 'bg-emerald-500/20';
-  const iconColor = sending ? 'text-blue-400' : 'text-emerald-400';
-  const idleColor = 'text-slate-500';
+  const ringColor = sending ? '#2563eb33' : '#2563eb33';
+  const bgColor   = sending ? 'bg-blue-50' : 'bg-blue-50';
+  const iconColor = sending ? 'text-blue-600' : 'text-blue-600';
+  const idleColor = 'text-gray-400';
 
   return (
     <div className="relative flex items-center justify-center" style={{ width: 80, height: 80 }}>
@@ -151,7 +151,7 @@ function PulsingIcon({ active, sending }: { active: boolean; sending: boolean })
       )}
       <div
         className={`relative z-10 flex items-center justify-center rounded-full transition-all duration-500
-          ${(active || sending) ? `${bgColor} border border-white/10` : 'bg-slate-800/60'}`}
+          ${(active || sending) ? `${bgColor} border border-blue-200` : 'bg-gray-100 border border-gray-200'}`}
         style={{ width: 64, height: 64 }}
       >
         {sending
@@ -166,7 +166,7 @@ function PulsingIcon({ active, sending }: { active: boolean; sending: boolean })
 
 /* ─── glass toggle row ───────────────────────────────────────────────────── */
 function ToggleRow({
-  icon, label, description, checked, onChange, disabled, accentColor = '#22c55e',
+  icon, label, description, checked, onChange, disabled, accentColor = '#2563eb',
 }: {
   icon: React.ReactNode;
   label: string;
@@ -180,12 +180,12 @@ function ToggleRow({
     <div
       className={`flex items-center gap-3 transition-opacity ${disabled ? 'opacity-30 pointer-events-none' : ''}`}
     >
-      <div className="h-9 w-9 rounded-xl bg-slate-800 border border-slate-700/60 flex items-center justify-center shrink-0 text-slate-400">
+      <div className="h-9 w-9 rounded-md bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0 text-gray-600">
         {icon}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-slate-100 leading-tight">{label}</p>
-        <p className="text-xs text-slate-500 mt-0.5">{description}</p>
+        <p className="text-sm font-medium text-gray-900 leading-tight">{label}</p>
+        <p className="text-xs text-gray-500 mt-0.5">{description}</p>
       </div>
       <button
         type="button"
@@ -194,7 +194,7 @@ function ToggleRow({
         disabled={disabled}
         onClick={() => !disabled && onChange(!checked)}
         className="relative shrink-0 w-12 h-6 rounded-full transition-all duration-300 focus:outline-none"
-        style={{ backgroundColor: checked ? accentColor : '#1e293b', border: '1px solid rgba(255,255,255,0.1)' }}
+        style={{ backgroundColor: checked ? accentColor : '#d1d5db', border: '1px solid rgba(0,0,0,0.05)' }}
       >
         <span
           className="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow-md transition-transform duration-300"
@@ -207,9 +207,9 @@ function ToggleRow({
 
 /* ─── status badge ───────────────────────────────────────────────────────── */
 const STATUS_META: Record<SessionStatus, { label: string; dot: string; text: string }> = {
-  ACTIVE:  { label: 'Active',  dot: 'bg-emerald-400', text: 'text-emerald-400' },
-  STOPPED: { label: 'Stopped', dot: 'bg-slate-400',   text: 'text-slate-400' },
-  ERROR:   { label: 'Error',   dot: 'bg-red-400',     text: 'text-red-400' },
+  ACTIVE:  { label: 'Active',  dot: 'bg-green-500', text: 'text-green-700' },
+  STOPPED: { label: 'Stopped', dot: 'bg-gray-400',  text: 'text-gray-600' },
+  ERROR:   { label: 'Error',   dot: 'bg-red-500',   text: 'text-red-700' },
 };
 
 function StatusBadge({ status }: { status: SessionStatus }) {
@@ -226,30 +226,30 @@ function StatusBadge({ status }: { status: SessionStatus }) {
 function HistoryCard({ session }: { session: AudioSessionRecord }) {
   const [open, setOpen] = useState(false);
   const accentColor =
-    session.status === 'ACTIVE' ? 'bg-emerald-500' :
-    session.status === 'ERROR'  ? 'bg-red-500' : 'bg-slate-600';
+    session.status === 'ACTIVE' ? 'bg-green-500' :
+    session.status === 'ERROR'  ? 'bg-red-500' : 'bg-gray-400';
 
   return (
-    <div className="rounded-2xl bg-slate-800/60 border border-slate-700/50 overflow-hidden backdrop-blur-sm">
+    <div className="rounded-lg bg-white border border-gray-200 shadow-sm overflow-hidden">
       <button
         type="button"
-        className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-700/30 transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-gray-50 transition-colors"
         onClick={() => setOpen((v) => !v)}
       >
         <div className={`h-2 w-2 rounded-full shrink-0 ${accentColor}`} />
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm text-slate-100">{fmtDuration(session.durationSeconds)} session</p>
-          <p className="text-xs text-slate-500 mt-0.5">{fmt(session.startedAt)}</p>
+          <p className="font-medium text-sm text-gray-900">{fmtDuration(session.durationSeconds)} session</p>
+          <p className="text-xs text-gray-500 mt-0.5">{fmt(session.startedAt)}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <StatusBadge status={session.status} />
-          <div className="text-slate-600">
+          <div className="text-gray-400">
             {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
         </div>
       </button>
       {open && (
-        <div className="px-4 pb-4 border-t border-slate-700/50 fade-in">
+        <div className="px-4 pb-4 border-t border-gray-100 fade-in">
           <div className="grid grid-cols-2 gap-x-4 gap-y-2 pt-3 text-xs">
             {[
               ['Started',  fmt(session.startedAt)],
@@ -258,8 +258,8 @@ function HistoryCard({ session }: { session: AudioSessionRecord }) {
               ['Started by', session.startedByEmail ?? '—'],
             ].map(([label, value]) => (
               <div key={label}>
-                <p className="text-slate-500 text-[10px] uppercase tracking-wide mb-0.5">{label}</p>
-                <p className="text-slate-200 font-medium truncate">{value}</p>
+                <p className="text-gray-500 text-[10px] uppercase tracking-wide mb-0.5">{label}</p>
+                <p className="text-gray-700 font-medium truncate">{value}</p>
               </div>
             ))}
           </div>
@@ -387,52 +387,52 @@ export function DeviceAudioPage() {
   /* ─── loading ──────────────────────────────────────────────────────────── */
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-950">
-        <Loader2 className="h-8 w-8 animate-spin text-slate-600" />
+      <div className="flex h-screen items-center justify-center bg-gray-50">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
       </div>
     );
   }
 
   /* ─── derived visuals ──────────────────────────────────────────────────── */
   const heroGradient = isHolding
-    ? 'from-blue-950 via-slate-900 to-slate-950'
+    ? 'bg-blue-50'
     : active
-    ? 'from-emerald-950 via-slate-900 to-slate-950'
-    : 'from-slate-900 via-slate-900 to-slate-950';
+    ? 'bg-blue-50'
+    : 'bg-white';
 
   const mainBtnGlow = active
-    ? { '--glow-color': '#ef444488' } as React.CSSProperties
-    : { '--glow-color': '#22c55e88' } as React.CSSProperties;
+    ? { '--glow-color': 'transparent' } as React.CSSProperties
+    : { '--glow-color': 'transparent' } as React.CSSProperties;
 
   /* ─── render ───────────────────────────────────────────────────────────── */
   return (
-    <div className="flex flex-col h-screen bg-slate-950 text-slate-100">
+    <div className="flex flex-col h-screen bg-gray-50 text-gray-900">
       <StyleInjector />
 
       {/* ── header ── */}
-      <div className="shrink-0 bg-slate-900/80 backdrop-blur-md border-b border-slate-800/80 px-4 z-10">
+      <div className="shrink-0 bg-white border-b border-gray-200 px-4 z-10">
         <div className="flex items-center gap-3 h-14">
           <button
             type="button"
             onClick={goBack}
-            className="p-2 -ml-2 rounded-xl hover:bg-slate-800 transition-colors text-slate-400 hover:text-slate-100"
+            className="p-2 -ml-2 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-900"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-slate-100 truncate leading-tight text-sm">
+            <p className="font-semibold text-gray-900 truncate leading-tight text-sm">
               {device?.deviceName ?? 'Unknown Device'}
             </p>
-            <p className="text-[10px] text-slate-600 truncate font-mono">{device?.deviceUuid}</p>
+            <p className="text-[10px] text-gray-500 truncate font-mono">{device?.deviceUuid}</p>
           </div>
           <div className="flex items-center gap-1.5">
             {active && (
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
             )}
             <span className={`text-xs font-medium px-2.5 py-1 rounded-full border transition-all
               ${active
-                ? 'text-emerald-400 border-emerald-800 bg-emerald-950/60'
-                : 'text-slate-500 border-slate-800 bg-slate-900/60'}`}>
+                ? 'text-red-700 border-red-200 bg-red-50'
+                : 'text-gray-600 border-gray-200 bg-gray-100'}`}>
               {active ? 'Live' : 'Idle'}
             </span>
           </div>
@@ -443,7 +443,7 @@ export function DeviceAudioPage() {
       <div className="flex-1 overflow-y-auto">
 
         {/* ── hero card ── */}
-        <div className={`bg-gradient-to-b ${heroGradient} transition-all duration-700 px-5 pt-8 pb-10`}>
+        <div className={`${heroGradient} border-b border-gray-200 transition-all duration-700 px-5 pt-8 pb-10`}>
           <div className="flex flex-col items-center gap-5">
 
             <PulsingIcon active={active} sending={isHolding} />
@@ -452,18 +452,18 @@ export function DeviceAudioPage() {
 
             <div className="flex flex-col items-center gap-1.5 min-h-[3rem] justify-center">
               {active && !isHolding && (
-                <p className="text-3xl font-mono font-bold text-slate-100 tracking-wider fade-in tabular-nums">
+                <p className="text-3xl font-mono font-semibold text-gray-900 tracking-wider fade-in tabular-nums">
                   {liveTimer}
                 </p>
               )}
               {isHolding && (
                 <div className="flex items-center gap-2 fade-in">
-                  <span className="h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
-                  <p className="text-sm font-semibold text-blue-300 tracking-wide uppercase">Transmitting…</p>
+                  <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+                  <p className="text-sm font-semibold text-blue-700 tracking-wide uppercase">Transmitting…</p>
                 </div>
               )}
               {!active && !isHolding && (
-                <p className="text-sm text-slate-600 text-center">
+                <p className="text-sm text-gray-500 text-center">
                   {canListen ? 'Tap Start Listening to begin' : 'No permission to listen'}
                 </p>
               )}
@@ -477,15 +477,15 @@ export function DeviceAudioPage() {
           {(error || pttError) && (
             <div className="space-y-2 fade-in">
               {error && (
-                <div className="flex items-start gap-2.5 rounded-2xl bg-red-950/60 border border-red-900/50 px-4 py-3">
-                  <XCircle className="h-4 w-4 text-red-400 mt-0.5 shrink-0" />
-                  <p className="text-sm text-red-300">{error}</p>
+                <div className="flex items-start gap-2.5 rounded-lg bg-red-50 border border-red-200 px-4 py-3">
+                  <XCircle className="h-4 w-4 text-red-600 mt-0.5 shrink-0" />
+                  <p className="text-sm text-red-700">{error}</p>
                 </div>
               )}
               {pttError && (
-                <div className="flex items-start gap-2.5 rounded-2xl bg-red-950/60 border border-red-900/50 px-4 py-3">
-                  <XCircle className="h-4 w-4 text-red-400 mt-0.5 shrink-0" />
-                  <p className="text-sm text-red-300">{pttError}</p>
+                <div className="flex items-start gap-2.5 rounded-lg bg-red-50 border border-red-200 px-4 py-3">
+                  <XCircle className="h-4 w-4 text-red-600 mt-0.5 shrink-0" />
+                  <p className="text-sm text-red-700">{pttError}</p>
                 </div>
               )}
             </div>
@@ -493,12 +493,12 @@ export function DeviceAudioPage() {
 
           {/* ── session feedback ── */}
           {currentSession && currentSession.status !== 'ACTIVE' && (
-            <div className={`flex items-center gap-2.5 rounded-2xl border px-4 py-3 fade-in
+            <div className={`flex items-center gap-2.5 rounded-lg border px-4 py-3 fade-in
               ${currentSession.status === 'ERROR'
-                ? 'bg-red-950/60 border-red-900/50'
-                : 'bg-emerald-950/60 border-emerald-900/50'}`}>
-              <CheckCircle2 className={`h-4 w-4 shrink-0 ${currentSession.status === 'ERROR' ? 'text-red-400' : 'text-emerald-400'}`} />
-              <p className={`text-sm font-medium ${currentSession.status === 'ERROR' ? 'text-red-300' : 'text-emerald-300'}`}>
+                ? 'bg-red-50 border-red-200'
+                : 'bg-green-50 border-green-200'}`}>
+              <CheckCircle2 className={`h-4 w-4 shrink-0 ${currentSession.status === 'ERROR' ? 'text-red-600' : 'text-green-600'}`} />
+              <p className={`text-sm font-medium ${currentSession.status === 'ERROR' ? 'text-red-700' : 'text-green-700'}`}>
                 {currentSession.status === 'STOPPED'
                   ? `Session ended · ${fmtDuration(currentSession.durationSeconds)}`
                   : 'Session error'}
@@ -508,9 +508,9 @@ export function DeviceAudioPage() {
 
           {/* ── options card ── */}
           {canListen && (
-            <div className="rounded-2xl bg-slate-900/80 border border-slate-800/60 backdrop-blur-sm overflow-hidden">
+            <div className="rounded-lg bg-white border border-gray-200 shadow-sm overflow-hidden">
               <div className="px-4 pt-4 pb-2">
-                <p className="text-[10px] font-semibold text-slate-600 uppercase tracking-widest">Session Options</p>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Session Options</p>
               </div>
               <div className="px-4 pb-4 space-y-4">
                 <ToggleRow
@@ -520,16 +520,16 @@ export function DeviceAudioPage() {
                   checked={listenInDark}
                   onChange={setListenInDark}
                   disabled={active}
-                  accentColor="#6366f1"
+                  accentColor="#2563eb"
                 />
-                <div className="h-px bg-slate-800/60" />
+                <div className="h-px bg-gray-200" />
                 <ToggleRow
                   icon={<Radio className="h-4 w-4" />}
                   label="Send Voice Command"
                   description="Hold button to speak live to device"
                   checked={sendVoice}
                   onChange={setSendVoice}
-                  accentColor="#3b82f6"
+                  accentColor="#2563eb"
                 />
               </div>
             </div>
@@ -544,12 +544,12 @@ export function DeviceAudioPage() {
               onPointerLeave={stopTalking}
               onPointerCancel={stopTalking}
               disabled={!device}
-              className={`w-full h-14 rounded-2xl flex items-center justify-center gap-2.5 font-semibold text-sm
+              className={`w-full h-14 rounded-md flex items-center justify-center gap-2.5 font-semibold text-sm
                           transition-all select-none touch-none disabled:opacity-40
                           ${isHolding
-                            ? 'bg-blue-600 text-white scale-[0.97]'
-                            : 'bg-slate-800 border border-slate-700 text-blue-400 hover:bg-slate-700'}`}
-              style={isHolding ? { boxShadow: '0 0 32px 4px #3b82f655' } : {}}
+                            ? 'bg-primary text-white shadow-sm'
+                            : 'bg-white border border-gray-300 text-blue-600 hover:bg-gray-50 shadow-sm'}`}
+              style={isHolding ? { boxShadow: 'none' } : {}}
             >
               <Radio className="h-4 w-4" />
               {isHolding ? 'Transmitting…' : 'Hold to Speak'}
@@ -560,12 +560,12 @@ export function DeviceAudioPage() {
           {canRead && (
             <div>
               <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-semibold text-slate-300">Session History</p>
+                <p className="text-base font-semibold text-gray-900">Session History</p>
                 <button
                   type="button"
                   onClick={loadHistory}
                   disabled={loadingHistory}
-                  className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors disabled:opacity-40"
+                  className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors disabled:opacity-40"
                 >
                   <RefreshCw className={`h-3.5 w-3.5 ${loadingHistory ? 'animate-spin' : ''}`} />
                   {loadingHistory ? 'Loading…' : 'Refresh'}
@@ -573,9 +573,9 @@ export function DeviceAudioPage() {
               </div>
 
               {history.length === 0 && !loadingHistory ? (
-                <div className="rounded-2xl bg-slate-900/60 border border-slate-800/60 py-10 flex flex-col items-center gap-2">
-                  <Clock className="h-6 w-6 text-slate-700" />
-                  <p className="text-sm text-slate-600">No sessions yet</p>
+                <div className="rounded-lg bg-white border border-gray-200 py-10 flex flex-col items-center gap-2">
+                  <Clock className="h-6 w-6 text-gray-400" />
+                  <p className="text-sm text-gray-500">No sessions yet</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -587,27 +587,27 @@ export function DeviceAudioPage() {
 
           {/* ── footer note ── */}
           <div className="flex items-center justify-center gap-1.5 py-3">
-            <Shield className="h-3 w-3 text-slate-700" />
-            <p className="text-xs text-slate-700">One-way audio · TLS encrypted</p>
+            <Shield className="h-3 w-3 text-gray-400" />
+            <p className="text-xs text-gray-500">One-way audio · TLS encrypted</p>
           </div>
         </div>
       </div>
 
       {/* ── sticky bottom action ── */}
       {canListen && (
-        <div className="shrink-0 bg-slate-900/90 backdrop-blur-md border-t border-slate-800/60 px-5 pt-4 pb-6">
+        <div className="shrink-0 bg-white border-t border-gray-200 px-5 pt-4 pb-6">
           <button
             type="button"
             onClick={active ? handleStop : handleStart}
             disabled={loading || !device}
-            className={`w-full h-14 rounded-2xl flex items-center justify-center gap-3 font-bold text-base
-                        transition-all disabled:opacity-40 disabled:scale-100
+            className={`w-full h-14 rounded-md flex items-center justify-center gap-3 font-semibold text-base
+                        shadow-sm transition-colors disabled:opacity-40
                         ${active
                           ? 'bg-red-600 hover:bg-red-700 active:bg-red-800 text-white'
-                          : 'bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white'}`}
+                          : 'bg-primary hover:bg-primary-hover text-white'}`}
             style={loading ? {} : (active || !loading) ? { ...(active
-              ? { boxShadow: '0 4px 32px -4px #ef444455' }
-              : { boxShadow: '0 4px 32px -4px #22c55e55' }), ...mainBtnGlow } : {}}
+              ? { boxShadow: 'none' }
+              : { boxShadow: 'none' }), ...mainBtnGlow } : {}}
           >
             {loading ? (
               <Loader2 className="h-5 w-5 animate-spin" />

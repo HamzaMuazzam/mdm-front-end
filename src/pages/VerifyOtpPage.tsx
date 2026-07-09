@@ -55,10 +55,10 @@ export function VerifyOtpPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 sm:px-0 p-4">
-      <Card className="w-full max-w-md mx-auto">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 sm:px-0 p-4">
+      <Card className="w-full max-w-md mx-auto bg-white border border-gray-200 rounded-lg shadow-sm">
         <CardHeader className="text-center px-6 sm:px-8 pt-6 sm:pt-8">
-          <CardTitle className="text-xl sm:text-2xl">Verify Your Email</CardTitle>
+          <CardTitle className="text-xl font-semibold text-gray-900">Verify Your Email</CardTitle>
           <CardDescription>
             We've sent a 6-digit code to <br />
             <span className="font-medium text-foreground">{email}</span>
@@ -67,12 +67,12 @@ export function VerifyOtpPage() {
         <CardContent className="px-6 sm:px-8 pb-6 sm:pb-8">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {error && (
-              <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md text-center">
+              <div className="p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md text-center">
                 {error}
               </div>
             )}
             {successMessage && (
-              <div className="p-3 text-sm text-success bg-success/10 rounded-md text-center">
+              <div className="p-3 text-sm text-green-700 bg-green-50 border border-green-200 rounded-md text-center">
                 {successMessage}
               </div>
             )}
@@ -99,7 +99,7 @@ export function VerifyOtpPage() {
                 type="button"
                 onClick={handleResendOtp}
                 disabled={sendOtpMutation.isPending}
-                className="text-primary hover:underline"
+                className="text-sm text-blue-600 hover:text-blue-700 hover:underline"
               >
                 {sendOtpMutation.isPending ? 'Sending...' : 'Resend OTP'}
               </button>

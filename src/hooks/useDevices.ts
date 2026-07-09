@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { deviceService } from '@/api/services/device.service';
 import { toast } from '@/hooks/useToast';
-import type { CreateDeviceRequest, UpdateDeviceRequest, UpdateDeviceConfigurationRequest, UpdateDeviceApplicationRequest, BlockedAppReviewRequest, DeviceAppUsageHistoryQuery } from '@/types/device.types';
+import type { CreateDeviceRequest, UpdateDeviceRequest, UpdateDeviceConfigurationRequest, UpdateDeviceApplicationRequest, BlockedAppReviewRequest, DeviceAppUsageHistoryQuery, ApplyDevicePolicyRequest } from '@/types/device.types';
 
 const DEVICES_QUERY_KEY = ['devices'];
 const DEVICE_ANALYTICS_QUERY_KEY = ['deviceAnalytics'];
@@ -262,6 +262,24 @@ export function useReviewBlockedAppRequest() {
       toast({
         variant: 'destructive',
         title: 'Review Error',
+        description: message,
+      });
+    },
+  });
+}
+
+export function useApplyDevicePolicy() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: ApplyDevicePolicyRequest) => deviceService.applyDevicePolicy(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: DEVICES_QUERY_KEY });
+    },
+    onError: (error: any) => {
+      const message = error?.response?.data?.message || error?.message || 'Failed to apply policy. Please try again.';
+      toast({
+        variant: 'destructive',
+        title: 'Policy Error',
         description: message,
       });
     },

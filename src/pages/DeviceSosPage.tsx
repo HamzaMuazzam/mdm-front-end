@@ -288,36 +288,36 @@ export function DeviceSosPage() {
                 key={ev.id}
                 type="button"
                 onClick={() => handleSelect(ev)}
-                className={`w-full text-left px-4 py-3.5 border-b transition-all duration-150 ${
+                className={`w-full text-left px-4 py-3.5 border-b border-gray-100 transition-all duration-150 ${
                   isSelected
-                    ? 'bg-red-600 text-white border-l-[3px] border-l-red-800 pl-[13px] shadow-sm'
-                    : 'hover:bg-red-50/60 dark:hover:bg-red-950/20'
+                    ? 'bg-red-50 border-l-[3px] border-l-red-600 pl-[13px]'
+                    : 'hover:bg-gray-50'
                 }`}
               >
                 {/* Row 1: badge + date + index */}
                 <div className="flex items-center gap-2 mb-1.5">
                   <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${
-                    isSelected ? 'bg-white/20 text-white' : 'bg-red-600 text-white'
+                    isSelected ? 'bg-red-600 text-white' : 'bg-red-50 text-red-700 border border-red-200'
                   }`}>
                     <Siren className="h-2.5 w-2.5" /> SOS
                   </span>
-                  <span className={`text-sm font-semibold flex-1 min-w-0 truncate ${isSelected ? 'text-white' : 'text-foreground'}`}>
+                  <span className={`text-sm font-semibold flex-1 min-w-0 truncate ${isSelected ? 'text-gray-900' : 'text-gray-700'}`}>
                     {fmtDateShort(ev.eventTime)}
                   </span>
-                  <span className={`text-[11px] flex-shrink-0 ${isSelected ? 'text-red-100' : 'text-muted-foreground'}`}>
+                  <span className={`text-[11px] flex-shrink-0 ${isSelected ? 'text-gray-600' : 'text-gray-500'}`}>
                     #{(page * PAGE_SIZE) + idx + 1}
                   </span>
                 </div>
 
                 {/* Row 2: coordinates + address */}
                 <div className="flex items-start gap-1.5 mb-2">
-                  <MapPin className={`h-3.5 w-3.5 flex-shrink-0 mt-0.5 ${isSelected ? 'text-red-200' : 'text-red-500'}`} />
+                  <MapPin className={`h-3.5 w-3.5 flex-shrink-0 mt-0.5 ${isSelected ? 'text-red-600' : 'text-red-500'}`} />
                   <div className="flex-1 min-w-0">
-                    <span className={`text-xs font-mono ${isSelected ? 'text-red-100' : 'text-muted-foreground'}`}>
+                    <span className={`text-xs font-mono ${isSelected ? 'text-gray-600' : 'text-gray-500'}`}>
                       {ev.latitude.toFixed(5)}, {ev.longitude.toFixed(5)}
                     </span>
                     {addresses[ev.id] ? (
-                      <p className={`text-[11px] mt-0.5 leading-tight break-words ${isSelected ? 'text-red-100' : 'text-muted-foreground'}`}>
+                      <p className={`text-[11px] mt-0.5 leading-tight break-words ${isSelected ? 'text-gray-600' : 'text-gray-500'}`}>
                         {addresses[ev.id]}
                       </p>
                     ) : (
@@ -326,7 +326,7 @@ export function DeviceSosPage() {
                         onClick={(e) => handleShowAddress(e, ev.id, ev.latitude, ev.longitude)}
                         disabled={addressLoading[ev.id]}
                         className={`mt-0.5 inline-flex items-center gap-1 text-[11px] disabled:opacity-60 transition-colors ${
-                          isSelected ? 'text-red-100 hover:text-white' : 'text-blue-600 hover:text-blue-700'
+                          isSelected ? 'text-blue-600 hover:text-blue-700' : 'text-blue-600 hover:text-blue-700'
                         }`}
                       >
                         {addressLoading[ev.id]
@@ -342,14 +342,14 @@ export function DeviceSosPage() {
                 <div className="flex items-center gap-2 flex-wrap">
                   {meta.battery != null && (
                     <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${
-                      isSelected ? 'bg-white/20 text-white' : `bg-muted ${batteryColor(meta.battery)}`
+                      isSelected ? `bg-gray-100 ${batteryColor(meta.battery)}` : `bg-gray-100 ${batteryColor(meta.battery)}`
                     }`}>
                       <BatteryMedium className="h-3 w-3" />{meta.battery}%
                     </span>
                   )}
                   {meta.network && (
                     <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${
-                      isSelected ? 'bg-white/20 text-white' : 'bg-muted text-muted-foreground'
+                      isSelected ? 'bg-gray-200 text-gray-700' : 'bg-gray-100 text-gray-600'
                     }`}>
                       <NetworkIcon network={meta.network} />{meta.network}
                     </span>
@@ -367,7 +367,7 @@ export function DeviceSosPage() {
             type="button"
             onClick={() => setPage((p) => Math.max(0, p - 1))}
             disabled={page === 0}
-            className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-xl border font-medium hover:bg-muted active:bg-muted/80 disabled:opacity-40 transition-colors"
+            className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-md border border-gray-300 font-medium hover:bg-muted active:bg-muted/80 disabled:opacity-40 transition-colors"
           >
             <ChevronLeft className="h-4 w-4" /> Prev
           </button>
@@ -376,7 +376,7 @@ export function DeviceSosPage() {
             type="button"
             onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
             disabled={page >= totalPages - 1}
-            className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-xl border font-medium hover:bg-muted active:bg-muted/80 disabled:opacity-40 transition-colors"
+            className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-md border border-gray-300 font-medium hover:bg-muted active:bg-muted/80 disabled:opacity-40 transition-colors"
           >
             Next <ChevronRight className="h-4 w-4" />
           </button>
@@ -389,22 +389,22 @@ export function DeviceSosPage() {
     <div className="flex flex-col bg-background" style={{ height: '100dvh' }}>
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 border-b bg-white dark:bg-gray-900 shadow-sm flex-shrink-0">
+      <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 border-b border-gray-200 bg-white shadow-sm flex-shrink-0">
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="p-2 -ml-1 rounded-xl hover:bg-muted transition-colors"
+          className="p-2 -ml-1 rounded-md hover:bg-muted transition-colors"
           aria-label="Back"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
 
-        <div className="p-2 bg-gradient-to-br from-red-500 to-rose-600 rounded-xl shadow-md shadow-red-500/20 flex-shrink-0">
-          <Siren className="h-4 w-4 text-white" />
+        <div className="p-2 bg-red-50 rounded-md flex-shrink-0">
+          <Siren className="h-4 w-4 text-red-600" />
         </div>
 
         <div className="flex-1 min-w-0">
-          <h1 className="font-semibold text-sm sm:text-base leading-tight">SOS History</h1>
+          <h1 className="font-semibold text-sm sm:text-base leading-tight text-gray-900">SOS History</h1>
           <p className="text-xs text-muted-foreground truncate">
             {device ? (device.deviceName || device.model) : `Device #${deviceId}`}
           </p>
@@ -420,7 +420,7 @@ export function DeviceSosPage() {
         <button
           type="button"
           onClick={() => setFiltersOpen((v) => !v)}
-          className={`p-2 rounded-xl transition-colors ${filtersOpen ? 'bg-red-50 text-red-600' : 'hover:bg-muted'}`}
+          className={`p-2 rounded-md transition-colors ${filtersOpen ? 'bg-red-50 text-red-600' : 'hover:bg-muted'}`}
           aria-label="Toggle filters"
         >
           <SlidersHorizontal className="h-4 w-4" />
@@ -430,7 +430,7 @@ export function DeviceSosPage() {
           type="button"
           onClick={fetchEvents}
           disabled={loading}
-          className="p-2 rounded-xl hover:bg-muted transition-colors disabled:opacity-40"
+          className="p-2 rounded-md hover:bg-muted transition-colors disabled:opacity-40"
           aria-label="Refresh"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
@@ -446,7 +446,7 @@ export function DeviceSosPage() {
               type="datetime-local"
               value={from}
               onChange={(e) => { setFrom(e.target.value); setPage(0); }}
-              className="flex-1 text-xs border rounded-lg px-2.5 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-red-400 min-w-0"
+              className="flex-1 text-xs border border-gray-300 rounded-md px-2.5 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-0"
             />
           </div>
           <div className="flex items-center gap-2 flex-1">
@@ -455,7 +455,7 @@ export function DeviceSosPage() {
               type="datetime-local"
               value={to}
               onChange={(e) => { setTo(e.target.value); setPage(0); }}
-              className="flex-1 text-xs border rounded-lg px-2.5 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-red-400 min-w-0"
+              className="flex-1 text-xs border border-gray-300 rounded-md px-2.5 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-0"
             />
           </div>
           <button
@@ -477,7 +477,7 @@ export function DeviceSosPage() {
         ═══════════════════════════════════════════════════════════════════ */}
 
         {/* ── Desktop list panel ─────────────────────────────────────────── */}
-        <div className="hidden md:flex md:w-[360px] xl:w-[400px] flex-col border-r bg-white dark:bg-gray-900 flex-shrink-0 min-h-0">
+        <div className="hidden md:flex md:w-[360px] xl:w-[400px] flex-col border-r border-gray-200 bg-white flex-shrink-0 min-h-0">
           <div className="px-4 py-2 border-b bg-muted/40 flex-shrink-0">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
               SOS Events {totalItems > 0 && `(${totalItems})`}
@@ -577,7 +577,7 @@ export function DeviceSosPage() {
           <button
             type="button"
             onClick={() => setListOpen(true)}
-            className="md:hidden absolute top-3 left-3 z-[400] flex items-center gap-2 bg-white dark:bg-gray-900 shadow-lg border rounded-xl px-3 py-2 text-sm font-medium hover:bg-muted active:scale-95 transition-all"
+            className="md:hidden absolute top-3 left-3 z-[400] flex items-center gap-2 bg-white shadow-lg border border-gray-200 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted active:scale-95 transition-all"
           >
             <List className="h-4 w-4 text-red-600" />
             <span>SOS List</span>
@@ -592,7 +592,7 @@ export function DeviceSosPage() {
           {selectedEvent && (() => {
             const meta = parseMeta(selectedEvent.metadata);
             return (
-              <div className="absolute bottom-3 left-3 right-3 z-[400] bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-border p-3">
+              <div className="absolute bottom-3 left-3 right-3 z-[400] bg-white rounded-lg shadow-lg border border-gray-200 p-3">
                 <div className="flex items-center justify-between gap-2 mb-2.5">
                   <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-xs font-bold px-2.5 py-1 rounded-full">
                     <Siren className="h-3 w-3" /> SOS
@@ -610,16 +610,16 @@ export function DeviceSosPage() {
                   </button>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-xs">
-                  <div className="bg-muted/60 rounded-lg px-2 py-1.5">
+                  <div className="bg-gray-50 rounded-md px-2 py-1.5">
                     <p className="text-muted-foreground text-[10px] mb-0.5">Latitude</p>
                     <p className="font-mono font-medium">{selectedEvent.latitude.toFixed(5)}</p>
                   </div>
-                  <div className="bg-muted/60 rounded-lg px-2 py-1.5">
+                  <div className="bg-gray-50 rounded-md px-2 py-1.5">
                     <p className="text-muted-foreground text-[10px] mb-0.5">Longitude</p>
                     <p className="font-mono font-medium">{selectedEvent.longitude.toFixed(5)}</p>
                   </div>
                   {meta.battery != null && (
-                    <div className="bg-muted/60 rounded-lg px-2 py-1.5">
+                    <div className="bg-gray-50 rounded-md px-2 py-1.5">
                       <p className="text-muted-foreground text-[10px] mb-0.5">Battery</p>
                       <p className={`font-semibold flex items-center gap-1 ${batteryColor(meta.battery)}`}>
                         <BatteryMedium className="h-3 w-3" />{meta.battery}%
@@ -627,7 +627,7 @@ export function DeviceSosPage() {
                     </div>
                   )}
                   {meta.network && (
-                    <div className="bg-muted/60 rounded-lg px-2 py-1.5">
+                    <div className="bg-gray-50 rounded-md px-2 py-1.5">
                       <p className="text-muted-foreground text-[10px] mb-0.5">Network</p>
                       <p className="font-semibold flex items-center gap-1">
                         <NetworkIcon network={meta.network} />{meta.network}
@@ -657,9 +657,9 @@ export function DeviceSosPage() {
 
         {/* ── Mobile list drawer (overlay) ───────────────────────────────── */}
         {listOpen && (
-          <div className="md:hidden absolute inset-0 z-[500] flex flex-col bg-white dark:bg-gray-900">
+          <div className="md:hidden absolute inset-0 z-[500] flex flex-col bg-white">
             {/* Drawer header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b bg-white dark:bg-gray-900 flex-shrink-0">
+            <div className="flex items-center justify-between px-4 py-3 border-b bg-white flex-shrink-0">
               <div className="flex items-center gap-2">
                 <Siren className="h-4 w-4 text-red-600" />
                 <span className="font-semibold text-sm">SOS Events</span>
@@ -672,7 +672,7 @@ export function DeviceSosPage() {
               <button
                 type="button"
                 onClick={() => setListOpen(false)}
-                className="p-2 rounded-xl hover:bg-muted transition-colors"
+                className="p-2 rounded-md hover:bg-muted transition-colors"
                 aria-label="Close list"
               >
                 <X className="h-5 w-5" />

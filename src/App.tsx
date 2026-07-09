@@ -19,6 +19,8 @@ import { DeviceAlertPage } from './pages/DeviceAlertPage';
 import { DeviceAudioPage } from './pages/DeviceAudioPage';
 import { DeviceDataPage } from './pages/DeviceDataPage';
 import { DeviceTrackingPage } from './pages/DeviceTrackingPage';
+import { DeviceSimChangesPage } from './pages/DeviceSimChangesPage';
+import { DeviceIntegrityPage } from './pages/DeviceIntegrityPage';
 import { AllDevicesMapPage } from './pages/AllDevicesMapPage';
 import { DeviceSosPage } from './pages/DeviceSosPage';
 import { DeviceTimeRangePage } from './pages/DeviceTimeRangePage';
@@ -115,6 +117,24 @@ function App() {
           element={
             <ProtectedRoute requiresSubscription>
               <DeviceTrackingPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path={ROUTES.DEVICE_SIM_CHANGES}
+          element={
+            <ProtectedRoute requiresSubscription>
+              <DeviceSimChangesPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path={ROUTES.DEVICE_INTEGRITY}
+          element={
+            <ProtectedRoute requiresSubscription>
+              <DeviceIntegrityPage />
             </ProtectedRoute>
           }
         />

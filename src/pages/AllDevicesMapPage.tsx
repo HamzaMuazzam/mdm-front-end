@@ -360,14 +360,14 @@ export function AllDevicesMapPage() {
     <>
       <div
         className={cn(
-          'border-b border-white/10 bg-slate-950',
+          'border-b border-gray-200 bg-white',
           isMobile ? 'px-4 pb-4 pt-2' : 'px-4 pb-4 pt-4'
         )}
       >
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2">
-            <MapPin className="h-3.5 w-3.5 shrink-0 text-cyan-300" />
-            <p className="truncate text-[0.76rem] text-slate-300">
+            <MapPin className="h-3.5 w-3.5 shrink-0 text-blue-600" />
+            <p className="truncate text-[0.76rem] text-gray-600">
               {loading
                 ? 'Loading...'
                 : `${located.length} mapped · ${onlineCount} online · ${noLocation.length} waiting`}
@@ -377,7 +377,7 @@ export function AllDevicesMapPage() {
             type="button"
             onClick={handleRefresh}
             disabled={loading}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-[14px] border border-white/10 bg-white/5 px-3 h-8 text-[0.72rem] font-medium text-white transition-colors hover:bg-white/10 disabled:opacity-60"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 h-8 text-[0.72rem] font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
           >
             <RefreshCw className={cn('h-3 w-3', loading && 'animate-spin')} />
             Refresh
@@ -386,37 +386,37 @@ export function AllDevicesMapPage() {
 
         <div className="mt-3 flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[0.7rem] font-medium uppercase tracking-[0.28em] text-sky-200/70">
+            <p className="text-[0.7rem] font-medium uppercase tracking-wide text-gray-500">
               Device Feed
             </p>
-            <h2 className="mt-1 text-base font-semibold text-white sm:text-lg">
+            <h2 className="mt-1 text-base font-semibold text-gray-900 sm:text-lg">
               Browse the fleet
             </h2>
-            <p className="mt-1 text-xs text-slate-300/70">
+            <p className="mt-1 text-xs text-gray-500">
               {q ? `${visibleResultCount} matching device${visibleResultCount === 1 ? '' : 's'}` : `${devices.length} managed device${devices.length === 1 ? '' : 's'}`}
             </p>
           </div>
 
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[0.72rem] font-medium text-slate-200">
-            <Layers3 className="h-3.5 w-3.5 text-sky-200" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-100 px-3 py-1.5 text-[0.72rem] font-medium text-gray-700">
+            <Layers3 className="h-3.5 w-3.5 text-blue-600" />
             {visibleResultCount}
           </div>
         </div>
 
         <div className="relative mt-3">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             placeholder="Search by name, model, or phone"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            className="h-10 w-full rounded-[18px] border border-white/10 bg-white/5 pl-10 pr-10 text-[0.82rem] text-white outline-none ring-0 placeholder:text-slate-400 focus:border-sky-400/70 focus:bg-white/[0.08]"
+            className="h-9 w-full rounded-md border border-gray-300 bg-white pl-10 pr-10 text-sm text-gray-900 outline-none ring-0 placeholder:text-gray-400 focus:border-blue-500"
           />
           {search && (
             <button
               type="button"
               onClick={() => setSearch('')}
-              className="absolute right-2.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white"
+              className="absolute right-2.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
               aria-label="Clear search"
             >
               <X className="h-3 w-3" />
@@ -433,12 +433,12 @@ export function AllDevicesMapPage() {
               className={cn(
                 'inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[0.72rem] font-medium transition-all duration-200',
                 panelView === filter.key
-                  ? 'border-sky-300/40 bg-sky-400/15 text-white shadow-[0_16px_30px_rgba(56,189,248,0.15)]'
-                  : 'border-white/10 bg-white/5 text-slate-300 hover:border-white/15 hover:bg-white/[0.08] hover:text-white'
+                  ? 'border-blue-200 bg-blue-50 text-blue-700'
+                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900'
               )}
             >
               <span>{filter.label}</span>
-              <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[0.62rem] text-slate-100">
+              <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[0.62rem] text-gray-600">
                 {filter.count}
               </span>
             </button>
@@ -446,26 +446,26 @@ export function AllDevicesMapPage() {
         </div>
       </div>
 
-      <div className={cn('flex-1 overflow-y-auto bg-slate-950 px-4 pb-8 pt-4', isMobile && 'px-4 pb-10 pt-3')}>
+      <div className={cn('flex-1 overflow-y-auto bg-gray-50 px-4 pb-8 pt-4', isMobile && 'px-4 pb-10 pt-3')}>
         {devices.length === 0 && !devicesLoading && (
-          <div className="flex h-full min-h-[16rem] flex-col items-center justify-center rounded-[28px] border border-dashed border-white/10 bg-white/[0.03] px-6 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 text-slate-300">
+          <div className="flex h-full min-h-[16rem] flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 bg-white px-6 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-md bg-gray-100 text-gray-500">
               <Smartphone className="h-7 w-7" />
             </div>
-            <h3 className="mt-4 text-base font-semibold text-white">No devices yet</h3>
-            <p className="mt-2 text-sm text-slate-400">
+            <h3 className="mt-4 text-base font-semibold text-gray-900">No devices yet</h3>
+            <p className="mt-2 text-sm text-gray-600">
               As soon as a device is enrolled, it will appear here with live status and coordinates.
             </p>
           </div>
         )}
 
         {devices.length > 0 && visibleResultCount === 0 && (
-          <div className="flex min-h-[14rem] flex-col items-center justify-center rounded-[28px] border border-dashed border-white/10 bg-white/[0.03] px-6 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 text-slate-300">
+          <div className="flex min-h-[14rem] flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 bg-white px-6 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-md bg-gray-100 text-gray-500">
               <Search className="h-6 w-6" />
             </div>
-            <h3 className="mt-4 text-base font-semibold text-white">No matching devices</h3>
-            <p className="mt-2 text-sm text-slate-400">
+            <h3 className="mt-4 text-base font-semibold text-gray-900">No matching devices</h3>
+            <p className="mt-2 text-sm text-gray-600">
               Try a different device name, model, or phone number.
             </p>
           </div>
@@ -476,10 +476,10 @@ export function AllDevicesMapPage() {
             <section className={cn(isMobile ? 'space-y-2' : 'space-y-2.5')}>
               {panelView === 'all' && (
                 <div className="flex items-center justify-between px-1">
-                  <p className={cn('font-medium uppercase tracking-[0.22em] text-sky-200/70', isMobile ? 'text-[0.64rem]' : 'text-[0.68rem]')}>
+                  <p className={cn('font-medium uppercase tracking-wide text-gray-500', isMobile ? 'text-[0.64rem]' : 'text-[0.68rem]')}>
                     Tracked Devices
                   </p>
-                  <p className={cn('text-slate-400', isMobile ? 'text-[0.64rem]' : 'text-[0.68rem]')}>
+                  <p className={cn('text-gray-500', isMobile ? 'text-[0.64rem]' : 'text-[0.68rem]')}>
                     {filteredLocated.length} with map data
                   </p>
                 </div>
@@ -498,17 +498,17 @@ export function AllDevicesMapPage() {
                     key={device.deviceUuid}
                     className={cn(
                       'border text-left transition-all duration-300',
-                      isMobile ? 'rounded-[18px] p-2.5' : 'rounded-[20px] p-3',
+                      isMobile ? 'rounded-lg p-2.5' : 'rounded-lg p-3',
                       isSelected
-                        ? 'border-sky-300/35 bg-sky-400/12 shadow-[0_18px_40px_rgba(56,189,248,0.12)]'
-                        : 'border-white/10 bg-white/[0.04] hover:border-white/15 hover:bg-white/[0.06]'
+                        ? 'border-blue-300 bg-blue-50 shadow-sm'
+                        : 'border-gray-200 bg-white shadow-sm hover:border-gray-300'
                     )}
                   >
                     <div className={cn('flex items-start', isMobile ? 'gap-2' : 'gap-2.5')}>
                       <div
                         className={cn(
-                          'flex shrink-0 items-center justify-center border border-white/10 bg-white/5 font-semibold text-white shadow-inner shadow-white/5',
-                          isMobile ? 'h-8 w-8 rounded-[14px] text-[0.66rem]' : 'h-9 w-9 rounded-[16px] text-[0.72rem]'
+                          'flex shrink-0 items-center justify-center border border-gray-200 bg-gray-100 font-semibold text-gray-700',
+                          isMobile ? 'h-8 w-8 rounded-md text-[0.66rem]' : 'h-9 w-9 rounded-md text-[0.72rem]'
                         )}
                       >
                         {initials}
@@ -517,10 +517,10 @@ export function AllDevicesMapPage() {
                       <div className="min-w-0 flex-1">
                         <div className={cn('flex items-start justify-between', isMobile ? 'gap-2' : 'gap-2.5')}>
                           <div className="min-w-0">
-                            <p className={cn('truncate font-semibold text-white', isMobile ? 'text-[0.74rem]' : 'text-[0.8rem]')}>
+                            <p className={cn('truncate font-semibold text-gray-900', isMobile ? 'text-[0.74rem]' : 'text-[0.8rem]')}>
                               {getDeviceLabel(device)}
                             </p>
-                            <p className={cn('mt-0.5 truncate text-slate-400', isMobile ? 'text-[0.62rem]' : 'text-[0.68rem]')}>
+                            <p className={cn('mt-0.5 truncate text-gray-500', isMobile ? 'text-[0.62rem]' : 'text-[0.68rem]')}>
                               {getDeviceSubtitle(device)}
                             </p>
                           </div>
@@ -530,8 +530,8 @@ export function AllDevicesMapPage() {
                               'inline-flex shrink-0 items-center gap-1 rounded-full border font-medium',
                               isMobile ? 'px-1.5 py-0.5 text-[0.54rem]' : 'px-1.5 py-0.5 text-[0.58rem]',
                               isOnline
-                                ? 'border-emerald-300/25 bg-emerald-400/12 text-emerald-100'
-                                : 'border-slate-300/15 bg-slate-200/10 text-slate-200'
+                                ? 'border-green-200 bg-green-50 text-green-700'
+                                : 'border-gray-200 bg-gray-100 text-gray-600'
                             )}
                           >
                             {isOnline ? <Wifi className="h-2.5 w-2.5" /> : <WifiOff className="h-2.5 w-2.5" />}
@@ -540,17 +540,17 @@ export function AllDevicesMapPage() {
                         </div>
 
                         <div className={cn('mt-2 flex flex-wrap', isMobile ? 'gap-1' : 'gap-1.5')}>
-                          <span className={cn('inline-flex items-center gap-1 rounded-full border border-white/10 bg-slate-950/70 text-slate-200', isMobile ? 'px-1.5 py-0.5 text-[0.54rem]' : 'px-1.5 py-0.5 text-[0.58rem]')}>
-                            <Gauge className="h-2.5 w-2.5 text-cyan-200" />
+                          <span className={cn('inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 text-gray-600', isMobile ? 'px-1.5 py-0.5 text-[0.54rem]' : 'px-1.5 py-0.5 text-[0.58rem]')}>
+                            <Gauge className="h-2.5 w-2.5 text-blue-600" />
                             {formatSpeed(point!.speed)}
                           </span>
-                          <span className={cn('inline-flex items-center gap-1 rounded-full border border-white/10 bg-slate-950/70 text-slate-200', isMobile ? 'px-1.5 py-0.5 text-[0.54rem]' : 'px-1.5 py-0.5 text-[0.58rem]')}>
-                            <Clock3 className="h-2.5 w-2.5 text-slate-300" />
+                          <span className={cn('inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 text-gray-600', isMobile ? 'px-1.5 py-0.5 text-[0.54rem]' : 'px-1.5 py-0.5 text-[0.58rem]')}>
+                            <Clock3 className="h-2.5 w-2.5 text-gray-400" />
                             {formatTimeAgo(point!.receivedAt)}
                           </span>
                           {device.batteryCharge !== undefined && device.batteryCharge !== null && (
-                            <span className={cn('inline-flex items-center gap-1 rounded-full border border-white/10 bg-slate-950/70 text-slate-200', isMobile ? 'px-1.5 py-0.5 text-[0.54rem]' : 'px-1.5 py-0.5 text-[0.58rem]')}>
-                              <BatteryMedium className="h-2.5 w-2.5 text-emerald-200" />
+                            <span className={cn('inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 text-gray-600', isMobile ? 'px-1.5 py-0.5 text-[0.54rem]' : 'px-1.5 py-0.5 text-[0.58rem]')}>
+                              <BatteryMedium className="h-2.5 w-2.5 text-green-600" />
                               {device.batteryCharge}%
                             </span>
                           )}
@@ -559,28 +559,28 @@ export function AllDevicesMapPage() {
                     </div>
 
                     <div className={cn('mt-2.5 grid grid-cols-1 gap-1.5 sm:grid-cols-2', isMobile && 'sm:grid-cols-1')}>
-                      <div className={cn('rounded-[14px] border border-white/8 bg-slate-950/70', isMobile ? 'p-2' : 'p-2.5')}>
-                        <p className={cn('uppercase tracking-[0.14em] text-slate-500', isMobile ? 'text-[0.5rem]' : 'text-[0.54rem]')}>
+                      <div className={cn('rounded-md border border-gray-200 bg-gray-50', isMobile ? 'p-2' : 'p-2.5')}>
+                        <p className={cn('uppercase tracking-wide text-gray-500', isMobile ? 'text-[0.5rem]' : 'text-[0.54rem]')}>
                           Coordinates
                         </p>
-                        <p className={cn('mt-1 font-medium text-slate-100', isMobile ? 'text-[0.68rem]' : 'text-[0.72rem]')}>
+                        <p className={cn('mt-1 font-medium text-gray-900', isMobile ? 'text-[0.68rem]' : 'text-[0.72rem]')}>
                           {formatCoords(point!)}
                         </p>
                       </div>
 
-                      <div className={cn('rounded-[14px] border border-white/8 bg-slate-950/70', isMobile ? 'p-2' : 'p-2.5')}>
-                        <p className={cn('uppercase tracking-[0.14em] text-slate-500', isMobile ? 'text-[0.5rem]' : 'text-[0.54rem]')}>
+                      <div className={cn('rounded-md border border-gray-200 bg-gray-50', isMobile ? 'p-2' : 'p-2.5')}>
+                        <p className={cn('uppercase tracking-wide text-gray-500', isMobile ? 'text-[0.5rem]' : 'text-[0.54rem]')}>
                           Last sync
                         </p>
-                        <p className={cn('mt-1 font-medium text-slate-100', isMobile ? 'text-[0.68rem]' : 'text-[0.72rem]')}>
+                        <p className={cn('mt-1 font-medium text-gray-900', isMobile ? 'text-[0.68rem]' : 'text-[0.72rem]')}>
                           {formatTimestamp(point!.receivedAt)}
                         </p>
                       </div>
                     </div>
 
-                    <div className={cn('mt-2 rounded-[14px] border border-white/8 bg-white/[0.03]', isMobile ? 'px-2 py-1.5' : 'px-2.5 py-2')}>
+                    <div className={cn('mt-2 rounded-md border border-gray-200 bg-gray-50', isMobile ? 'px-2 py-1.5' : 'px-2.5 py-2')}>
                       {address ? (
-                        <p className={cn('text-slate-300', isMobile ? 'text-[0.58rem] leading-4' : 'text-[0.62rem] leading-4')}>
+                        <p className={cn('text-gray-600', isMobile ? 'text-[0.58rem] leading-4' : 'text-[0.62rem] leading-4')}>
                           {address}
                         </p>
                       ) : (
@@ -590,7 +590,7 @@ export function AllDevicesMapPage() {
                             handleShowAddress(event, device.deviceUuid, point!.latitude, point!.longitude)
                           }
                           disabled={pendingAddress}
-                          className={cn('inline-flex items-center font-medium text-sky-200 transition-colors hover:text-white disabled:opacity-60', isMobile ? 'gap-1 text-[0.58rem]' : 'gap-1 text-[0.62rem]')}
+                          className={cn('inline-flex items-center font-medium text-blue-600 transition-colors hover:text-blue-700 disabled:opacity-60', isMobile ? 'gap-1 text-[0.58rem]' : 'gap-1 text-[0.62rem]')}
                         >
                           {pendingAddress ? (
                             <Loader2 className="h-2.5 w-2.5 animate-spin" />
@@ -606,7 +606,7 @@ export function AllDevicesMapPage() {
                       <button
                         type="button"
                         onClick={() => handleDeviceFocus(location, isMobile)}
-                        className={cn('inline-flex items-center justify-center rounded-[14px] bg-white font-medium text-slate-950 transition-transform duration-200 hover:-translate-y-0.5', isMobile ? 'gap-1 px-2 py-2 text-[0.62rem]' : 'gap-1 px-2.5 py-2 text-[0.68rem]')}
+                        className={cn('inline-flex items-center justify-center rounded-md bg-blue-600 font-medium text-white shadow-sm transition-colors hover:bg-blue-700', isMobile ? 'gap-1 px-2 py-2 text-[0.62rem]' : 'gap-1 px-2.5 py-2 text-[0.68rem]')}
                       >
                         <LocateFixed className="h-3 w-3" />
                         Center on map
@@ -614,7 +614,7 @@ export function AllDevicesMapPage() {
                       <button
                         type="button"
                         onClick={() => handleOpenTracking(device.id)}
-                        className={cn('inline-flex items-center justify-center rounded-[14px] border border-white/10 bg-white/5 font-medium text-white transition-colors hover:bg-white/10', isMobile ? 'gap-1 px-2 py-2 text-[0.62rem]' : 'gap-1 px-2.5 py-2 text-[0.68rem]')}
+                        className={cn('inline-flex items-center justify-center rounded-md border border-gray-300 bg-white font-medium text-gray-700 transition-colors hover:bg-gray-50', isMobile ? 'gap-1 px-2 py-2 text-[0.62rem]' : 'gap-1 px-2.5 py-2 text-[0.68rem]')}
                       >
                         <ArrowUpRight className="h-3 w-3" />
                         Open tracking
@@ -630,10 +630,10 @@ export function AllDevicesMapPage() {
             <section className="space-y-3">
               {panelView === 'all' && (
                 <div className="flex items-center justify-between px-1">
-                  <p className="text-xs font-medium uppercase tracking-[0.24em] text-amber-200/70">
+                  <p className="text-xs font-medium uppercase tracking-wide text-amber-700">
                     Needs Attention
                   </p>
-                  <p className="text-xs text-slate-400">{filteredNoLocation.length} waiting for first location</p>
+                  <p className="text-xs text-gray-500">{filteredNoLocation.length} waiting for first location</p>
                 </div>
               )}
 
@@ -644,20 +644,20 @@ export function AllDevicesMapPage() {
                 return (
                   <div
                     key={device.deviceUuid}
-                    className="rounded-[28px] border border-amber-300/20 bg-amber-400/10 p-4 text-left shadow-[0_20px_50px_rgba(245,158,11,0.08)]"
+                    className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-left shadow-sm"
                   >
                     <div className="flex items-start gap-3">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-amber-200/20 bg-amber-300/10 text-sm font-semibold text-amber-50">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-amber-200 bg-amber-100 text-sm font-semibold text-amber-700">
                         {getDeviceLabel(device).slice(0, 2).toUpperCase()}
                       </div>
 
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-white sm:text-[0.95rem]">
+                            <p className="truncate text-sm font-semibold text-gray-900 sm:text-[0.95rem]">
                               {getDeviceLabel(device)}
                             </p>
-                            <p className="mt-1 truncate text-xs text-amber-50/70">
+                            <p className="mt-1 truncate text-xs text-gray-600">
                               {getDeviceSubtitle(device)}
                             </p>
                           </div>
@@ -666,8 +666,8 @@ export function AllDevicesMapPage() {
                             className={cn(
                               'inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-[0.68rem] font-medium',
                               isOnline
-                                ? 'border-emerald-300/20 bg-emerald-400/12 text-emerald-100'
-                                : 'border-amber-300/15 bg-slate-950/20 text-amber-100'
+                                ? 'border-green-200 bg-green-50 text-green-700'
+                                : 'border-gray-200 bg-gray-100 text-gray-600'
                             )}
                           >
                             {isOnline ? <Wifi className="h-3.5 w-3.5" /> : <WifiOff className="h-3.5 w-3.5" />}
@@ -676,20 +676,20 @@ export function AllDevicesMapPage() {
                         </div>
 
                         <div className="mt-3 flex flex-wrap gap-2">
-                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-200/15 bg-slate-950/25 px-2.5 py-1 text-[0.68rem] text-amber-50">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-white px-2.5 py-1 text-[0.68rem] text-amber-700">
                             <ShieldAlert className="h-3.5 w-3.5" />
                             No location recorded
                           </span>
                           {device.batteryCharge !== undefined && device.batteryCharge !== null && (
-                            <span className="inline-flex items-center gap-1 rounded-full border border-amber-200/15 bg-slate-950/25 px-2.5 py-1 text-[0.68rem] text-amber-50">
+                            <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-white px-2.5 py-1 text-[0.68rem] text-amber-700">
                               <BatteryMedium className="h-3.5 w-3.5" />
                               {device.batteryCharge}%
                             </span>
                           )}
                         </div>
 
-                        <div className="mt-3 rounded-2xl border border-amber-200/15 bg-slate-950/25 p-3">
-                          <p className="text-xs leading-5 text-amber-50/80">
+                        <div className="mt-3 rounded-md border border-amber-200 bg-white p-3">
+                          <p className="text-xs leading-5 text-gray-600">
                             This device has not uploaded any trackable coordinates yet. Keep it online and confirm location permissions plus GPS access on the handset.
                           </p>
                         </div>
@@ -706,35 +706,35 @@ export function AllDevicesMapPage() {
   );
 
   return (
-    <div className="all-devices-map-page relative min-h-[100dvh] overflow-hidden bg-slate-950 text-white">
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute left-[-10%] top-[-6%] h-72 w-72 rounded-full bg-cyan-500/18 blur-[120px]" />
-        <div className="absolute right-[-12%] top-[18%] h-80 w-80 rounded-full bg-fuchsia-500/14 blur-[140px]" />
-        <div className="absolute bottom-[-12%] left-[20%] h-96 w-96 rounded-full bg-emerald-500/12 blur-[150px]" />
+    <div className="all-devices-map-page relative min-h-[100dvh] overflow-hidden bg-gray-50 text-gray-900">
+      <div className="pointer-events-none absolute inset-0 hidden overflow-hidden">
+        <div className="hidden" />
+        <div className="hidden" />
+        <div className="hidden" />
       </div>
 
       <div className="relative flex h-[100dvh] flex-col p-0 lg:p-5">
         <div className="grid flex-1 min-h-0 gap-0 lg:gap-3 lg:grid-cols-[minmax(0,1fr)_24rem] xl:grid-cols-[minmax(0,1fr)_26rem]">
-          <section className="relative min-h-0 overflow-hidden bg-slate-950 lg:rounded-[34px] lg:border lg:border-white/10 lg:shadow-[0_32px_120px_rgba(15,23,42,0.45)] lg:ring-1 lg:ring-white/5">
+          <section className="relative min-h-0 overflow-hidden bg-white lg:rounded-lg lg:border lg:border-gray-200 lg:shadow-sm">
             <div
               className="pointer-events-none absolute inset-x-0 top-0 z-[710] flex items-center justify-between px-3 lg:hidden"
               style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.85rem)' }}
             >
-              <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/72 px-3 py-1.5 text-[0.7rem] font-medium text-white shadow-[0_14px_28px_rgba(2,6,23,0.28)] backdrop-blur-xl">
-                <MapPin className="h-3.5 w-3.5 text-cyan-200" />
+              <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-[0.7rem] font-medium text-gray-700 shadow-sm">
+                <MapPin className="h-3.5 w-3.5 text-blue-600" />
                 Live map
               </div>
 
               <div className="pointer-events-auto flex items-center gap-2">
-                <div className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-slate-950/72 px-2.5 py-1.5 text-[0.66rem] font-medium text-slate-100 backdrop-blur-xl">
-                  <Wifi className="h-3 w-3 text-emerald-200" />
+                <div className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2.5 py-1.5 text-[0.66rem] font-medium text-gray-700 shadow-sm">
+                  <Wifi className="h-3 w-3 text-green-600" />
                   {onlineCount}
                 </div>
                 <button
                   type="button"
                   onClick={handleRefresh}
                   disabled={loading}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-slate-950/72 text-white shadow-[0_14px_28px_rgba(2,6,23,0.28)] backdrop-blur-xl disabled:opacity-60"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-sm disabled:opacity-60"
                   aria-label="Refresh locations"
                 >
                   <RefreshCw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
@@ -743,11 +743,11 @@ export function AllDevicesMapPage() {
             </div>
 
             {(loading || devicesLoading) && (
-              <div className="absolute inset-0 z-[750] flex items-center justify-center bg-slate-950/70">
-                <div className="rounded-[28px] border border-white/10 bg-slate-900 px-8 py-7 text-center shadow-[0_24px_80px_rgba(2,6,23,0.5)]">
-                  <Loader2 className="mx-auto h-9 w-9 animate-spin text-cyan-300" />
-                  <p className="mt-4 text-sm font-medium text-white">Loading device locations</p>
-                  <p className="mt-1 text-xs text-slate-400">
+              <div className="absolute inset-0 z-[750] flex items-center justify-center bg-white/70">
+                <div className="rounded-lg border border-gray-200 bg-white px-8 py-7 text-center shadow-lg">
+                  <Loader2 className="mx-auto h-9 w-9 animate-spin text-blue-600" />
+                  <p className="mt-4 text-sm font-medium text-gray-900">Loading device locations</p>
+                  <p className="mt-1 text-xs text-gray-500">
                     Syncing the newest coordinates and connection state.
                   </p>
                 </div>
@@ -775,7 +775,7 @@ export function AllDevicesMapPage() {
                 const initials = getDeviceLabel(device).slice(0, 2).toUpperCase();
                 const isSelected = selectedUuid === device.deviceUuid;
                 const pin = makePin(
-                  isOnline ? (isSelected ? '#22d3ee' : '#14b8a6') : (isSelected ? '#cbd5e1' : '#64748b'),
+                  isOnline ? (isSelected ? '#2563eb' : '#16a34a') : (isSelected ? '#2563eb' : '#9ca3af'),
                   initials,
                   isSelected
                 );
@@ -793,10 +793,10 @@ export function AllDevicesMapPage() {
                       <div className="w-[220px] p-3">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-white">
+                            <p className="truncate text-sm font-semibold text-gray-900">
                               {getDeviceLabel(device)}
                             </p>
-                            <p className="mt-0.5 truncate text-xs text-slate-400">
+                            <p className="mt-0.5 truncate text-xs text-gray-500">
                               {getDeviceSubtitle(device)}
                             </p>
                           </div>
@@ -804,8 +804,8 @@ export function AllDevicesMapPage() {
                             className={cn(
                               'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[0.65rem] font-medium',
                               isOnline
-                                ? 'bg-emerald-400/15 text-emerald-300'
-                                : 'bg-slate-700/60 text-slate-300'
+                                ? 'bg-green-50 text-green-700'
+                                : 'bg-gray-100 text-gray-600'
                             )}
                           >
                             {isOnline ? <Wifi className="h-2.5 w-2.5" /> : <WifiOff className="h-2.5 w-2.5" />}
@@ -814,25 +814,25 @@ export function AllDevicesMapPage() {
                         </div>
 
                         <div className="mt-3 grid grid-cols-2 gap-1.5">
-                          <div className="rounded-xl bg-white/[0.06] p-2.5">
-                            <p className="text-[0.6rem] uppercase tracking-[0.14em] text-slate-400">Speed</p>
-                            <p className="mt-1 text-sm font-semibold text-white">{formatSpeed(point!.speed)}</p>
+                          <div className="rounded-md bg-gray-50 p-2.5">
+                            <p className="text-[0.6rem] uppercase tracking-wide text-gray-500">Speed</p>
+                            <p className="mt-1 text-sm font-semibold text-gray-900">{formatSpeed(point!.speed)}</p>
                           </div>
-                          <div className="rounded-xl bg-white/[0.06] p-2.5">
-                            <p className="text-[0.6rem] uppercase tracking-[0.14em] text-slate-400">Updated</p>
-                            <p className="mt-1 text-sm font-semibold text-white">{formatTimeAgo(point!.receivedAt)}</p>
+                          <div className="rounded-md bg-gray-50 p-2.5">
+                            <p className="text-[0.6rem] uppercase tracking-wide text-gray-500">Updated</p>
+                            <p className="mt-1 text-sm font-semibold text-gray-900">{formatTimeAgo(point!.receivedAt)}</p>
                           </div>
                         </div>
 
-                        <div className="mt-1.5 rounded-xl bg-white/[0.06] p-2.5 text-xs leading-5 text-slate-300 font-mono">
+                        <div className="mt-1.5 rounded-md bg-gray-50 p-2.5 text-xs leading-5 text-gray-600 font-mono">
                           <div>{point!.latitude.toFixed(6)}, {point!.longitude.toFixed(6)}</div>
-                          <div className="text-slate-400">{formatTimestamp(point!.receivedAt)}</div>
+                          <div className="text-gray-500">{formatTimestamp(point!.receivedAt)}</div>
                         </div>
 
                         <button
                           type="button"
                           onClick={() => handleOpenTracking(device.id)}
-                          className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white/10 border border-white/10 px-3 py-2 text-xs font-medium text-white hover:bg-white/15 transition-colors"
+                          className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-xs font-medium text-white shadow-sm hover:bg-blue-700 transition-colors"
                         >
                           <ArrowUpRight className="h-3.5 w-3.5" />
                           Open tracking
@@ -847,28 +847,28 @@ export function AllDevicesMapPage() {
             <div className="absolute inset-x-0 bottom-0 z-[720] lg:hidden">
               <div
                 className={cn(
-                  'rounded-t-[30px] border-x border-t border-white/10 bg-slate-950 shadow-[0_-20px_80px_rgba(2,6,23,0.65)] transition-all duration-300',
+                  'rounded-t-lg border-x border-t border-gray-200 bg-white shadow-lg transition-all duration-300',
                   mobileSheetExpanded ? 'h-[82dvh]' : 'h-[25rem]'
                 )}
                 style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.6rem)' }}
               >
                 <div className="flex items-center justify-center px-4 pt-3">
-                  <div className="mx-auto h-1.5 w-12 rounded-full bg-white/15" />
+                  <div className="mx-auto h-1.5 w-12 rounded-full bg-gray-300" />
                 </div>
 
                 <div className="flex items-center justify-between px-4 pb-1 pt-3">
                   <div>
-                    <p className="text-[0.62rem] font-medium uppercase tracking-[0.24em] text-slate-400">
+                    <p className="text-[0.62rem] font-medium uppercase tracking-wide text-gray-500">
                       Fleet Drawer
                     </p>
-                    <p className="mt-1 text-[0.84rem] font-semibold text-white">
+                    <p className="mt-1 text-[0.84rem] font-semibold text-gray-900">
                       Native mobile feed
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setMobileSheetExpanded((value) => !value)}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-[16px] border border-white/10 bg-white/5 px-3 text-[0.7rem] font-medium text-white"
+                    className="inline-flex h-9 items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 text-[0.7rem] font-medium text-gray-700 hover:bg-gray-50"
                   >
                     {mobileSheetExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
                     {mobileSheetExpanded ? 'Collapse' : 'Expand'}
@@ -882,7 +882,7 @@ export function AllDevicesMapPage() {
             </div>
           </section>
 
-          <aside className="hidden min-h-0 overflow-hidden rounded-[34px] border border-white/10 bg-slate-950 shadow-[0_28px_90px_rgba(2,6,23,0.42)] lg:flex lg:flex-col">
+          <aside className="hidden min-h-0 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm lg:flex lg:flex-col">
             {renderPanelContent(false)}
           </aside>
         </div>

@@ -2,7 +2,6 @@ import { useState, type ReactNode } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useLogout } from '@/hooks/useAuth';
 import { usePermissionStore } from '@/store/permissionStore';
-import { Button } from '@/components/ui/button';
 import {
   LayoutDashboard,
   Users,
@@ -45,48 +44,28 @@ export function Sidebar({ activeTab, onTabChange, isMobileOpen = false, onMobile
   const sidebarContent = (collapsed: boolean) => (
     <>
       {/* Logo Section */}
-      <div className={`p-6 ${collapsed ? 'px-4' : ''}`}>
-        <div className={`flex flex-col items-center justify-center space-y-2 ${collapsed ? 'space-y-0' : ''}`}>
+      <div className={`h-16 flex items-center border-b border-gray-200 ${collapsed ? 'justify-center px-2' : 'px-5'}`}>
+        <div className="flex items-center gap-3">
           <img
             src="/tw_logo.png"
             alt="MDM Portal"
-            className={`transition-all duration-300 ${collapsed ? 'h-8 w-8' : 'h-10 w-auto'}`}
+            className="h-8 w-8 shrink-0"
           />
-          <h1
-            className={`text-2xl font-bold whitespace-nowrap overflow-hidden transition-all duration-300 ${
+          <span
+            className={`text-base font-semibold text-gray-900 whitespace-nowrap overflow-hidden transition-all duration-300 ${
               collapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
             }`}
           >
             MDM Portal
-          </h1>
+          </span>
         </div>
       </div>
 
-      {/* User Info Section */}
-      <div className={`mx-4 mb-6 p-3 bg-white/10 rounded-lg overflow-hidden transition-all duration-300 ${
-        collapsed ? 'mx-2 p-2' : ''
-      }`}>
-        {collapsed ? (
-          <div className="flex justify-center">
-            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-              <span className="text-xs font-bold">
-                {user?.email?.charAt(0).toUpperCase()}
-              </span>
-            </div>
-          </div>
-        ) : (
-          <>
-            <p className="text-sm text-gray-300">Signed in as</p>
-            <p className="font-medium truncate">{user?.email}</p>
-          </>
-        )}
-      </div>
-
       {/* Navigation */}
-      <nav className={`flex-1 space-y-2 ${collapsed ? 'px-2' : 'px-4'}`}>
+      <nav className={`flex-1 space-y-0.5 py-4 overflow-y-auto ${collapsed ? 'px-2' : 'px-3'}`}>
         {hasPermission('user:analytics') && (
           <NavButton
-            icon={<LayoutDashboard className="h-5 w-5" />}
+            icon={<LayoutDashboard className="h-4 w-4" />}
             label="Analytics"
             isActive={activeTab === 'analytics'}
             isCollapsed={collapsed}
@@ -95,7 +74,7 @@ export function Sidebar({ activeTab, onTabChange, isMobileOpen = false, onMobile
         )}
         {hasPermission('user:read') && (
           <NavButton
-            icon={<Users className="h-5 w-5" />}
+            icon={<Users className="h-4 w-4" />}
             label="Users"
             isActive={activeTab === 'users'}
             isCollapsed={collapsed}
@@ -104,7 +83,7 @@ export function Sidebar({ activeTab, onTabChange, isMobileOpen = false, onMobile
         )}
         {hasPermission('subscriptions:read') && (
           <NavButton
-            icon={<CreditCard className="h-5 w-5" />}
+            icon={<CreditCard className="h-4 w-4" />}
             label="Subscriptions"
             isActive={activeTab === 'subscriptions'}
             isCollapsed={collapsed}
@@ -113,7 +92,7 @@ export function Sidebar({ activeTab, onTabChange, isMobileOpen = false, onMobile
         )}
         {hasPermission('devices:read') && (
           <NavButton
-            icon={<Smartphone className="h-5 w-5" />}
+            icon={<Smartphone className="h-4 w-4" />}
             label="Devices"
             isActive={activeTab === 'devices'}
             isCollapsed={collapsed}
@@ -122,7 +101,7 @@ export function Sidebar({ activeTab, onTabChange, isMobileOpen = false, onMobile
         )}
         {hasPermission('configuration:read') && (
           <NavButton
-            icon={<Settings className="h-5 w-5" />}
+            icon={<Settings className="h-4 w-4" />}
             label="Configuration"
             isActive={activeTab === 'configuration'}
             isCollapsed={collapsed}
@@ -131,7 +110,7 @@ export function Sidebar({ activeTab, onTabChange, isMobileOpen = false, onMobile
         )}
         {hasPermission('security-group:read') && (
           <NavButton
-            icon={<ShieldCheck className="h-5 w-5" />}
+            icon={<ShieldCheck className="h-4 w-4" />}
             label="Security Groups"
             isActive={activeTab === 'security-groups'}
             isCollapsed={collapsed}
@@ -140,7 +119,7 @@ export function Sidebar({ activeTab, onTabChange, isMobileOpen = false, onMobile
         )}
         {hasPermission('app-updates:upload') && (
           <NavButton
-            icon={<RefreshCw className="h-5 w-5" />}
+            icon={<RefreshCw className="h-4 w-4" />}
             label="App Update"
             isActive={activeTab === 'app-update'}
             isCollapsed={collapsed}
@@ -149,7 +128,7 @@ export function Sidebar({ activeTab, onTabChange, isMobileOpen = false, onMobile
         )}
         {(hasPermission('app-management:read') || hasPermission('app-management:upload') || hasPermission('app-management:deploy')) && (
           <NavButton
-            icon={<PackageSearch className="h-5 w-5" />}
+            icon={<PackageSearch className="h-4 w-4" />}
             label="App Management"
             isActive={activeTab === 'app-management'}
             isCollapsed={collapsed}
@@ -158,7 +137,7 @@ export function Sidebar({ activeTab, onTabChange, isMobileOpen = false, onMobile
         )}
         {(hasPermission('file-manager:read') || hasPermission('file-manager:command')) && (
           <NavButton
-            icon={<HardDrive className="h-5 w-5" />}
+            icon={<HardDrive className="h-4 w-4" />}
             label="File Manager"
             isActive={activeTab === 'file-manager'}
             isCollapsed={collapsed}
@@ -167,16 +146,29 @@ export function Sidebar({ activeTab, onTabChange, isMobileOpen = false, onMobile
         )}
       </nav>
 
-      {/* Logout Button */}
-      <div className={`p-4 ${collapsed ? 'px-2' : ''}`}>
-        <Button
-          variant="destructive"
-          className={`w-full transition-all duration-300 ${
-            collapsed ? 'px-2' : ''
-          }`}
+      {/* User Info + Logout */}
+      <div className={`border-t border-gray-200 p-3 ${collapsed ? 'px-2' : ''}`}>
+        <div className={`flex items-center gap-3 mb-2 ${collapsed ? 'justify-center' : 'px-2'}`}>
+          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+            <span className="text-xs font-semibold text-blue-700">
+              {user?.email?.charAt(0).toUpperCase()}
+            </span>
+          </div>
+          {!collapsed && (
+            <div className="min-w-0">
+              <p className="text-xs text-gray-500">Signed in as</p>
+              <p className="text-sm font-medium text-gray-900 truncate">{user?.email}</p>
+            </div>
+          )}
+        </div>
+        <button
           onClick={logout}
+          title={collapsed ? 'Logout' : undefined}
+          className={`w-full flex items-center rounded-md px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors ${
+            collapsed ? 'justify-center px-2' : ''
+          }`}
         >
-          <LogOut className={`h-5 w-5 ${collapsed ? '' : 'mr-2'}`} />
+          <LogOut className={`h-4 w-4 ${collapsed ? '' : 'mr-3'}`} />
           <span
             className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${
               collapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
@@ -184,7 +176,7 @@ export function Sidebar({ activeTab, onTabChange, isMobileOpen = false, onMobile
           >
             Logout
           </span>
-        </Button>
+        </button>
       </div>
     </>
   );
@@ -194,21 +186,21 @@ export function Sidebar({ activeTab, onTabChange, isMobileOpen = false, onMobile
       {/* Mobile Drawer Overlay */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/30 z-40 lg:hidden"
           onClick={onMobileClose}
         />
       )}
 
       {/* Mobile Drawer */}
       <div
-        className={`fixed top-0 left-0 h-full z-50 w-72 bg-sidebar text-white flex flex-col transition-transform duration-300 ease-in-out lg:hidden ${
+        className={`fixed top-0 left-0 h-full z-50 w-72 bg-sidebar border-r border-gray-200 text-gray-900 flex flex-col transition-transform duration-300 ease-in-out lg:hidden ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* Close button */}
         <button
           onClick={onMobileClose}
-          className="absolute top-4 right-4 p-1.5 rounded-md bg-white/10 hover:bg-white/20 transition-colors"
+          className="absolute top-4 right-4 p-1.5 rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
           aria-label="Close menu"
         >
           <X className="h-5 w-5" />
@@ -219,14 +211,14 @@ export function Sidebar({ activeTab, onTabChange, isMobileOpen = false, onMobile
 
       {/* Desktop Sidebar */}
       <div
-        className={`hidden lg:flex h-screen bg-sidebar text-white flex-col relative transition-all duration-300 ease-in-out ${
-          isCollapsed ? 'w-20' : 'w-64'
+        className={`hidden lg:flex h-screen bg-sidebar border-r border-gray-200 text-gray-900 flex-col relative transition-all duration-300 ease-in-out ${
+          isCollapsed ? 'w-16' : 'w-64'
         }`}
       >
         {/* Collapse Toggle Button */}
         <button
           onClick={toggleSidebar}
-          className="absolute -right-3 top-8 bg-sidebar border-2 border-white/20 rounded-full p-1 hover:bg-white/10 transition-colors z-10"
+          className="absolute -right-3 top-6 bg-white border border-gray-200 rounded-full p-1 text-gray-500 shadow-sm hover:bg-gray-50 hover:text-gray-900 transition-colors z-10"
         >
           {isCollapsed ? (
             <ChevronRight className="h-4 w-4" />
@@ -251,15 +243,16 @@ interface NavButtonProps {
 
 function NavButton({ icon, label, isActive, isCollapsed, onClick }: NavButtonProps) {
   return (
-    <Button
-      variant={isActive ? 'default' : 'ghost'}
-      className={`w-full text-white hover:bg-white/10 transition-all duration-300 ${
-        isCollapsed ? 'justify-center px-2' : 'justify-start'
-      }`}
+    <button
+      className={`w-full flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+        isActive
+          ? 'bg-blue-50 text-blue-700'
+          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+      } ${isCollapsed ? 'justify-center px-2' : 'justify-start'}`}
       onClick={onClick}
       title={isCollapsed ? label : undefined}
     >
-      <span className={isCollapsed ? '' : 'mr-3'}>{icon}</span>
+      <span className={`shrink-0 ${isCollapsed ? '' : 'mr-3'}`}>{icon}</span>
       <span
         className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${
           isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
@@ -267,6 +260,6 @@ function NavButton({ icon, label, isActive, isCollapsed, onClick }: NavButtonPro
       >
         {label}
       </span>
-    </Button>
+    </button>
   );
 }

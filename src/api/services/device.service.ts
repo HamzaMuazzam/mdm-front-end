@@ -1,5 +1,5 @@
 import { apiClient } from '../client';
-import type { Device, CreateDeviceRequest, UpdateDeviceRequest, DeviceConfiguration, UpdateDeviceConfigurationRequest, ConfigEnumItem, DeviceApplication, UpdateDeviceApplicationRequest, BlockedAppRequest, BlockedAppReviewRequest, DeviceDashboardAnalytics, DeviceMonitorStateDashboard, DeviceAppUsageHistoryItem, DeviceAppUsageHistoryQuery } from '@/types/device.types';
+import type { Device, CreateDeviceRequest, UpdateDeviceRequest, DeviceConfiguration, UpdateDeviceConfigurationRequest, ConfigEnumItem, DeviceApplication, UpdateDeviceApplicationRequest, BlockedAppRequest, BlockedAppReviewRequest, DeviceDashboardAnalytics, DeviceMonitorStateDashboard, DeviceAppUsageHistoryItem, DeviceAppUsageHistoryQuery, ApplyDevicePolicyRequest, ApplyPolicyResult } from '@/types/device.types';
 import type { ApiResponse, PaginatedResponse } from '@/types/api.types';
 
 export const deviceService = {
@@ -31,6 +31,12 @@ export const deviceService = {
   async updateDeviceConfiguration(configId: number, data: UpdateDeviceConfigurationRequest): Promise<ApiResponse<DeviceConfiguration>> {
     const response = await apiClient.put<ApiResponse<DeviceConfiguration>>(`/v1/configurations/${configId}`, data);
     return response.data;
+  },
+
+  /** Apply root-detection / OS-upgrade policy to one or many devices (per-device or bulk). */
+  async applyDevicePolicy(payload: ApplyDevicePolicyRequest): Promise<ApplyPolicyResult[]> {
+    const response = await apiClient.post<ApiResponse<ApplyPolicyResult[]>>('/v1/configurations/policy', payload);
+    return response.data.data;
   },
 
   // Configuration Enum APIs

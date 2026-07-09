@@ -207,11 +207,11 @@ export function UserManagement() {
             <>
               <div className="my-1 h-px bg-border" />
               {user.active ? (
-                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30" onClick={() => handleDelete(user.id)} disabled={deleteMutation.isPending}>
+                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50" onClick={() => handleDelete(user.id)} disabled={deleteMutation.isPending}>
                   <Trash2 className="h-4 w-4" /> Delete
                 </button>
               ) : (
-                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/30" onClick={() => handleActivate(user.id)} disabled={deleteMutation.isPending}>
+                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-green-700 hover:bg-green-50" onClick={() => handleActivate(user.id)} disabled={deleteMutation.isPending}>
                   <CheckCircle className="h-4 w-4" /> Activate
                 </button>
               )}
@@ -230,7 +230,7 @@ export function UserManagement() {
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
-        <h1 className="text-xl sm:text-2xl font-bold">User Management</h1>
+        <h1 className="text-xl font-semibold text-gray-900">User Management</h1>
         {hasPermission('user:create') && (
           <Button onClick={() => setIsModalOpen(true)} className="w-full sm:w-auto">Add User</Button>
         )}
@@ -260,8 +260,8 @@ export function UserManagement() {
                 </div>
                 {/* Status + actions */}
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className={`inline-block px-2 py-0.5 text-xs rounded-full font-medium ${
-                    user.active ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-destructive/10 text-destructive'
+                  <span className={`inline-block px-2 py-0.5 text-xs rounded-full font-medium border ${
+                    user.active ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
                   }`}>
                     {user.active ? 'Active' : 'Inactive'}
                   </span>
@@ -280,14 +280,14 @@ export function UserManagement() {
         <CardContent className="h-full p-0">
           <div className="h-full overflow-auto">
             <table className="w-full">
-              <thead className="bg-muted/50 sticky top-0">
+              <thead className="bg-gray-50 sticky top-0">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium">ID</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">Email</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">User Name</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">Phone</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">Status</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">Actions</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">ID</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Email</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">User Name</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Phone</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -298,8 +298,8 @@ export function UserManagement() {
                     <td className="px-4 py-3 text-sm">{user.userName}</td>
                     <td className="px-4 py-3 text-sm">{user.phone}</td>
                     <td className="px-4 py-3 text-sm">
-                      <span className={`inline-block px-2 py-1 text-xs rounded-full font-medium ${
-                        user.active ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-destructive/10 text-destructive'
+                      <span className={`inline-block px-2 py-1 text-xs rounded-full font-medium border ${
+                        user.active ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
                       }`}>
                         {user.active ? 'Active' : 'Inactive'}
                       </span>
@@ -317,7 +317,7 @@ export function UserManagement() {
 
       {/* ── Add User Modal ─────────────────────────────────────────────────── */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/30 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
           <Card className="w-full sm:max-w-md rounded-b-none sm:rounded-lg max-h-[92dvh] overflow-y-auto">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">Add New User</CardTitle>
@@ -385,7 +385,7 @@ export function UserManagement() {
 
       {/* ── Edit User Modal ─────────────────────────────────────────────────── */}
       {isEditModalOpen && selectedUser && (
-        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/30 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
           <Card className="w-full sm:max-w-md rounded-b-none sm:rounded-lg max-h-[92dvh] overflow-y-auto">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">Edit User</CardTitle>
@@ -429,7 +429,7 @@ export function UserManagement() {
 
       {/* ── Reset Password Modal ────────────────────────────────────────────── */}
       {isResetPasswordModalOpen && selectedUser && (
-        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/30 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
           <Card className="w-full sm:max-w-md rounded-b-none sm:rounded-lg max-h-[92dvh] overflow-y-auto">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">Reset Password</CardTitle>

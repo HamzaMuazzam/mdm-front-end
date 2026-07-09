@@ -11,7 +11,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, Eye, BarChart3, MoreVertical, Power, RotateCcw, Siren, Mic, Database, Map, Plus, RefreshCw, Search, Clock, CheckSquare, Square, Users } from 'lucide-react';
+import { DevicePolicyModal } from './DevicePolicyModal';
+import { BulkDevicePolicyModal } from './BulkDevicePolicyModal';
+import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, Eye, BarChart3, MoreVertical, Power, RotateCcw, Siren, Mic, Database, Map, Plus, RefreshCw, Search, Clock, CheckSquare, Square, Users, ShieldAlert } from 'lucide-react';
 import { timeRangeService } from '@/api/services/timerange.service';
 import QRCode from 'qrcode';
 import type { CreateDeviceRequest, UpdateDeviceRequest, Device, UpdateDeviceConfigurationRequest } from '@/types/device.types';
@@ -49,6 +51,10 @@ export function DeviceManagement() {
 
   // ── Bulk Time Range modal state ───────────────────────────────────────────
   const [isBulkTimeRangeOpen, setIsBulkTimeRangeOpen] = useState(false);
+
+  // ── Update & Security Policy modal state ──────────────────────────────────
+  const [policyModalDevice, setPolicyModalDevice] = useState<Device | null>(null);
+  const [isBulkPolicyOpen, setIsBulkPolicyOpen] = useState(false);
   const [bulkSelectedUuids, setBulkSelectedUuids] = useState<Set<string>>(new Set());
   const [bulkSearchQuery, setBulkSearchQuery] = useState('');
   const [bulkStartTime, setBulkStartTime] = useState('09:00');
@@ -359,6 +365,18 @@ export function DeviceManagement() {
     navigate(`/device/${device.id}/tracking`);
   };
 
+  const handleSimChanges = (device: Device) => {
+    navigate(`/device/${device.id}/sim-changes`);
+  };
+
+  const handleIntegrity = (device: Device) => {
+    navigate(`/device/${device.id}/integrity`);
+  };
+
+  const handleDevicePolicy = (device: Device) => {
+    setPolicyModalDevice(device);
+  };
+
   const handleSosHistory = (device: Device) => {
     navigate(`/device/${device.id}/sos`);
   };
@@ -553,14 +571,14 @@ export function DeviceManagement() {
     return <div>Loading devices...</div>;
   }
 
-  // Gradient palette for device avatars (cycles by device id)
+  // Flat muted palette for device avatars (cycles by device id)
   const avatarGradients = [
-    'from-blue-500 to-indigo-600',
-    'from-violet-500 to-purple-600',
-    'from-emerald-500 to-teal-600',
-    'from-orange-500 to-amber-600',
-    'from-pink-500 to-rose-600',
-    'from-cyan-500 to-blue-600',
+    'bg-blue-100 text-blue-700',
+    'bg-gray-200 text-gray-700',
+    'bg-blue-50 text-blue-600',
+    'bg-gray-100 text-gray-600',
+    'bg-blue-100 text-blue-800',
+    'bg-gray-200 text-gray-600',
   ];
 
   return (
@@ -569,26 +587,26 @@ export function DeviceManagement() {
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start mb-4 sm:mb-6">
         {/* Mobile: icon + title stacked */}
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg shadow-blue-500/20 sm:hidden">
-            <Smartphone className="h-5 w-5 text-white" />
+          <div className="p-2.5 bg-blue-50 rounded-md sm:hidden">
+            <Smartphone className="h-5 w-5 text-blue-600" />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Device Management</h1>
+              <h1 className="text-xl font-semibold text-gray-900">Device Management</h1>
               {devices.length > 0 && (() => {
                 const liveCount    = devices.filter((d) => deviceStatuses[d.deviceUuid] === 'online').length;
                 const offlineCount = devices.length - liveCount;
                 return (
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
                       {devices.length} total
                     </span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                    <span className="inline-flex items-center gap-1 rounded-full bg-green-50 border border-green-200 px-2 py-0.5 text-xs font-medium text-green-700">
+                      <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse shrink-0" />
                       {liveCount} live
                     </span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs font-medium text-slate-500 dark:text-slate-400">
-                      <span className="h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                    <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                      <span className="h-1.5 w-1.5 rounded-full bg-gray-400 shrink-0" />
                       {offlineCount} offline
                     </span>
                   </div>
@@ -613,7 +631,7 @@ export function DeviceManagement() {
                 placeholder="Search devices…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-lg border border-border bg-background py-1.5 pl-8 pr-8 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full rounded-md border border-gray-300 bg-white py-1.5 pl-8 pr-8 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary"
               />
               {searchQuery && (
                 <button
@@ -646,14 +664,24 @@ export function DeviceManagement() {
             <Button
               variant="outline"
               onClick={openBulkTimeRange}
-              className="flex-1 sm:flex-none border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-300"
+              className="flex-1 sm:flex-none border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300"
             >
               <Clock className="h-4 w-4 mr-2" />
               Bulk Time Range
             </Button>
           )}
+          {devices.length > 0 && hasPermission('configuration:update') && (
+            <Button
+              variant="outline"
+              onClick={() => setIsBulkPolicyOpen(true)}
+              className="flex-1 sm:flex-none border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300"
+            >
+              <ShieldAlert className="h-4 w-4 mr-2" />
+              Bulk Policy
+            </Button>
+          )}
           {hasPermission('devices:create') && (
-            <Button onClick={() => setIsModalOpen(true)} className="flex-1 sm:flex-none bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white border-0">
+            <Button onClick={() => setIsModalOpen(true)} className="flex-1 sm:flex-none shadow-sm">
               <Plus className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline">Add Device</span>
             </Button>
@@ -665,7 +693,7 @@ export function DeviceManagement() {
       <div className="flex flex-col gap-3 sm:hidden pb-4">
         {filteredDevices.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 px-4">
-            <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mb-3">
+            <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mb-3">
               <Smartphone className="h-8 w-8 text-muted-foreground" />
             </div>
             {searchQuery.trim() ? (
@@ -689,28 +717,28 @@ export function DeviceManagement() {
           const alertsLoading = alertStatusLoading[device.id];
           const alertsLabel = alertsEnabled === undefined ? 'Alerts' : alertsEnabled ? 'Alerts Enabled' : 'Alerts Disabled';
           const alertsMenuClass = alertsEnabled
-            ? 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
+            ? 'text-green-700 hover:bg-green-50'
             : !alertsEnabled
-            ? 'text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20'
+            ? 'text-amber-700 hover:bg-amber-50'
             : 'text-foreground hover:bg-muted';
           // Left border: green if active+online, amber if active+offline/unknown, red if inactive
           const accentClass = !isActive
             ? 'border-l-red-500'
             : onlineStatus === 'online'
-            ? 'border-l-emerald-500'
+            ? 'border-l-green-500'
             : 'border-l-amber-400';
 
           return (
             <div
               key={device.id}
-              className={`rounded-xl border border-border border-l-4 ${accentClass} bg-card shadow-sm overflow-hidden${!isActive ? ' opacity-70' : ''}`}
+              className={`rounded-lg border border-gray-200 border-l-4 ${accentClass} bg-white shadow-sm overflow-hidden${!isActive ? ' opacity-70' : ''}`}
             >
               {/* ── Card header: avatar + info + status badge ── */}
               <div className="flex items-start gap-3 p-4 pb-3">
                 {/* Avatar with live-status overlay */}
                 <div className="relative shrink-0">
-                  <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-md`}>
-                    <span className="text-white font-bold text-lg leading-none">
+                  <div className={`w-12 h-12 rounded-full ${gradient} flex items-center justify-center`}>
+                    <span className="font-semibold text-lg leading-none">
                       {(device.deviceName || device.deviceUuid || 'D').charAt(0).toUpperCase()}
                     </span>
                   </div>
@@ -724,12 +752,12 @@ export function DeviceManagement() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2 mb-0.5">
                     <p className="font-semibold text-sm text-foreground leading-snug truncate">{device.deviceName || 'Unnamed Device'}</p>
-                    <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                    <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border ${
                       isActive
-                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                        : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                        ? 'bg-green-50 text-green-700 border-green-200'
+                        : 'bg-red-50 text-red-700 border-red-200'
                     }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                      <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-green-500' : 'bg-red-500'}`} />
                       {isActive ? 'Active' : 'Inactive'}
                     </span>
                   </div>
@@ -759,7 +787,7 @@ export function DeviceManagement() {
                   <button
                     type="button"
                     onClick={() => handleOpenMonitorDashboard(device)}
-                    className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                    className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
                   >
                     <BarChart3 className="h-4 w-4" />
                     <span className="text-[10px] font-medium">Monitor</span>
@@ -769,7 +797,7 @@ export function DeviceManagement() {
                   <button
                     type="button"
                     onClick={() => handleViewApps(device)}
-                    className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                    className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
                   >
                     <AppWindow className="h-4 w-4" />
                     <span className="text-[10px] font-medium">Apps</span>
@@ -779,7 +807,7 @@ export function DeviceManagement() {
                   <button
                     type="button"
                     onClick={() => handleEdit(device)}
-                    className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                    className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
                   >
                     <Pencil className="h-4 w-4" />
                     <span className="text-[10px] font-medium">Edit</span>
@@ -788,7 +816,7 @@ export function DeviceManagement() {
                 <button
                   type="button"
                   onClick={() => handleViewRequests(device)}
-                  className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                  className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
                 >
                   <FileText className="h-4 w-4" />
                   <span className="text-[10px] font-medium">Requests</span>
@@ -797,7 +825,7 @@ export function DeviceManagement() {
                   <button
                     type="button"
                     onClick={() => handleViewNotifications(device)}
-                    className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                    className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
                   >
                     <Bell className="h-4 w-4" />
                     <span className="text-[10px] font-medium">Notifications</span>
@@ -807,7 +835,7 @@ export function DeviceManagement() {
                   <button
                     type="button"
                     onClick={() => handleToggleAlerts(device)}
-                    className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                    className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
                   >
                     <Bell className="h-4 w-4" />
                     <span className="text-[10px] font-medium">Alerts</span>
@@ -817,7 +845,7 @@ export function DeviceManagement() {
                   <button
                     type="button"
                     onClick={() => handleSendAlert(device)}
-                    className="flex flex-col items-center gap-0.5 px-2.5 py-2 rounded-lg bg-red-600 hover:bg-red-700 active:bg-red-800 transition-colors text-white"
+                    className="flex flex-col items-center gap-0.5 px-2.5 py-2 rounded-md bg-red-600 hover:bg-red-700 active:bg-red-800 transition-colors text-white"
                   >
                     <Siren className="h-4 w-4" />
                     <span className="text-[10px] font-semibold">Send Alarm</span>
@@ -828,7 +856,7 @@ export function DeviceManagement() {
                   <button
                     type="button"
                     onClick={() => handleListenAudio(device)}
-                    className="flex flex-col items-center gap-0.5 px-2.5 py-2 rounded-lg bg-green-600 hover:bg-green-700 active:bg-green-800 transition-colors text-white"
+                    className="flex flex-col items-center gap-0.5 px-2.5 py-2 rounded-md bg-green-600 hover:bg-green-700 active:bg-green-800 transition-colors text-white"
                   >
                     <Mic className="h-4 w-4" />
                     <span className="text-[10px] font-semibold">Listen</span>
@@ -838,7 +866,7 @@ export function DeviceManagement() {
                   <button
                     type="button"
                     onClick={() => handleMonitorData(device)}
-                    className="flex flex-col items-center gap-0.5 px-2.5 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 active:bg-violet-800 transition-colors text-white"
+                    className="flex flex-col items-center gap-0.5 px-2.5 py-2 rounded-md bg-blue-600 hover:bg-blue-700 active:bg-blue-800 transition-colors text-white"
                   >
                     <Database className="h-4 w-4" />
                     <span className="text-[10px] font-semibold">Data</span>
@@ -848,7 +876,7 @@ export function DeviceManagement() {
                   <button
                     type="button"
                     onClick={() => handleTracking(device)}
-                    className="flex flex-col items-center gap-0.5 px-2.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 transition-colors text-white"
+                    className="flex flex-col items-center gap-0.5 px-2.5 py-2 rounded-md bg-blue-600 hover:bg-blue-700 active:bg-blue-800 transition-colors text-white"
                   >
                     <MapPin className="h-4 w-4" />
                     <span className="text-[10px] font-semibold">Tracking</span>
@@ -857,7 +885,7 @@ export function DeviceManagement() {
                 <button
                   type="button"
                   onClick={() => handleTimeRange(device)}
-                  className="flex flex-col items-center gap-0.5 px-2.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 transition-colors text-white"
+                  className="flex flex-col items-center gap-0.5 px-2.5 py-2 rounded-md bg-blue-600 hover:bg-blue-700 active:bg-blue-800 transition-colors text-white"
                 >
                   <Clock className="h-4 w-4" />
                   <span className="text-[10px] font-semibold">Time Range</span>
@@ -868,7 +896,7 @@ export function DeviceManagement() {
                   <button
                     type="button"
                     onClick={() => handleOpenActionsMenu(device.id)}
-                    className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                    className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
                   >
                     <MoreVertical className="h-4 w-4" />
                     <span className="text-[10px] font-medium">More</span>
@@ -876,9 +904,9 @@ export function DeviceManagement() {
                   {openActionMenuDeviceId === device.id && (
                     <>
                       {/* Backdrop */}
-                      <div className="fixed inset-0 z-40 bg-black/40" onClick={closeActionsMenu} />
+                      <div className="fixed inset-0 z-40 bg-black/30" onClick={closeActionsMenu} />
                       {/* Bottom sheet */}
-                      <div className="fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-2xl border-t border-border bg-popover shadow-2xl max-h-[80vh]">
+                      <div className="fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-lg border-t border-gray-200 bg-white shadow-lg max-h-[80vh]">
                         {/* Drag handle */}
                         <div className="flex justify-center pt-3 pb-1 shrink-0">
                           <div className="w-10 h-1 rounded-full bg-border" />
@@ -901,31 +929,46 @@ export function DeviceManagement() {
                             </button>
                           )}
                           {hasPermission('device-alerts:send') && (
-                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" onClick={() => { closeActionsMenu(); handleSendAlert(device); }}>
+                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-red-600 hover:bg-red-50 transition-colors" onClick={() => { closeActionsMenu(); handleSendAlert(device); }}>
                               <Siren className="h-5 w-5 shrink-0" /> Send Alarm
                             </button>
                           )}
                           {(hasPermission('device-audio:listen') || hasPermission('audio-management:listen')) && (
-                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors" onClick={() => { closeActionsMenu(); handleListenAudio(device); }}>
+                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-green-700 hover:bg-green-50 transition-colors" onClick={() => { closeActionsMenu(); handleListenAudio(device); }}>
                               <Mic className="h-5 w-5 shrink-0" /> Listen to Device
                             </button>
                           )}
                           {(hasPermission('device-data:read') || hasPermission('contacts:read') || hasPermission('sms:read') || hasPermission('call-logs:read')) && (
-                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors" onClick={() => { closeActionsMenu(); handleMonitorData(device); }}>
+                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-blue-600 hover:bg-blue-50 transition-colors" onClick={() => { closeActionsMenu(); handleMonitorData(device); }}>
                               <Database className="h-5 w-5 shrink-0" /> Contacts &amp; SMS &amp; Calls
                             </button>
                           )}
+                          {hasPermission('sim-changes:read') && (
+                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-blue-600 hover:bg-blue-50 transition-colors" onClick={() => { closeActionsMenu(); handleSimChanges(device); }}>
+                              <Smartphone className="h-5 w-5 shrink-0" /> SIM Change Logs
+                            </button>
+                          )}
+                          {hasPermission('device-integrity:read') && (
+                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-red-600 hover:bg-red-50 transition-colors" onClick={() => { closeActionsMenu(); handleIntegrity(device); }}>
+                              <ShieldAlert className="h-5 w-5 shrink-0" /> Root / Integrity
+                            </button>
+                          )}
+                          {hasPermission('configuration:update') && (
+                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-blue-600 hover:bg-blue-50 transition-colors" onClick={() => { closeActionsMenu(); handleDevicePolicy(device); }}>
+                              <Settings className="h-5 w-5 shrink-0" /> Update &amp; Security Policy
+                            </button>
+                          )}
                           {hasPermission('tracking:history') && (
-                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors" onClick={() => { closeActionsMenu(); handleTracking(device); }}>
+                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-blue-600 hover:bg-blue-50 transition-colors" onClick={() => { closeActionsMenu(); handleTracking(device); }}>
                               <MapPin className="h-5 w-5 shrink-0" /> Live Tracking
                             </button>
                           )}
                           {hasPermission('tracking:history') && (
-                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors font-medium" onClick={() => { closeActionsMenu(); handleSosHistory(device); }}>
+                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-red-600 hover:bg-red-50 transition-colors font-medium" onClick={() => { closeActionsMenu(); handleSosHistory(device); }}>
                               <Siren className="h-5 w-5 shrink-0" /> SOS History
                             </button>
                           )}
-                          <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors" onClick={() => { closeActionsMenu(); handleTimeRange(device); }}>
+                          <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-blue-600 hover:bg-blue-50 transition-colors" onClick={() => { closeActionsMenu(); handleTimeRange(device); }}>
                             <Clock className="h-5 w-5 shrink-0" /> Usage Time Range
                           </button>
                           {hasPermission('notifications:manage-alerts') && (
@@ -947,7 +990,7 @@ export function DeviceManagement() {
                               <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-foreground hover:bg-muted transition-colors" onClick={() => { closeActionsMenu(); handleOpenCommandDialog(device, 'reboot'); }}>
                                 <Power className="h-5 w-5 text-muted-foreground shrink-0" /> Reboot Device
                               </button>
-                              <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" onClick={() => { closeActionsMenu(); handleOpenCommandDialog(device, 'reset'); }}>
+                              <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-red-600 hover:bg-red-50 transition-colors" onClick={() => { closeActionsMenu(); handleOpenCommandDialog(device, 'reset'); }}>
                                 <RotateCcw className="h-5 w-5 shrink-0" /> Factory Reset
                               </button>
                             </>
@@ -959,8 +1002,8 @@ export function DeviceManagement() {
                                 type="button"
                                 className={`flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm transition-colors ${
                                   isActive
-                                    ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
-                                    : 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
+                                    ? 'text-red-600 hover:bg-red-50'
+                                    : 'text-green-700 hover:bg-green-50'
                                 }`}
                                 onClick={() => { closeActionsMenu(); handleToggleClick(device); }}
                                 disabled={toggleStatusMutation.isPending}
@@ -975,7 +1018,7 @@ export function DeviceManagement() {
                         <div className="shrink-0 p-3 border-t border-border">
                           <button
                             type="button"
-                            className="w-full py-3 rounded-xl bg-muted text-sm font-medium text-foreground hover:bg-muted/80 transition-colors"
+                            className="w-full py-3 rounded-md bg-gray-100 text-sm font-medium text-gray-700 hover:bg-gray-200 transition-colors"
                             onClick={closeActionsMenu}
                           >
                             Cancel
@@ -996,19 +1039,19 @@ export function DeviceManagement() {
         <CardContent className="h-full p-0">
           <div className="h-full overflow-auto">
             <table className="w-full">
-              <thead className="bg-muted/50 sticky top-0">
+              <thead className="bg-gray-50 sticky top-0">
                 <tr>
-                  {/*<th className="px-4 py-3 text-left text-sm font-medium">ID</th>*/}
-                  <th className="px-4 py-3 text-center text-sm font-medium">Live</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">Device UUID</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">Device Name</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">User Email</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">Model</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">OS Version</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">Description</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">Status</th>
-                  {/*<th className="px-4 py-3 text-left text-sm font-medium">Deleted At</th>*/}
-                  <th className="px-4 py-3 text-left text-sm font-medium">Actions</th>
+                  {/*<th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">ID</th>*/}
+                  <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wide text-gray-500">Live</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Device UUID</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Device Name</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">User Email</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Model</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">OS Version</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Description</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Status</th>
+                  {/*<th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Deleted At</th>*/}
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -1018,9 +1061,9 @@ export function DeviceManagement() {
                   const alertsLoading = alertStatusLoading[device.id];
                   const alertsLabel = alertsEnabled === undefined ? 'Alerts' : alertsEnabled ? 'Alerts Enabled' : 'Alerts Disabled';
                   const alertsMenuClass = alertsEnabled
-                    ? 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
+                    ? 'text-green-700 hover:bg-green-50'
                     : !alertsEnabled
-                    ? 'text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20'
+                    ? 'text-amber-700 hover:bg-amber-50'
                     : 'text-foreground hover:bg-muted';
                   return (
                     <tr
@@ -1039,10 +1082,10 @@ export function DeviceManagement() {
                       <td className="px-4 py-3 text-sm">{device.description || '-'}</td>
                       <td className="px-4 py-3 text-sm">
                         <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
                             isActive
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                              : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                              ? 'bg-green-50 text-green-700 border-green-200'
+                              : 'bg-red-50 text-red-700 border-red-200'
                           }`}
                         >
                           {isActive ? 'Active' : 'Inactive'}
@@ -1104,13 +1147,28 @@ export function DeviceManagement() {
                                 </button>
                               )}
                               {(hasPermission('device-audio:listen') || hasPermission('audio-management:listen')) && (
-                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-green-600 hover:bg-green-50" onClick={() => { closeActionsMenu(); handleListenAudio(device); }}>
+                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-green-700 hover:bg-green-50" onClick={() => { closeActionsMenu(); handleListenAudio(device); }}>
                                   <Mic className="h-4 w-4" /> Listen to Device
                                 </button>
                               )}
                               {(hasPermission('device-data:read') || hasPermission('contacts:read') || hasPermission('sms:read') || hasPermission('call-logs:read')) && (
-                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-violet-600 hover:bg-violet-50" onClick={() => { closeActionsMenu(); handleMonitorData(device); }}>
+                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50" onClick={() => { closeActionsMenu(); handleMonitorData(device); }}>
                                   <Database className="h-4 w-4" /> Contacts &amp; SMS &amp; Calls
+                                </button>
+                              )}
+                              {hasPermission('sim-changes:read') && (
+                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50" onClick={() => { closeActionsMenu(); handleSimChanges(device); }}>
+                                  <Smartphone className="h-4 w-4" /> SIM Change Logs
+                                </button>
+                              )}
+                              {hasPermission('device-integrity:read') && (
+                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50" onClick={() => { closeActionsMenu(); handleIntegrity(device); }}>
+                                  <ShieldAlert className="h-4 w-4" /> Root / Integrity
+                                </button>
+                              )}
+                              {hasPermission('configuration:update') && (
+                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50" onClick={() => { closeActionsMenu(); handleDevicePolicy(device); }}>
+                                  <Settings className="h-4 w-4" /> Update &amp; Security Policy
                                 </button>
                               )}
                               {hasPermission('tracking:history') && (
@@ -1123,7 +1181,7 @@ export function DeviceManagement() {
                                   <Siren className="h-4 w-4" /> SOS History
                                 </button>
                               )}
-                              <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20" onClick={() => { closeActionsMenu(); handleTimeRange(device); }}>
+                              <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50" onClick={() => { closeActionsMenu(); handleTimeRange(device); }}>
                                 <Clock className="h-4 w-4" /> Usage Time Range
                               </button>
                               {hasPermission('devices:update') && (
@@ -1137,7 +1195,7 @@ export function DeviceManagement() {
                                   <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => handleOpenCommandDialog(device, 'reboot')}>
                                     <Power className="h-4 w-4" /> Reboot
                                   </button>
-                                  <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30" onClick={() => handleOpenCommandDialog(device, 'reset')}>
+                                  <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50" onClick={() => handleOpenCommandDialog(device, 'reset')}>
                                     <RotateCcw className="h-4 w-4" /> Reset
                                   </button>
                                 </>
@@ -1147,7 +1205,7 @@ export function DeviceManagement() {
                                   <div className="my-1 h-px bg-border" />
                                   <button
                                     type="button"
-                                    className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm ${isActive ? 'text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30' : 'text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/30'}`}
+                                    className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm ${isActive ? 'text-red-600 hover:bg-red-50' : 'text-green-700 hover:bg-green-50'}`}
                                     onClick={() => { closeActionsMenu(); handleToggleClick(device); }}
                                     disabled={toggleStatusMutation.isPending}
                                   >
@@ -1169,31 +1227,39 @@ export function DeviceManagement() {
         </CardContent>
       </Card>
 
+      {/* ── Update & Security Policy modals ──────────────────────────────────── */}
+      {policyModalDevice && (
+        <DevicePolicyModal device={policyModalDevice} onClose={() => setPolicyModalDevice(null)} />
+      )}
+      {isBulkPolicyOpen && (
+        <BulkDevicePolicyModal devices={devices} onClose={() => setIsBulkPolicyOpen(false)} />
+      )}
+
       {/* ── Bulk Time Range Modal ────────────────────────────────────────────── */}
       {isBulkTimeRangeOpen && (
         <div
-          className="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
+          className="fixed inset-0 bg-black/30 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
           onClick={() => setIsBulkTimeRangeOpen(false)}
         >
           <div
-            className="w-full sm:max-w-2xl rounded-t-2xl sm:rounded-2xl bg-card border border-border shadow-2xl flex flex-col max-h-[92dvh]"
+            className="w-full sm:max-w-2xl rounded-t-lg sm:rounded-lg bg-white border border-gray-200 shadow-lg flex flex-col max-h-[92dvh]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-border shrink-0">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-indigo-100 dark:bg-indigo-900/30">
-                  <Clock className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                <div className="p-2 rounded-md bg-blue-50">
+                  <Clock className="h-4 w-4 text-blue-600" />
                 </div>
                 <div>
-                  <h2 className="text-base font-semibold text-foreground">Bulk Time Range</h2>
+                  <h2 className="text-base font-semibold text-gray-900">Bulk Time Range</h2>
                   <p className="text-xs text-muted-foreground">Apply the same time range to multiple devices at once</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsBulkTimeRangeOpen(false)}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                className="p-1.5 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -1212,13 +1278,13 @@ export function DeviceManagement() {
                       placeholder="Search devices…"
                       value={bulkSearchQuery}
                       onChange={(e) => setBulkSearchQuery(e.target.value)}
-                      className="w-full rounded-lg border border-input bg-background py-1.5 pl-8 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                      className="w-full rounded-md border border-gray-300 bg-white py-1.5 pl-8 pr-3 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
                   <button
                     type="button"
                     onClick={toggleBulkSelectAll}
-                    className="flex items-center gap-2 text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                    className="flex items-center gap-2 text-xs text-blue-600 hover:text-blue-700 font-medium"
                   >
                     {bulkSelectedUuids.size === bulkFilteredDevices.length && bulkFilteredDevices.length > 0
                       ? <CheckSquare className="h-3.5 w-3.5" />
@@ -1245,13 +1311,13 @@ export function DeviceManagement() {
                           type="button"
                           onClick={() => toggleBulkDevice(device.deviceUuid)}
                           className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
-                            selected ? 'bg-indigo-50 dark:bg-indigo-900/20' : 'hover:bg-muted'
+                            selected ? 'bg-blue-50' : 'hover:bg-gray-50'
                           }`}
                         >
                           <div className={`shrink-0 h-4 w-4 rounded border-2 flex items-center justify-center transition-colors ${
                             selected
-                              ? 'bg-indigo-600 border-indigo-600'
-                              : 'border-border bg-background'
+                              ? 'bg-blue-600 border-blue-600'
+                              : 'border-gray-300 bg-white'
                           }`}>
                             {selected && <Check className="h-2.5 w-2.5 text-white" />}
                           </div>
@@ -1263,7 +1329,7 @@ export function DeviceManagement() {
                               {device.userEmail || device.deviceUuid}
                             </p>
                           </div>
-                          <span className={`shrink-0 h-2 w-2 rounded-full ${online ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                          <span className={`shrink-0 h-2 w-2 rounded-full ${online ? 'bg-green-500' : 'bg-gray-400'}`} />
                         </button>
                       );
                     })
@@ -1295,7 +1361,7 @@ export function DeviceManagement() {
                         type="time"
                         value={bulkStartTime}
                         onChange={(e) => setBulkStartTime(e.target.value)}
-                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                       />
                     </div>
                     <div>
@@ -1306,14 +1372,14 @@ export function DeviceManagement() {
                         type="time"
                         value={bulkEndTime}
                         onChange={(e) => setBulkEndTime(e.target.value)}
-                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                       />
                     </div>
                   </div>
 
                   {/* Midnight-crossing hint */}
                   {bulkStartTime > bulkEndTime && (
-                    <p className="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                    <p className="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-md px-3 py-2">
                       Midnight-crossing range: unlocks at {bulkStartTime}, locks at {bulkEndTime} next day.
                     </p>
                   )}
@@ -1324,7 +1390,7 @@ export function DeviceManagement() {
                     <select
                       value={bulkTimezone}
                       onChange={(e) => setBulkTimezone(e.target.value)}
-                      className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                     >
                       {['device','UTC','Asia/Karachi','Asia/Kolkata','Asia/Dubai','America/New_York','America/Los_Angeles','Europe/London','Europe/Berlin','Australia/Sydney'].map((tz) => (
                         <option key={tz} value={tz}>{tz === 'device' ? 'Device local timezone' : tz}</option>
@@ -1337,10 +1403,10 @@ export function DeviceManagement() {
                     <button
                       type="button"
                       onClick={() => setBulkEnabled((v) => !v)}
-                      className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                      className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
                         bulkEnabled
-                          ? 'border-green-300 bg-green-50 text-green-800 hover:bg-green-100'
-                          : 'border-border bg-muted text-muted-foreground hover:bg-muted/80'
+                          ? 'border-green-200 bg-green-50 text-green-700 hover:bg-green-100'
+                          : 'border-gray-200 bg-gray-100 text-gray-500 hover:bg-gray-200'
                       }`}
                     >
                       {bulkEnabled ? <CheckSquare className="h-4 w-4" /> : <Square className="h-4 w-4" />}
@@ -1353,12 +1419,12 @@ export function DeviceManagement() {
 
                   {/* Result banner */}
                   {bulkResult && (
-                    <div className={`rounded-lg border px-4 py-3 text-sm flex items-start gap-2 ${
+                    <div className={`rounded-md border px-4 py-3 text-sm flex items-start gap-2 ${
                       bulkResult.failed === 0
-                        ? 'bg-green-50 border-green-200 text-green-800'
+                        ? 'bg-green-50 border-green-200 text-green-700'
                         : bulkResult.success === 0
-                        ? 'bg-red-50 border-red-200 text-red-800'
-                        : 'bg-amber-50 border-amber-200 text-amber-800'
+                        ? 'bg-red-50 border-red-200 text-red-700'
+                        : 'bg-amber-50 border-amber-200 text-amber-700'
                     }`}>
                       <Check className="h-4 w-4 shrink-0 mt-0.5" />
                       <div>
@@ -1378,7 +1444,7 @@ export function DeviceManagement() {
                   <button
                     type="button"
                     onClick={() => setIsBulkTimeRangeOpen(false)}
-                    className="flex-1 sm:flex-none py-2.5 px-4 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                    className="flex-1 sm:flex-none py-2.5 px-4 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                   >
                     Close
                   </button>
@@ -1386,7 +1452,7 @@ export function DeviceManagement() {
                     type="button"
                     onClick={handleBulkApply}
                     disabled={bulkSelectedUuids.size === 0 || bulkSaving}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-md bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium transition-colors shadow-sm"
                   >
                     {bulkSaving ? (
                       <>
@@ -1410,23 +1476,23 @@ export function DeviceManagement() {
 
       {/* Verification Code Modal */}
       {verificationCodeModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" onClick={() => setVerificationCodeModal(null)}>
+        <div className="fixed inset-0 bg-black/30 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" onClick={() => setVerificationCodeModal(null)}>
           <div
-            className="w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl bg-card border border-border shadow-2xl overflow-hidden"
+            className="w-full sm:max-w-sm rounded-t-lg sm:rounded-lg bg-white border border-gray-200 shadow-lg overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-border">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-indigo-100 dark:bg-indigo-900/30">
-                  <Key className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                <div className="p-2 rounded-md bg-blue-50">
+                  <Key className="h-4 w-4 text-blue-600" />
                 </div>
-                <h2 className="text-base font-semibold text-foreground">Verification Code</h2>
+                <h2 className="text-base font-semibold text-gray-900">Verification Code</h2>
               </div>
               <button
                 type="button"
                 onClick={() => setVerificationCodeModal(null)}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                className="p-1.5 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -1436,8 +1502,8 @@ export function DeviceManagement() {
               {verificationCodeModal.code != null ? (
                 <>
                   <p className="text-sm text-muted-foreground text-center">Use this code to verify the device</p>
-                  <div className="w-full rounded-xl bg-muted px-6 py-4 flex items-center justify-center">
-                    <span className="text-3xl font-bold tracking-[0.25em] text-foreground font-mono select-all">
+                  <div className="w-full rounded-md bg-gray-100 px-6 py-4 flex items-center justify-center">
+                    <span className="text-3xl font-bold tracking-[0.25em] text-gray-900 font-mono select-all">
                       {verificationCodeModal.code}
                     </span>
                   </div>
@@ -1451,7 +1517,7 @@ export function DeviceManagement() {
               <button
                 type="button"
                 onClick={() => setVerificationCodeModal(null)}
-                className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+                className="w-full py-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity shadow-sm"
               >
                 Done
               </button>
@@ -1462,7 +1528,7 @@ export function DeviceManagement() {
 
       {/* Add Device Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/30 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
           <Card className="w-full sm:max-w-md rounded-b-none sm:rounded-lg max-h-[92dvh] overflow-y-auto">
             <CardHeader>
               <CardTitle>Add New Device</CardTitle>
@@ -1524,7 +1590,7 @@ export function DeviceManagement() {
 
       {/* Edit Device Modal */}
       {isEditModalOpen && editingDevice && (
-        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/30 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
           <Card className="w-full sm:max-w-md rounded-b-none sm:rounded-lg max-h-[92dvh] overflow-y-auto">
             <CardHeader>
               <CardTitle>Edit Device</CardTitle>
@@ -1636,7 +1702,7 @@ export function DeviceManagement() {
 
       {/* Toggle Status Confirmation Dialog */}
       {isToggleDialogOpen && deviceToToggle && (
-        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/30 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
           <Card className="w-full sm:max-w-sm rounded-b-none sm:rounded-lg">
             <CardHeader>
               <CardTitle>
@@ -1662,7 +1728,7 @@ export function DeviceManagement() {
 
       {/* Reboot / Reset Confirmation Dialog */}
       {isCommandDialogOpen && commandTarget && (
-        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/30 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
           <Card className="w-full sm:max-w-sm rounded-b-none sm:rounded-lg">
             <CardHeader>
               <CardTitle>
@@ -1686,7 +1752,7 @@ export function DeviceManagement() {
 
       {/* QR Code Modal */}
       {isQrModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/30 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
           <Card className="w-full sm:max-w-sm rounded-b-none sm:rounded-lg">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Your QR Code</CardTitle>
@@ -1718,7 +1784,7 @@ export function DeviceManagement() {
 
       {/* Device Configuration Modal */}
       {isConfigModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/30 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
           <Card className="w-full sm:max-w-4xl rounded-b-none sm:rounded-lg max-h-[92dvh] overflow-hidden flex flex-col">
             <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b pb-4">
               <div>
@@ -1832,8 +1898,8 @@ export function DeviceManagement() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   {/* General Settings */}
                   <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-lg font-semibold border-b pb-2">
-                      <Smartphone className="h-5 w-5 text-blue-500" />
+                    <div className="flex items-center gap-2 text-base font-semibold text-gray-900 border-b pb-2">
+                      <Smartphone className="h-5 w-5 text-gray-500" />
                       General Settings
                     </div>
                     <ConfigEditItem
@@ -1870,8 +1936,8 @@ export function DeviceManagement() {
 
                   {/* Connectivity Settings */}
                   <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-lg font-semibold border-b pb-2">
-                      <Wifi className="h-5 w-5 text-green-500" />
+                    <div className="flex items-center gap-2 text-base font-semibold text-gray-900 border-b pb-2">
+                      <Wifi className="h-5 w-5 text-gray-500" />
                       Connectivity
                     </div>
                     <ConfigEditItem
@@ -1914,8 +1980,8 @@ export function DeviceManagement() {
 
                   {/* Location & Tracking */}
                   <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-lg font-semibold border-b pb-2">
-                      <MapPin className="h-5 w-5 text-red-500" />
+                    <div className="flex items-center gap-2 text-base font-semibold text-gray-900 border-b pb-2">
+                      <MapPin className="h-5 w-5 text-gray-500" />
                       Location & Tracking
                     </div>
                     <ConfigEditItem
@@ -1947,8 +2013,8 @@ export function DeviceManagement() {
 
                   {/* Notifications */}
                   <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-lg font-semibold border-b pb-2">
-                      <Bell className="h-5 w-5 text-yellow-500" />
+                    <div className="flex items-center gap-2 text-base font-semibold text-gray-900 border-b pb-2">
+                      <Bell className="h-5 w-5 text-gray-500" />
                       Notifications
                     </div>
                     <ConfigEditItem
@@ -1988,8 +2054,8 @@ export function DeviceManagement() {
 
                   {/* Display Settings */}
                   <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-lg font-semibold border-b pb-2">
-                      <Monitor className="h-5 w-5 text-purple-500" />
+                    <div className="flex items-center gap-2 text-base font-semibold text-gray-900 border-b pb-2">
+                      <Monitor className="h-5 w-5 text-gray-500" />
                       Display Settings
                     </div>
                     <ConfigEditItem
@@ -2069,7 +2135,7 @@ export function DeviceManagement() {
                                 }}
                                 className="sr-only peer"
                               />
-                              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+                              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                            </label>
 
                            {isBackgroundImageEnabled && (
@@ -2125,8 +2191,8 @@ export function DeviceManagement() {
 
                   {/* Security & Controls */}
                   <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-lg font-semibold border-b pb-2">
-                      <Lock className="h-5 w-5 text-orange-500" />
+                    <div className="flex items-center gap-2 text-base font-semibold text-gray-900 border-b pb-2">
+                      <Lock className="h-5 w-5 text-gray-500" />
                       Security & Controls
                     </div>
                     <ConfigEditItem
@@ -2161,7 +2227,7 @@ export function DeviceManagement() {
                       />
                     )}
                     {isConfigEditMode && !configFormData.kioskModePackageId && (
-                      <p className="text-xs text-amber-600 dark:text-amber-400 -mt-2 ml-1">
+                      <p className="text-xs text-amber-700 -mt-2 ml-1">
                         * Set Package ID first to enable Kiosk Mode
                       </p>
                     )}
@@ -2232,8 +2298,8 @@ export function DeviceManagement() {
 
                   {/* Volume Settings */}
                   <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-lg font-semibold border-b pb-2">
-                      <Bell className="h-5 w-5 text-pink-500" />
+                    <div className="flex items-center gap-2 text-base font-semibold text-gray-900 border-b pb-2">
+                      <Bell className="h-5 w-5 text-gray-500" />
                       Volume Settings
                     </div>
                     <ConfigEditItem
@@ -2248,7 +2314,7 @@ export function DeviceManagement() {
                       label="Volume Level"
                       value={
                         <div className="flex items-center gap-2">
-                          <div className="w-32 bg-gray-200 rounded-full h-2 dark:bg-gray-700">
+                          <div className="w-32 bg-gray-200 rounded-full h-2">
                             <div
                               className="bg-primary h-2 rounded-full"
                               style={{ width: `${deviceConfig.volumePercentage}%` }}
@@ -2266,8 +2332,8 @@ export function DeviceManagement() {
 
                   {/* Permissions */}
                   <div className="space-y-4 md:col-span-2">
-                    <div className="flex items-center gap-2 text-lg font-semibold border-b pb-2">
-                      <Lock className="h-5 w-5 text-indigo-500" />
+                    <div className="flex items-center gap-2 text-base font-semibold text-gray-900 border-b pb-2">
+                      <Lock className="h-5 w-5 text-gray-500" />
                       Application Permissions
                     </div>
                     <ConfigEditItem
@@ -2354,7 +2420,7 @@ function ConfigEditItem({ label, value, editValue, isEditMode, onChange, type, o
               onChange={(e) => onChange(e.target.checked)}
               className="sr-only peer"
             />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
           </label>
         )}
         {type === 'select' && options && (
@@ -2394,7 +2460,7 @@ function ConfigEditItem({ label, value, editValue, isEditMode, onChange, type, o
               max="100"
               value={editValue as string}
               onChange={(e) => onChange(e.target.value)}
-              className="w-32 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+              className="w-32 h-2 bg-gray-200 rounded-full appearance-none cursor-pointer"
             />
             <span className="text-sm w-12">{editValue}%</span>
           </div>
@@ -2407,10 +2473,10 @@ function ConfigEditItem({ label, value, editValue, isEditMode, onChange, type, o
 function BooleanBadge({ value }: { value: boolean }) {
   return (
     <span
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${
         value
-          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-          : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
+          ? 'bg-green-50 text-green-700 border-green-200'
+          : 'bg-gray-100 text-gray-700 border-gray-200'
       }`}
     >
       {value ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
@@ -2423,10 +2489,10 @@ function StateBadge({ value }: { value: string }) {
   const isAny = value.toUpperCase() === 'ANY';
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${
         isAny
-          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-          : 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+          ? 'bg-blue-50 text-blue-700 border-blue-200'
+          : 'bg-gray-100 text-gray-700 border-gray-200'
       }`}
     >
       {value}
@@ -2439,7 +2505,7 @@ function DeviceStatusDot({ status }: { status?: 'online' | 'offline' }) {
     // No MQTT event received yet — show grey dot
     return (
       <span className="relative inline-flex h-3 w-3" title="Unknown">
-        <span className="h-3 w-3 rounded-full bg-gray-300 dark:bg-gray-600" />
+        <span className="h-3 w-3 rounded-full bg-gray-300" />
       </span>
     );
   }
@@ -2453,7 +2519,7 @@ function DeviceStatusDot({ status }: { status?: 'online' | 'offline' }) {
   }
   return (
     <span className="relative inline-flex h-3 w-3" title="Offline">
-      <span className="h-3 w-3 rounded-full bg-red-500" />
+      <span className="h-3 w-3 rounded-full bg-gray-400" />
     </span>
   );
 }

@@ -114,7 +114,7 @@ export function SecurityGroupManagement() {
   return (
     <div className="flex h-full flex-col">
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6">
-        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Security Groups</h1>
+        <h1 className="text-xl font-semibold text-gray-900">Security Groups</h1>
         {hasPermission('security-group:create') && (
           <Button onClick={() => setIsCreateOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
@@ -258,7 +258,7 @@ export function SecurityGroupManagement() {
 
       {/* Create Modal */}
       {isCreateOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <CardTitle>Create Security Group</CardTitle>
@@ -303,7 +303,7 @@ export function SecurityGroupManagement() {
 
       {/* Edit Modal */}
       {editingGroup && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <CardTitle>Edit Security Group</CardTitle>

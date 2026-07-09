@@ -78,8 +78,8 @@ export function SubscriptionsManagement() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8">
         <div>
-          <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mb-1">Subscription Plans</h2>
-          <p className="text-muted-foreground">Manage your subscription plan</p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-1">Subscription Plans</h2>
+          <p className="text-sm text-gray-600">Manage your subscription plan</p>
         </div>
         {hasPermission('subscriptions:create') && (
           <Button onClick={() => setIsCreateOpen(true)}>
@@ -93,22 +93,22 @@ export function SubscriptionsManagement() {
         {plans.map((plan) => (
           <Card
             key={plan.id}
-            className={`hover:-translate-y-1 transition-transform duration-200 ${
+            className={`hover:shadow-md transition-shadow duration-200 ${
               plan.isUserPlan ? 'ring-2 ring-primary' : ''
             }`}
           >
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg sm:text-xl lg:text-2xl">{plan.subscriptionName}</CardTitle>
+                <CardTitle className="text-lg font-semibold text-gray-900">{plan.subscriptionName}</CardTitle>
                 {plan.isUserPlan && (
-                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-primary text-primary-foreground">
+                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
                     <Check className="h-3 w-3" />
                     Current Plan
                   </span>
                 )}
               </div>
               <CardDescription>
-                <span className="text-2xl sm:text-3xl font-bold text-primary">
+                <span className="text-2xl font-semibold text-gray-900">
                   {plan.currency === 'Dollar' ? '$' : plan.currency}
                   {plan.price}
                 </span>
@@ -152,7 +152,7 @@ export function SubscriptionsManagement() {
 
       {/* Create Plan Modal */}
       {isCreateOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <CardTitle>Create Subscription Plan</CardTitle>
