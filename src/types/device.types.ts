@@ -111,6 +111,14 @@ export interface DeviceConfiguration {
   maintenanceWindowEnd?: number | null;
   freezePeriodStart?: string | null;
   freezePeriodEnd?: string | null;
+  // VPN management
+  vpnEnabled?: boolean | null;
+  vpnServerAddress?: string | null;
+  vpnUsername?: string | null;
+  vpnSecret?: string | null;
+  vpnProtocolTypeId?: number | null;
+  vpnProtocolTypeName?: string | null;
+  vpnRoutingRules?: string[] | null;
 }
 
 export type SystemUpdatePolicyType = 'AUTOMATIC' | 'WINDOWED' | 'POSTPONED' | 'FREEZE';
@@ -129,6 +137,13 @@ export interface ApplyDevicePolicyRequest {
   freezePeriodStart?: string | null;
   freezePeriodEnd?: string | null;
   clearSystemUpdatePolicy?: boolean;
+  // VPN management
+  vpnEnabled?: boolean | null;
+  vpnServerAddress?: string | null;
+  vpnUsername?: string | null;
+  vpnSecret?: string | null;
+  vpnProtocolTypeId?: number | null;
+  vpnRoutingRules?: string[] | null;
 }
 
 export interface ApplyPolicyResult {
@@ -389,4 +404,11 @@ export interface UpdateDeviceConfigurationRequest {
   maintenanceWindowEnd?: number | null;
   freezePeriodStart?: string | null;
   freezePeriodEnd?: string | null;
+  // VPN management
+  vpnEnabled?: boolean | null;
+  vpnServerAddress?: string | null;
+  vpnUsername?: string | null;
+  vpnSecret?: string | null;
+  vpnProtocolTypeId?: number | null;
+  vpnRoutingRules?: string[] | null;
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useParentConfiguration, useUpdateDeviceConfiguration, useApplicationPermissionGranters, useFeatureStates, useLocationTrackingTypes, usePushNotificationProtocols } from '@/hooks/useDevices';
+import { useParentConfiguration, useUpdateDeviceConfiguration, useApplicationPermissionGranters, useFeatureStates, useLocationTrackingTypes, usePushNotificationProtocols, useVpnProtocolTypes } from '@/hooks/useDevices';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, Check, X, Pencil, Save, RefreshCw, Eye } from 'lucide-react';
@@ -26,6 +26,7 @@ export function ConfigurationManagement() {
   const { data: featureStates = [] } = useFeatureStates();
   const { data: locationTrackingTypes = [] } = useLocationTrackingTypes();
   const { data: pushNotificationProtocols = [] } = usePushNotificationProtocols();
+  const { data: vpnProtocolTypes = [] } = useVpnProtocolTypes();
 
   // Initialize form data when config loads
   useEffect(() => {
@@ -81,6 +82,12 @@ export function ConfigurationManagement() {
         maintenanceWindowEnd: config.maintenanceWindowEnd ?? null,
         freezePeriodStart: config.freezePeriodStart ?? null,
         freezePeriodEnd: config.freezePeriodEnd ?? null,
+        vpnEnabled: config.vpnEnabled ?? false,
+        vpnServerAddress: config.vpnServerAddress ?? '',
+        vpnUsername: config.vpnUsername ?? '',
+        vpnSecret: config.vpnSecret ?? '',
+        vpnProtocolTypeId: config.vpnProtocolTypeId ?? null,
+        vpnRoutingRules: config.vpnRoutingRules ?? [],
       });
       setIsBackgroundImageEnabled(!!config.backgroundImageUrl);
     }
@@ -185,6 +192,12 @@ export function ConfigurationManagement() {
         maintenanceWindowEnd: config.maintenanceWindowEnd ?? null,
         freezePeriodStart: config.freezePeriodStart ?? null,
         freezePeriodEnd: config.freezePeriodEnd ?? null,
+        vpnEnabled: config.vpnEnabled ?? false,
+        vpnServerAddress: config.vpnServerAddress ?? '',
+        vpnUsername: config.vpnUsername ?? '',
+        vpnSecret: config.vpnSecret ?? '',
+        vpnProtocolTypeId: config.vpnProtocolTypeId ?? null,
+        vpnRoutingRules: config.vpnRoutingRules ?? [],
       });
       setIsBackgroundImageEnabled(!!config.backgroundImageUrl);
     }
@@ -767,6 +780,66 @@ export function ConfigurationManagement() {
                   isEditMode={isEditMode}
                   onChange={(v) => handleInputChange('freezePeriodEnd', v === '' ? null : v)}
                   type="date"
+                />
+              </div>
+
+              {/* VPN */}
+              <div className="space-y-4 md:col-span-2">
+                <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">
+                  <Wifi className="h-5 w-5 text-blue-600" />
+                  VPN
+                </div>
+                <ConfigEditItem
+                  label="Enable VPN"
+                  value={<BooleanBadge value={config.vpnEnabled ?? false} />}
+                  editValue={formData.vpnEnabled ?? false}
+                  isEditMode={isEditMode}
+                  onChange={(v) => handleInputChange('vpnEnabled', v)}
+                  type="checkbox"
+                />
+                <ConfigEditItem
+                  label="Protocol"
+                  value={config.vpnProtocolTypeName || '—'}
+                  editValue={formData.vpnProtocolTypeId != null ? formData.vpnProtocolTypeId.toString() : ''}
+                  isEditMode={isEditMode}
+                  onChange={(v) => handleInputChange('vpnProtocolTypeId', v === '' ? null : parseInt(v))}
+                  type="select"
+                  options={[
+                    { value: '', label: '—' },
+                    ...vpnProtocolTypes.map((p) => ({ value: p.id.toString(), label: p.title })),
+                  ]}
+                />
+                <ConfigEditItem
+                  label="Server Address"
+                  value={config.vpnServerAddress || '—'}
+                  editValue={formData.vpnServerAddress ?? ''}
+                  isEditMode={isEditMode}
+                  onChange={(v) => handleInputChange('vpnServerAddress', v)}
+                  type="text"
+                />
+                <ConfigEditItem
+                  label="Username"
+                  value={config.vpnUsername || '—'}
+                  editValue={formData.vpnUsername ?? ''}
+                  isEditMode={isEditMode}
+                  onChange={(v) => handleInputChange('vpnUsername', v)}
+                  type="text"
+                />
+                <ConfigEditItem
+                  label="Secret / Key"
+                  value={config.vpnSecret ? '••••••••' : '—'}
+                  editValue={formData.vpnSecret ?? ''}
+                  isEditMode={isEditMode}
+                  onChange={(v) => handleInputChange('vpnSecret', v)}
+                  type="text"
+                />
+                <ConfigEditItem
+                  label="Routing Rules (comma-separated CIDRs)"
+                  value={config.vpnRoutingRules && config.vpnRoutingRules.length ? config.vpnRoutingRules.join(', ') : 'Full tunnel'}
+                  editValue={(formData.vpnRoutingRules ?? []).join(', ')}
+                  isEditMode={isEditMode}
+                  onChange={(v) => handleInputChange('vpnRoutingRules', v.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0))}
+                  type="text"
                 />
               </div>
             </div>

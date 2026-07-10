@@ -184,6 +184,14 @@ export function useLocationTrackingTypes() {
   });
 }
 
+export function useVpnProtocolTypes() {
+  return useQuery({
+    queryKey: ['configEnums', 'vpnProtocolTypes'],
+    queryFn: deviceService.getVpnProtocolTypes,
+    staleTime: 30 * 60 * 1000,
+  });
+}
+
 export function usePushNotificationProtocols() {
   return useQuery({
     queryKey: ['configEnums', 'pushNotificationProtocols'],
@@ -274,6 +282,10 @@ export function useApplyDevicePolicy() {
     mutationFn: (payload: ApplyDevicePolicyRequest) => deviceService.applyDevicePolicy(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: DEVICES_QUERY_KEY });
+      // Applying a policy writes the device's own Configuration — refresh the cached configs
+      // so reopening the per-device modal shows the saved values (not stale cache).
+      queryClient.invalidateQueries({ queryKey: ['deviceConfiguration'] });
+      queryClient.invalidateQueries({ queryKey: ['parentConfiguration'] });
     },
     onError: (error: any) => {
       const message = error?.response?.data?.message || error?.message || 'Failed to apply policy. Please try again.';

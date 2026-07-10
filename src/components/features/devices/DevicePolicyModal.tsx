@@ -29,6 +29,12 @@ export function DevicePolicyModal({ device, onClose }: { device: Device; onClose
       maintenanceWindowEnd: config.maintenanceWindowEnd ?? '',
       freezePeriodStart: config.freezePeriodStart ?? '',
       freezePeriodEnd: config.freezePeriodEnd ?? '',
+      vpnEnabled: config.vpnEnabled ?? false,
+      vpnServerAddress: config.vpnServerAddress ?? '',
+      vpnUsername: config.vpnUsername ?? '',
+      vpnSecret: config.vpnSecret ?? '',
+      vpnProtocolTypeId: config.vpnProtocolTypeId ?? '',
+      vpnRoutingRules: (config.vpnRoutingRules ?? []).join(', '),
     });
   }, [config]);
 

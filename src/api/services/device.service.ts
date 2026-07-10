@@ -55,6 +55,11 @@ export const deviceService = {
     return response.data.data;
   },
 
+  async getVpnProtocolTypes(): Promise<ConfigEnumItem[]> {
+    const response = await apiClient.get<ApiResponse<ConfigEnumItem[]>>('/v1/configurations/enums/vpn-protocol-types');
+    return response.data.data;
+  },
+
   async getPushNotificationProtocols(): Promise<ConfigEnumItem[]> {
     const response = await apiClient.get<ApiResponse<ConfigEnumItem[]>>('/v1/configurations/enums/push-notification-protocols');
     return response.data.data;

@@ -1,4 +1,5 @@
 import type { ApplyDevicePolicyRequest, SystemUpdatePolicyType } from '@/types/device.types';
+import { useVpnProtocolTypes } from '@/hooks/useDevices';
 
 /** Editable end-state of the device policy form (root-detection + OS-upgrade). */
 export interface DevicePolicyState {
@@ -13,6 +14,13 @@ export interface DevicePolicyState {
   maintenanceWindowEnd: number | '';
   freezePeriodStart: string;
   freezePeriodEnd: string;
+  // VPN
+  vpnEnabled: boolean;
+  vpnServerAddress: string;
+  vpnUsername: string;
+  vpnSecret: string;
+  vpnProtocolTypeId: number | ''; // enum titleId from the backend, '' = none
+  vpnRoutingRules: string; // comma-separated CIDRs; split to array in the payload
 }
 
 export const defaultDevicePolicy: DevicePolicyState = {
@@ -26,6 +34,12 @@ export const defaultDevicePolicy: DevicePolicyState = {
   maintenanceWindowEnd: '',
   freezePeriodStart: '',
   freezePeriodEnd: '',
+  vpnEnabled: false,
+  vpnServerAddress: '',
+  vpnUsername: '',
+  vpnSecret: '',
+  vpnProtocolTypeId: '',
+  vpnRoutingRules: '',
 };
 
 /** Convert the form state into the API payload (minus deviceUuids). */
@@ -44,6 +58,15 @@ export function policyToPayload(p: DevicePolicyState): Omit<ApplyDevicePolicyReq
     freezePeriodStart: p.freezePeriodStart || null,
     freezePeriodEnd: p.freezePeriodEnd || null,
     clearSystemUpdatePolicy: unmanaged,
+    vpnEnabled: p.vpnEnabled,
+    vpnServerAddress: p.vpnServerAddress || null,
+    vpnUsername: p.vpnUsername || null,
+    vpnSecret: p.vpnSecret || null,
+    vpnProtocolTypeId: p.vpnProtocolTypeId === '' ? null : Number(p.vpnProtocolTypeId),
+    vpnRoutingRules: p.vpnRoutingRules
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0),
   };
 }
 
@@ -82,6 +105,8 @@ export function DevicePolicyForm({
 }) {
   const set = <K extends keyof DevicePolicyState>(key: K, v: DevicePolicyState[K]) =>
     onChange({ ...value, [key]: v });
+
+  const { data: vpnProtocols = [] } = useVpnProtocolTypes();
 
   const inputCls =
     'w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary';
@@ -208,6 +233,80 @@ export function DevicePolicyForm({
                 type="date"
                 value={value.freezePeriodEnd}
                 onChange={(e) => set('freezePeriodEnd', e.target.value)}
+                className={inputCls}
+              />
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* VPN */}
+      <section className="space-y-1">
+        <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2 mb-2">
+          VPN
+        </h3>
+        <Toggle
+          label="Enable managed VPN"
+          hint="Device Owner → always-on enforced; otherwise in-app VPN"
+          checked={value.vpnEnabled}
+          onChange={(v) => set('vpnEnabled', v)}
+        />
+        {value.vpnEnabled && (
+          <div className="space-y-3 pt-2">
+            <div>
+              <label className={labelCls}>Protocol</label>
+              <select
+                value={value.vpnProtocolTypeId === '' ? '' : String(value.vpnProtocolTypeId)}
+                onChange={(e) => set('vpnProtocolTypeId', e.target.value === '' ? '' : Number(e.target.value))}
+                className={inputCls}
+              >
+                <option value="">Select protocol…</option>
+                {vpnProtocols.map((p) => (
+                  <option key={p.id} value={String(p.id)}>
+                    {p.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Server address</label>
+              <input
+                type="text"
+                placeholder="vpn.corp.example.com:51820"
+                value={value.vpnServerAddress}
+                onChange={(e) => set('vpnServerAddress', e.target.value)}
+                className={inputCls}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>Username</label>
+                <input
+                  type="text"
+                  autoComplete="off"
+                  value={value.vpnUsername}
+                  onChange={(e) => set('vpnUsername', e.target.value)}
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Secret / key</label>
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  value={value.vpnSecret}
+                  onChange={(e) => set('vpnSecret', e.target.value)}
+                  className={inputCls}
+                />
+              </div>
+            </div>
+            <div>
+              <label className={labelCls}>Routing rules — split-tunnel subnets (comma-separated CIDRs)</label>
+              <input
+                type="text"
+                placeholder="10.0.0.0/8, 192.168.10.0/24  (empty = full tunnel)"
+                value={value.vpnRoutingRules}
+                onChange={(e) => set('vpnRoutingRules', e.target.value)}
                 className={inputCls}
               />
             </div>
