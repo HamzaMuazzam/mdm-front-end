@@ -21,6 +21,7 @@ import { DeviceDataPage } from './pages/DeviceDataPage';
 import { DeviceTrackingPage } from './pages/DeviceTrackingPage';
 import { DeviceSimChangesPage } from './pages/DeviceSimChangesPage';
 import { DeviceIntegrityPage } from './pages/DeviceIntegrityPage';
+import { DeviceSslPinningPage } from './pages/DeviceSslPinningPage';
 import { AllDevicesMapPage } from './pages/AllDevicesMapPage';
 import { DeviceSosPage } from './pages/DeviceSosPage';
 import { DeviceTimeRangePage } from './pages/DeviceTimeRangePage';
@@ -135,6 +136,15 @@ function App() {
           element={
             <ProtectedRoute requiresSubscription>
               <DeviceIntegrityPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path={ROUTES.DEVICE_SSL_PINNING}
+          element={
+            <ProtectedRoute requiresSubscription>
+              <DeviceSslPinningPage />
             </ProtectedRoute>
           }
         />

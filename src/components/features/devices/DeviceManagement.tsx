@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DevicePolicyModal } from './DevicePolicyModal';
 import { BulkDevicePolicyModal } from './BulkDevicePolicyModal';
+import { BulkSslPinningModal } from './BulkSslPinningModal';
 import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, Eye, BarChart3, MoreVertical, Power, RotateCcw, Siren, Mic, Database, Map, Plus, RefreshCw, Search, Clock, CheckSquare, Square, Users, ShieldAlert } from 'lucide-react';
 import { timeRangeService } from '@/api/services/timerange.service';
 import QRCode from 'qrcode';
@@ -55,6 +56,7 @@ export function DeviceManagement() {
   // ── Update & Security Policy modal state ──────────────────────────────────
   const [policyModalDevice, setPolicyModalDevice] = useState<Device | null>(null);
   const [isBulkPolicyOpen, setIsBulkPolicyOpen] = useState(false);
+  const [isBulkSslOpen, setIsBulkSslOpen] = useState(false);
   const [bulkSelectedUuids, setBulkSelectedUuids] = useState<Set<string>>(new Set());
   const [bulkSearchQuery, setBulkSearchQuery] = useState('');
   const [bulkStartTime, setBulkStartTime] = useState('09:00');
@@ -377,6 +379,10 @@ export function DeviceManagement() {
     setPolicyModalDevice(device);
   };
 
+  const handleSslPinning = (device: Device) => {
+    navigate(`/device/${device.id}/ssl-pinning`);
+  };
+
   const handleSosHistory = (device: Device) => {
     navigate(`/device/${device.id}/sos`);
   };
@@ -680,6 +686,16 @@ export function DeviceManagement() {
               Bulk Policy
             </Button>
           )}
+          {devices.length > 0 && hasPermission('configuration:update') && (
+            <Button
+              variant="outline"
+              onClick={() => setIsBulkSslOpen(true)}
+              className="flex-1 sm:flex-none border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300"
+            >
+              <Lock className="h-4 w-4 mr-2" />
+              Bulk SSL Pinning
+            </Button>
+          )}
           {hasPermission('devices:create') && (
             <Button onClick={() => setIsModalOpen(true)} className="flex-1 sm:flex-none shadow-sm">
               <Plus className="h-4 w-4 shrink-0" />
@@ -958,6 +974,11 @@ export function DeviceManagement() {
                               <Settings className="h-5 w-5 shrink-0" /> Update &amp; Security Policy
                             </button>
                           )}
+                          {hasPermission('configuration:update') && (
+                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-blue-600 hover:bg-blue-50 transition-colors" onClick={() => { closeActionsMenu(); handleSslPinning(device); }}>
+                              <Lock className="h-5 w-5 shrink-0" /> SSL Pinning
+                            </button>
+                          )}
                           {hasPermission('tracking:history') && (
                             <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-blue-600 hover:bg-blue-50 transition-colors" onClick={() => { closeActionsMenu(); handleTracking(device); }}>
                               <MapPin className="h-5 w-5 shrink-0" /> Live Tracking
@@ -1171,6 +1192,11 @@ export function DeviceManagement() {
                                   <Settings className="h-4 w-4" /> Update &amp; Security Policy
                                 </button>
                               )}
+                              {hasPermission('configuration:update') && (
+                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50" onClick={() => { closeActionsMenu(); handleSslPinning(device); }}>
+                                  <Lock className="h-4 w-4" /> SSL Pinning
+                                </button>
+                              )}
                               {hasPermission('tracking:history') && (
                                 <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50" onClick={() => { closeActionsMenu(); handleTracking(device); }}>
                                   <MapPin className="h-4 w-4" /> Live Tracking
@@ -1233,6 +1259,9 @@ export function DeviceManagement() {
       )}
       {isBulkPolicyOpen && (
         <BulkDevicePolicyModal devices={devices} onClose={() => setIsBulkPolicyOpen(false)} />
+      )}
+      {isBulkSslOpen && (
+        <BulkSslPinningModal devices={devices} onClose={() => setIsBulkSslOpen(false)} />
       )}
 
       {/* ── Bulk Time Range Modal ────────────────────────────────────────────── */}

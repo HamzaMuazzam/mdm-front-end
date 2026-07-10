@@ -26,6 +26,7 @@ export const ROUTES = {
   DEVICE_TIME_RANGE: '/device/:deviceId/time-range',
   DEVICE_SIM_CHANGES: '/device/:deviceId/sim-changes',
   DEVICE_INTEGRITY: '/device/:deviceId/integrity',
+  DEVICE_SSL_PINNING: '/device/:deviceId/ssl-pinning',
 } as const;
 
 export const ERROR_MESSAGES = {
