@@ -16,9 +16,11 @@ import { BulkRootPolicyModal } from './BulkRootPolicyModal';
 import { BulkOsUpgradeModal } from './BulkOsUpgradeModal';
 import { BulkVpnModal } from './BulkVpnModal';
 import { BulkSslPinningModal } from './BulkSslPinningModal';
+import { BulkConfigModal, type BulkConfigSection } from './BulkConfigModal';
 import { BulkActionsMenu } from './BulkActionsMenu';
 import { DeviceActionsMenu, type DeviceActionCategory, type ActionTone } from './DeviceActionsMenu';
-import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, Eye, BarChart3, Power, RotateCcw, Siren, Mic, Database, Map, Plus, RefreshCw, Search, Clock, CheckSquare, Square, Users, ShieldAlert, ArrowUpCircle, Globe } from 'lucide-react';
+import { DeviceConfigPanel } from './DeviceConfigPanel';
+import { Settings, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, BarChart3, Power, RotateCcw, Siren, Mic, Database, Map, Plus, RefreshCw, Search, Clock, CheckSquare, Square, Users, ShieldAlert, ArrowUpCircle, Globe, Wifi } from 'lucide-react';
 import { timeRangeService } from '@/api/services/timerange.service';
 import QRCode from 'qrcode';
 import type { CreateDeviceRequest, UpdateDeviceRequest, Device, UpdateDeviceConfigurationRequest } from '@/types/device.types';
@@ -62,6 +64,7 @@ export function DeviceManagement() {
   const [isBulkOsOpen, setIsBulkOsOpen] = useState(false);
   const [isBulkVpnOpen, setIsBulkVpnOpen] = useState(false);
   const [isBulkSslOpen, setIsBulkSslOpen] = useState(false);
+  const [bulkConfigSection, setBulkConfigSection] = useState<BulkConfigSection | null>(null);
   const [bulkSelectedUuids, setBulkSelectedUuids] = useState<Set<string>>(new Set());
   const [bulkSearchQuery, setBulkSearchQuery] = useState('');
   const [bulkStartTime, setBulkStartTime] = useState('09:00');
@@ -757,6 +760,15 @@ export function DeviceManagement() {
                   ],
                 },
                 {
+                  label: 'Configuration',
+                  items: [
+                    { label: 'Connectivity', icon: Wifi, onClick: () => setBulkConfigSection('connectivity'), visible: hasPermission('configuration:update') },
+                    { label: 'Display & Screen', icon: Monitor, onClick: () => setBulkConfigSection('display'), visible: hasPermission('configuration:update') },
+                    { label: 'Security & Controls', icon: Lock, onClick: () => setBulkConfigSection('security'), visible: hasPermission('configuration:update') },
+                    { label: 'Notifications & More', icon: Bell, onClick: () => setBulkConfigSection('notifications'), visible: hasPermission('configuration:update') },
+                  ],
+                },
+                {
                   label: 'Usage',
                   items: [{ label: 'Time Range', icon: Clock, onClick: openBulkTimeRange }],
                 },
@@ -1061,6 +1073,9 @@ export function DeviceManagement() {
       )}
       {isBulkSslOpen && (
         <BulkSslPinningModal devices={devices} onClose={() => setIsBulkSslOpen(false)} />
+      )}
+      {bulkConfigSection && (
+        <BulkConfigModal section={bulkConfigSection} devices={devices} onClose={() => setBulkConfigSection(null)} />
       )}
 
       {/* ── Bulk Time Range Modal ────────────────────────────────────────────── */}
@@ -1613,7 +1628,7 @@ export function DeviceManagement() {
       {/* Device Configuration Modal */}
       {isConfigModalOpen && (
         <div className="fixed inset-0 bg-black/30 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-          <Card className="w-full sm:max-w-4xl rounded-b-none sm:rounded-lg max-h-[92dvh] overflow-hidden flex flex-col">
+          <Card className="w-full sm:max-w-5xl rounded-b-none sm:rounded-lg max-h-[92dvh] overflow-hidden flex flex-col">
             <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b pb-4">
               <div>
                 <CardTitle className="flex items-center gap-2">
@@ -1717,466 +1732,26 @@ export function DeviceManagement() {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="overflow-y-auto p-4 sm:p-6">
+            <CardContent className="flex min-h-0 flex-1 p-0">
               {isLoadingConfig ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
               ) : deviceConfig ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                  {/* General Settings */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-base font-semibold text-gray-900 border-b pb-2">
-                      <Smartphone className="h-5 w-5 text-gray-500" />
-                      General Settings
-                    </div>
-                    <ConfigEditItem
-                      label="Configuration Name"
-                      value={deviceConfig.configName}
-                      editValue={configFormData.configName || ''}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('configName', v)}
-                      type="text"
-                    />
-                    <ConfigEditItem
-                      label="Description"
-                      value={deviceConfig.description || 'No description'}
-                      editValue={configFormData.description || ''}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('description', v)}
-                      type="text"
-                    />
-                    <ConfigItem label="Is Parent Config" value={<BooleanBadge value={deviceConfig.isParentConfig} />} />
-                    <ConfigEditItem
-                      label="Icon Size"
-                      value={deviceConfig.iconSize}
-                      editValue={configFormData.iconSize || ''}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('iconSize', v)}
-                      type="select"
-                      options={[
-                        { value: 'small', label: 'Small' },
-                        { value: 'medium', label: 'Medium' },
-                        { value: 'large', label: 'Large' },
-                      ]}
-                    />
-                  </div>
-
-                  {/* Connectivity Settings */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-base font-semibold text-gray-900 border-b pb-2">
-                      <Wifi className="h-5 w-5 text-gray-500" />
-                      Connectivity
-                    </div>
-                    <ConfigEditItem
-                      label="WiFi State"
-                      value={<StateBadge value={deviceConfig.wifiStateName} />}
-                      editValue={configFormData.wifiStateId?.toString() || '0'}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('wifiStateId', parseInt(v))}
-                      type="select"
-                      options={featureStates.map(state => ({ value: state.id.toString(), label: state.title }))}
-                    />
-                    <ConfigEditItem
-                      label="Mobile Data State"
-                      value={<StateBadge value={deviceConfig.mobileDataStateName} />}
-                      editValue={configFormData.mobileDataStateId?.toString() || '0'}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('mobileDataStateId', parseInt(v))}
-                      type="select"
-                      options={featureStates.map(state => ({ value: state.id.toString(), label: state.title }))}
-                    />
-                    <ConfigEditItem
-                      label="GPS State"
-                      value={<StateBadge value={deviceConfig.gpsStateName} />}
-                      editValue={configFormData.gpsStateId?.toString() || '0'}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('gpsStateId', parseInt(v))}
-                      type="select"
-                      options={featureStates.map(state => ({ value: state.id.toString(), label: state.title }))}
-                    />
-                    <ConfigEditItem
-                      label="Push Notification Protocol"
-                      value={deviceConfig.pushNotificationProtocolTypeName}
-                      editValue={configFormData.pushNotificationProtocolTypeId?.toString() || '0'}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('pushNotificationProtocolTypeId', parseInt(v))}
-                      type="select"
-                      options={pushNotificationProtocols.map(protocol => ({ value: protocol.id.toString(), label: protocol.title }))}
-                    />
-                  </div>
-
-                  {/* Location & Tracking */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-base font-semibold text-gray-900 border-b pb-2">
-                      <MapPin className="h-5 w-5 text-gray-500" />
-                      Location & Tracking
-                    </div>
-                    <ConfigEditItem
-                      label="Location Tracking"
-                      value={deviceConfig.locationTrackingByTypeName}
-                      editValue={configFormData.locationTrackingByTypeId?.toString() || '0'}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('locationTrackingByTypeId', parseInt(v))}
-                      type="select"
-                      options={locationTrackingTypes.map(type => ({ value: type.id.toString(), label: type.title }))}
-                    />
-                    <ConfigEditItem
-                      label="Lock System Orientation"
-                      value={<BooleanBadge value={deviceConfig.lockSystemOrientation} />}
-                      editValue={configFormData.lockSystemOrientation}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('lockSystemOrientation', v)}
-                      type="checkbox"
-                    />
-                    <ConfigEditItem
-                      label="Lock Launcher Orientation"
-                      value={<BooleanBadge value={deviceConfig.lockLauncherOrientation} />}
-                      editValue={configFormData.lockLauncherOrientation}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('lockLauncherOrientation', v)}
-                      type="checkbox"
-                    />
-                  </div>
-
-                  {/* Notifications */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-base font-semibold text-gray-900 border-b pb-2">
-                      <Bell className="h-5 w-5 text-gray-500" />
-                      Notifications
-                    </div>
-                    <ConfigEditItem
-                      label="Notification Bar State"
-                      value={<StateBadge value={deviceConfig.notificationBarStateName} />}
-                      editValue={configFormData.notificationBarStateId?.toString() || '0'}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('notificationBarStateId', parseInt(v))}
-                      type="select"
-                      options={featureStates.map(state => ({ value: state.id.toString(), label: state.title }))}
-                    />
-                    <ConfigEditItem
-                      label="Enable Notifications"
-                      value={<BooleanBadge value={deviceConfig.enableNotifications} />}
-                      editValue={configFormData.enableNotifications}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('enableNotifications', v)}
-                      type="checkbox"
-                    />
-                    <ConfigEditItem
-                      label="Hide System Notification Bar"
-                      value={<BooleanBadge value={deviceConfig.hideSystemNotificationBarInLauncher} />}
-                      editValue={configFormData.hideSystemNotificationBarInLauncher}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('hideSystemNotificationBarInLauncher', v)}
-                      type="checkbox"
-                    />
-                    <ConfigEditItem
-                      label="Show Launcher Notification Bar"
-                      value={<BooleanBadge value={deviceConfig.showLauncherOwnNotificationBar} />}
-                      editValue={configFormData.showLauncherOwnNotificationBar}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('showLauncherOwnNotificationBar', v)}
-                      type="checkbox"
-                    />
-                  </div>
-
-                  {/* Display Settings */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-base font-semibold text-gray-900 border-b pb-2">
-                      <Monitor className="h-5 w-5 text-gray-500" />
-                      Display Settings
-                    </div>
-                    <ConfigEditItem
-                      label="Use Default Theme"
-                      value={<BooleanBadge value={deviceConfig.useDefaultLauncherTheme} />}
-                      editValue={configFormData.useDefaultLauncherTheme}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('useDefaultLauncherTheme', v)}
-                      type="checkbox"
-                    />
-                    <ConfigEditItem
-                      label="Background Color"
-                      value={
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-6 h-6 rounded border"
-                            style={{ backgroundColor: deviceConfig.backgroundColor }}
-                          />
-                          <span>{deviceConfig.backgroundColor}</span>
-                        </div>
-                      }
-                      editValue={configFormData.backgroundColor || '#FFFFFF'}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('backgroundColor', v)}
-                      type="color"
-                    />
-                    <ConfigEditItem
-                      label="App Names Color"
-                      value={
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-6 h-6 rounded border"
-                            style={{ backgroundColor: deviceConfig.applicationNamesColor }}
-                          />
-                          <span>{deviceConfig.applicationNamesColor}</span>
-                        </div>
-                      }
-                      editValue={configFormData.applicationNamesColor || '#000000'}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('applicationNamesColor', v)}
-                      type="color"
-                    />
-                    {/* Background Image URL */}
-                    <div className={`py-2 border-b border-dashed border-muted last:border-0 ${isConfigEditMode ? 'flex justify-between items-center' : 'grid grid-cols-2'}`}>
-                      <span className="text-sm text-muted-foreground flex items-center">Background Image</span>
-                      {!isConfigEditMode ? (
-                        <div className="flex items-center justify-end gap-2">
-                           <span className="text-sm font-medium text-right truncate max-w-[200px]">
-                             {deviceConfig.backgroundImageUrl ? deviceConfig.backgroundImageUrl : 'Not Set'}
-                           </span>
-                           {deviceConfig.backgroundImageUrl && (
-                             <Button
-                               variant="ghost"
-                               size="sm"
-                               className="h-6 w-6 p-0"
-                               onClick={() => {
-                                 if (deviceConfig.backgroundImageUrl) {
-                                   window.open(deviceConfig.backgroundImageUrl, '_blank');
-                                 }
-                               }}
-                             >
-                               <Eye className="h-4 w-4" />
-                             </Button>
-                           )}
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                           <label className="relative inline-flex items-center cursor-pointer" title={isBackgroundImageEnabled ? "Disable" : "Enable"}>
-                              <input
-                                type="checkbox"
-                                checked={isBackgroundImageEnabled}
-                                onChange={(e) => {
-                                  setIsBackgroundImageEnabled(e.target.checked);
-                                  if (!e.target.checked) {
-                                    handleConfigInputChange('backgroundImageUrl', '');
-                                  }
-                                }}
-                                className="sr-only peer"
-                              />
-                              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                           </label>
-
-                           {isBackgroundImageEnabled && (
-                             <>
-                               <input
-                                 type="text"
-                                 value={configFormData.backgroundImageUrl || ''}
-                                 onChange={(e) => handleConfigInputChange('backgroundImageUrl', e.target.value)}
-                                 placeholder="Image URL"
-                                 className="h-8 w-48 rounded-md border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                               />
-                               {configFormData.backgroundImageUrl && (
-                                 <Button
-                                   variant="ghost"
-                                   size="sm"
-                                   className="h-8 w-8 p-0"
-                                   onClick={() => window.open(configFormData.backgroundImageUrl, '_blank')}
-                                   title="View Image"
-                                 >
-                                   <Eye className="h-4 w-4" />
-                                 </Button>
-                               )}
-                             </>
-                           )}
-                        </div>
-                      )}
-                    </div>
-                    <ConfigEditItem
-                      label="Screen Always On"
-                      value={<BooleanBadge value={deviceConfig.screenAlwaysOn} />}
-                      editValue={configFormData.screenAlwaysOn}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('screenAlwaysOn', v)}
-                      type="checkbox"
-                    />
-                    <ConfigEditItem
-                      label="Manage Screen Timeout"
-                      value={<BooleanBadge value={deviceConfig.manageScreenTimeout} />}
-                      editValue={configFormData.manageScreenTimeout}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('manageScreenTimeout', v)}
-                      type="checkbox"
-                    />
-                    <ConfigEditItem
-                      label="Screen Timeout (seconds)"
-                      value={`${deviceConfig.screenTimeoutSeconds} seconds`}
-                      editValue={configFormData.screenTimeoutSeconds?.toString() || '60'}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('screenTimeoutSeconds', parseInt(v))}
-                      type="number"
-                    />
-                  </div>
-
-                  {/* Security & Controls */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-base font-semibold text-gray-900 border-b pb-2">
-                      <Lock className="h-5 w-5 text-gray-500" />
-                      Security & Controls
-                    </div>
-                    <ConfigEditItem
-                      label="Enable Kiosk Mode"
-                      value={<BooleanBadge value={deviceConfig.enableKioskMode} />}
-                      editValue={configFormData.enableKioskMode}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => {
-                        if (v && !configFormData.kioskModePackageId) {
-                          // Don't enable if package ID is not set
-                          return;
-                        }
-                        handleConfigInputChange('enableKioskMode', v);
-                      }}
-                      type="checkbox"
-                    />
-                    {/* Kiosk Mode Package ID - shown when kiosk mode is enabled or in edit mode */}
-                    {(deviceConfig.enableKioskMode || isConfigEditMode) && (
-                      <ConfigEditItem
-                        label="Kiosk Mode Package ID"
-                        value={deviceConfig.kioskModePackageId || 'Not set'}
-                        editValue={configFormData.kioskModePackageId || ''}
-                        isEditMode={isConfigEditMode}
-                        onChange={(v) => {
-                          handleConfigInputChange('kioskModePackageId', v);
-                          // If package ID is cleared, disable kiosk mode
-                          if (!v && configFormData.enableKioskMode) {
-                            handleConfigInputChange('enableKioskMode', false);
-                          }
-                        }}
-                        type="text"
-                      />
-                    )}
-                    {isConfigEditMode && !configFormData.kioskModePackageId && (
-                      <p className="text-xs text-amber-700 -mt-2 ml-1">
-                        * Set Package ID first to enable Kiosk Mode
-                      </p>
-                    )}
-                    <ConfigEditItem
-                      label="Enable Screen Lock"
-                      value={<BooleanBadge value={deviceConfig.enableScreenLock} />}
-                      editValue={configFormData.enableScreenLock}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => {
-                        handleConfigInputChange('enableScreenLock', v);
-                        if (!v) {
-                          handleConfigInputChange('devicePassword', '');
-                        }
-                      }}
-                      type="checkbox"
-                    />
-                    {(configFormData.enableScreenLock || (deviceConfig.enableScreenLock && isConfigEditMode)) && (
-                      <ConfigEditItem
-                        label="Device Password"
-                        value={deviceConfig.unlockPassword ? '********' : 'Not set'}
-                        editValue={configFormData.devicePassword || ''}
-                        isEditMode={isConfigEditMode}
-                        onChange={(v) => handleConfigInputChange('devicePassword', v)}
-                        type="text"
-                      />
-                    )}
-                    <ConfigEditItem
-                      label="Block External Storage"
-                      value={<BooleanBadge value={deviceConfig.blockExternalStorage} />}
-                      editValue={configFormData.blockExternalStorage}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('blockExternalStorage', v)}
-                      type="checkbox"
-                    />
-                    <ConfigEditItem
-                      label="Is Default Launcher"
-                      value={<BooleanBadge value={deviceConfig.isDefaultLauncher} />}
-                      editValue={configFormData.isDefaultLauncher}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('isDefaultLauncher', v)}
-                      type="checkbox"
-                    />
-                    <ConfigEditItem
-                      label="Device Admin Code Enabled"
-                      value={<BooleanBadge value={deviceConfig.isDeviceAdminCodeEnabled} />}
-                      editValue={configFormData.isDeviceAdminCodeEnabled}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('isDeviceAdminCodeEnabled', v)}
-                      type="checkbox"
-                    />
-                    <ConfigEditItem
-                      label="Device Admin Code"
-                      value={deviceConfig.deviceAdminCode || 'Not set'}
-                      editValue={configFormData.deviceAdminCode || ''}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('deviceAdminCode', v)}
-                      type="text"
-                    />
-                    <ConfigEditItem
-                      label="Allow Access to Sensitive Settings"
-                      value={<BooleanBadge value={deviceConfig.allowToAccessSensitiveSettings} />}
-                      editValue={configFormData.allowToAccessSensitiveSettings}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('allowToAccessSensitiveSettings', v)}
-                      type="checkbox"
-                    />
-                  </div>
-
-                  {/* Volume Settings */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-base font-semibold text-gray-900 border-b pb-2">
-                      <Bell className="h-5 w-5 text-gray-500" />
-                      Volume Settings
-                    </div>
-                    <ConfigEditItem
-                      label="Lock Volume"
-                      value={<BooleanBadge value={deviceConfig.lockVolume} />}
-                      editValue={configFormData.lockVolume}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('lockVolume', v)}
-                      type="checkbox"
-                    />
-                    <ConfigEditItem
-                      label="Volume Level"
-                      value={
-                        <div className="flex items-center gap-2">
-                          <div className="w-32 bg-gray-200 rounded-full h-2">
-                            <div
-                              className="bg-primary h-2 rounded-full"
-                              style={{ width: `${deviceConfig.volumePercentage}%` }}
-                            />
-                          </div>
-                          <span>{deviceConfig.volumePercentage}%</span>
-                        </div>
-                      }
-                      editValue={configFormData.volumePercentage?.toString() || '50'}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('volumePercentage', parseInt(v))}
-                      type="range"
-                    />
-                  </div>
-
-                  {/* Permissions */}
-                  <div className="space-y-4 md:col-span-2">
-                    <div className="flex items-center gap-2 text-base font-semibold text-gray-900 border-b pb-2">
-                      <Lock className="h-5 w-5 text-gray-500" />
-                      Application Permissions
-                    </div>
-                    <ConfigEditItem
-                      label="Permission Granter"
-                      value={deviceConfig.applicationPermissionGranterTypeName}
-                      editValue={configFormData.applicationPermissionGranterTypeId?.toString() || '0'}
-                      isEditMode={isConfigEditMode}
-                      onChange={(v) => handleConfigInputChange('applicationPermissionGranterTypeId', parseInt(v))}
-                      type="select"
-                      options={permissionGranters.map(granter => ({ value: granter.id.toString(), label: granter.title }))}
-                    />
-                  </div>
-                </div>
+                <DeviceConfigPanel
+                  deviceConfig={deviceConfig}
+                  configFormData={configFormData}
+                  isEditMode={isConfigEditMode}
+                  onChange={handleConfigInputChange}
+                  featureStates={featureStates}
+                  locationTrackingTypes={locationTrackingTypes}
+                  pushNotificationProtocols={pushNotificationProtocols}
+                  permissionGranters={permissionGranters}
+                  isBackgroundImageEnabled={isBackgroundImageEnabled}
+                  setIsBackgroundImageEnabled={setIsBackgroundImageEnabled}
+                />
               ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                <div className="flex flex-1 flex-col items-center justify-center py-12 text-muted-foreground">
                   <AlertCircle className="h-12 w-12 mb-4" />
                   <p>No configuration found for this device</p>
                 </div>
@@ -2187,144 +1762,6 @@ export function DeviceManagement() {
       )}
 
     </div>
-  );
-}
-
-// Helper Components
-function ConfigItem({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex justify-between items-center py-2 border-b border-dashed border-muted last:border-0">
-      <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="text-sm font-medium">{value}</span>
-    </div>
-  );
-}
-
-interface ConfigEditItemProps {
-  label: string;
-  value: React.ReactNode;
-  editValue: string | boolean | undefined;
-  isEditMode: boolean;
-  onChange: (value: any) => void;
-  type: 'text' | 'number' | 'checkbox' | 'select' | 'color' | 'range';
-  options?: { value: string; label: string }[];
-}
-
-function ConfigEditItem({ label, value, editValue, isEditMode, onChange, type, options }: ConfigEditItemProps) {
-  if (!isEditMode) {
-    return (
-        <div className="grid grid-cols-2 py-2 border-b border-dashed border-muted last:border-0">
-          <span className="text-sm text-muted-foreground">{label}</span>
-          <span className="text-sm font-medium text-right">{value}</span>
-        </div>
-    );
-  }
-
-  return (
-    <div className="flex justify-between items-center py-2 border-b border-dashed border-muted last:border-0">
-      <span className="text-sm text-muted-foreground">{label}</span>
-      <div className="flex items-center gap-2">
-        {type === 'text' && (
-          <input
-            type="text"
-            value={editValue as string}
-            onChange={(e) => onChange(e.target.value)}
-            className="h-8 w-48 rounded-md border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-          />
-        )}
-        {type === 'number' && (
-          <input
-            type="number"
-            value={editValue as string}
-            onChange={(e) => onChange(e.target.value)}
-            className="h-8 w-24 rounded-md border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-          />
-        )}
-        {type === 'checkbox' && (
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={editValue as boolean}
-              onChange={(e) => onChange(e.target.checked)}
-              className="sr-only peer"
-            />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-          </label>
-        )}
-        {type === 'select' && options && (
-          <select
-            value={editValue as string}
-            onChange={(e) => onChange(e.target.value)}
-            className="h-8 w-48 rounded-md border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-          >
-            {options.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        )}
-        {type === 'color' && (
-          <div className="flex items-center gap-2">
-            <input
-              type="color"
-              value={editValue as string}
-              onChange={(e) => onChange(e.target.value)}
-              className="h-8 w-8 rounded border border-input cursor-pointer"
-            />
-            <input
-              type="text"
-              value={editValue as string}
-              onChange={(e) => onChange(e.target.value)}
-              className="h-8 w-24 rounded-md border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-            />
-          </div>
-        )}
-        {type === 'range' && (
-          <div className="flex items-center gap-2">
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={editValue as string}
-              onChange={(e) => onChange(e.target.value)}
-              className="w-32 h-2 bg-gray-200 rounded-full appearance-none cursor-pointer"
-            />
-            <span className="text-sm w-12">{editValue}%</span>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function BooleanBadge({ value }: { value: boolean }) {
-  return (
-    <span
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${
-        value
-          ? 'bg-green-50 text-green-700 border-green-200'
-          : 'bg-gray-100 text-gray-700 border-gray-200'
-      }`}
-    >
-      {value ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
-      {value ? 'Enabled' : 'Disabled'}
-    </span>
-  );
-}
-
-function StateBadge({ value }: { value: string }) {
-  const isAny = value.toUpperCase() === 'ANY';
-  return (
-    <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${
-        isAny
-          ? 'bg-blue-50 text-blue-700 border-blue-200'
-          : 'bg-gray-100 text-gray-700 border-gray-200'
-      }`}
-    >
-      {value}
-    </span>
   );
 }
 

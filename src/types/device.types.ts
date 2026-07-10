@@ -144,6 +144,39 @@ export interface ApplyDevicePolicyRequest {
   vpnSecret?: string | null;
   vpnProtocolTypeId?: number | null;
   vpnRoutingRules?: string[] | null;
+  // Configuration: Connectivity
+  wifiStateId?: number | null;
+  mobileDataStateId?: number | null;
+  gpsStateId?: number | null;
+  pushNotificationProtocolTypeId?: number | null;
+  // Configuration: Display & Screen
+  useDefaultLauncherTheme?: boolean | null;
+  backgroundColor?: string | null;
+  applicationNamesColor?: string | null;
+  iconSize?: string | null;
+  screenAlwaysOn?: boolean | null;
+  manageScreenTimeout?: boolean | null;
+  screenTimeoutSeconds?: number | null;
+  // Configuration: Security & Controls
+  enableKioskMode?: boolean | null;
+  kioskModePackageId?: string | null;
+  enableScreenLock?: boolean | null;
+  blockExternalStorage?: boolean | null;
+  isDefaultLauncher?: boolean | null;
+  isDeviceAdminCodeEnabled?: boolean | null;
+  deviceAdminCode?: string | null;
+  allowToAccessSensitiveSettings?: boolean | null;
+  // Configuration: Notifications / Location / Volume / Permissions
+  notificationBarStateId?: number | null;
+  enableNotifications?: boolean | null;
+  hideSystemNotificationBarInLauncher?: boolean | null;
+  showLauncherOwnNotificationBar?: boolean | null;
+  locationTrackingByTypeId?: number | null;
+  lockSystemOrientation?: boolean | null;
+  lockLauncherOrientation?: boolean | null;
+  lockVolume?: boolean | null;
+  volumePercentage?: number | null;
+  applicationPermissionGranterTypeId?: number | null;
 }
 
 export interface ApplyPolicyResult {
