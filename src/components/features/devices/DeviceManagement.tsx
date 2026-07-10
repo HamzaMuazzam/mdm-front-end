@@ -12,9 +12,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DevicePolicyModal } from './DevicePolicyModal';
-import { BulkDevicePolicyModal } from './BulkDevicePolicyModal';
+import { BulkRootPolicyModal } from './BulkRootPolicyModal';
+import { BulkOsUpgradeModal } from './BulkOsUpgradeModal';
+import { BulkVpnModal } from './BulkVpnModal';
 import { BulkSslPinningModal } from './BulkSslPinningModal';
-import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, Eye, BarChart3, MoreVertical, Power, RotateCcw, Siren, Mic, Database, Map, Plus, RefreshCw, Search, Clock, CheckSquare, Square, Users, ShieldAlert } from 'lucide-react';
+import { BulkActionsMenu } from './BulkActionsMenu';
+import { DeviceActionsMenu, type DeviceActionCategory, type ActionTone } from './DeviceActionsMenu';
+import { Settings, Wifi, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, Eye, BarChart3, Power, RotateCcw, Siren, Mic, Database, Map, Plus, RefreshCw, Search, Clock, CheckSquare, Square, Users, ShieldAlert, ArrowUpCircle, Globe } from 'lucide-react';
 import { timeRangeService } from '@/api/services/timerange.service';
 import QRCode from 'qrcode';
 import type { CreateDeviceRequest, UpdateDeviceRequest, Device, UpdateDeviceConfigurationRequest } from '@/types/device.types';
@@ -39,7 +43,6 @@ export function DeviceManagement() {
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [isConfigEditMode, setIsConfigEditMode] = useState(false);
   const [isBackgroundImageEnabled, setIsBackgroundImageEnabled] = useState(false);
-  const [openActionMenuDeviceId, setOpenActionMenuDeviceId] = useState<number | null>(null);
   const [alertStatusByDevice, setAlertStatusByDevice] = useState<Record<number, boolean>>({});
   const [alertStatusLoading, setAlertStatusLoading] = useState<Record<number, boolean>>({});
   const [deviceToToggle, setDeviceToToggle] = useState<Device | null>(null);
@@ -55,7 +58,9 @@ export function DeviceManagement() {
 
   // ── Update & Security Policy modal state ──────────────────────────────────
   const [policyModalDevice, setPolicyModalDevice] = useState<Device | null>(null);
-  const [isBulkPolicyOpen, setIsBulkPolicyOpen] = useState(false);
+  const [isBulkRootOpen, setIsBulkRootOpen] = useState(false);
+  const [isBulkOsOpen, setIsBulkOsOpen] = useState(false);
+  const [isBulkVpnOpen, setIsBulkVpnOpen] = useState(false);
   const [isBulkSslOpen, setIsBulkSslOpen] = useState(false);
   const [bulkSelectedUuids, setBulkSelectedUuids] = useState<Set<string>>(new Set());
   const [bulkSearchQuery, setBulkSearchQuery] = useState('');
@@ -143,19 +148,6 @@ export function DeviceManagement() {
     link.click();
   }, [qrDataUrl]);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (!target?.closest('[data-device-actions-menu]')) {
-        setOpenActionMenuDeviceId(null);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
 
   // On page load/refresh, seed status map from backend client list so status is visible before MQTT events arrive
   useEffect(() => {
@@ -497,24 +489,9 @@ export function DeviceManagement() {
     }
   };
 
-  const handleOpenActionsMenu = (deviceId: number) => {
-    setOpenActionMenuDeviceId((previous) => {
-      const next = previous === deviceId ? null : deviceId;
-      if (next !== null) {
-        void fetchAlertStatus(deviceId);
-      }
-      return next;
-    });
-  };
-
-  const closeActionsMenu = () => {
-    setOpenActionMenuDeviceId(null);
-  };
-
   const handleOpenCommandDialog = (device: Device, command: DeviceCommandType) => {
     setCommandTarget({ device, command });
     setIsCommandDialogOpen(true);
-    closeActionsMenu();
   };
 
   const handleCloseCommandDialog = () => {
@@ -571,6 +548,77 @@ export function DeviceManagement() {
 
   const handleShowCode = (code: number | undefined) => {
     setVerificationCodeModal({ code: code ?? null });
+  };
+
+  /**
+   * Declarative two-level action model for a device, shared by the desktop dropdown and the mobile
+   * sheet. New per-device features slot into the right category here — no menu markup to touch.
+   */
+  const buildDeviceActionCategories = (device: Device): DeviceActionCategory[] => {
+    const isActive = !device.deletedAt;
+    const alertsEnabled = alertStatusByDevice[device.id];
+    const alertsLoading = alertStatusLoading[device.id];
+    const alertsLabel = alertsEnabled === undefined ? 'Alerts' : alertsEnabled ? 'Alerts Enabled' : 'Alerts Disabled';
+    const alertsTone: ActionTone = alertsEnabled ? 'green' : alertsEnabled === false ? 'amber' : 'default';
+
+    return [
+      {
+        key: 'monitoring',
+        label: 'Monitoring',
+        icon: BarChart3,
+        items: [
+          { key: 'monitor', label: 'Monitor Dashboard', icon: BarChart3, onSelect: () => handleOpenMonitorDashboard(device), visible: hasPermission('devices:monitoring') },
+          { key: 'config', label: 'Configuration', icon: Settings, onSelect: () => handleViewConfig(device), visible: hasPermission('devices:configurations:read') },
+          { key: 'apps', label: 'Applications', icon: AppWindow, onSelect: () => handleViewApps(device), visible: hasPermission('devices:applications:read') },
+          { key: 'requests', label: 'Requests', icon: FileText, onSelect: () => handleViewRequests(device) },
+          { key: 'notifications', label: 'Notifications', icon: Bell, onSelect: () => handleViewNotifications(device), visible: hasPermission('notifications:view-history') },
+          { key: 'data', label: 'Contacts, SMS & Calls', icon: Database, tone: 'blue', onSelect: () => handleMonitorData(device), visible: hasPermission('device-data:read') || hasPermission('contacts:read') || hasPermission('sms:read') || hasPermission('call-logs:read') },
+          { key: 'listen', label: 'Listen to Device', icon: Mic, tone: 'green', onSelect: () => handleListenAudio(device), visible: hasPermission('device-audio:listen') || hasPermission('audio-management:listen') },
+          { key: 'sim', label: 'SIM Change Logs', icon: Smartphone, tone: 'blue', onSelect: () => handleSimChanges(device), visible: hasPermission('sim-changes:read') },
+        ],
+      },
+      {
+        key: 'security',
+        label: 'Security & Policy',
+        icon: ShieldAlert,
+        items: [
+          { key: 'integrity', label: 'Root / Integrity', icon: ShieldAlert, tone: 'red', onSelect: () => handleIntegrity(device), visible: hasPermission('device-integrity:read') },
+          { key: 'policy', label: 'Update & Security Policy', icon: Settings, tone: 'blue', onSelect: () => handleDevicePolicy(device), visible: hasPermission('configuration:update') },
+          { key: 'ssl', label: 'SSL Pinning', icon: Lock, tone: 'blue', onSelect: () => handleSslPinning(device), visible: hasPermission('configuration:update') },
+        ],
+      },
+      {
+        key: 'location',
+        label: 'Location & Safety',
+        icon: MapPin,
+        items: [
+          { key: 'tracking', label: 'Live Tracking', icon: MapPin, tone: 'blue', onSelect: () => handleTracking(device), visible: hasPermission('tracking:history') },
+          { key: 'sos', label: 'SOS History', icon: Siren, tone: 'red', onSelect: () => handleSosHistory(device), visible: hasPermission('tracking:history') },
+          { key: 'alarm', label: 'Send Alarm', icon: Siren, tone: 'red', onSelect: () => handleSendAlert(device), visible: hasPermission('device-alerts:send') },
+        ],
+      },
+      {
+        key: 'access',
+        label: 'Access & Settings',
+        icon: Key,
+        items: [
+          { key: 'code', label: 'Verification Code', icon: Key, onSelect: () => handleShowCode(device.deviceVerificationCode) },
+          { key: 'alerts', label: alertsLabel, icon: Bell, tone: alertsTone, disabled: alertsLoading || updateNotificationSettingsMutation.isPending, onSelect: () => handleToggleAlerts(device), visible: hasPermission('notifications:manage-alerts') },
+          { key: 'timerange', label: 'Usage Time Range', icon: Clock, tone: 'blue', onSelect: () => handleTimeRange(device) },
+          { key: 'edit', label: 'Edit Device', icon: Pencil, onSelect: () => handleEdit(device), visible: hasPermission('devices:update') },
+        ],
+      },
+      {
+        key: 'danger',
+        label: 'Danger Zone',
+        icon: AlertCircle,
+        items: [
+          { key: 'reboot', label: 'Reboot', icon: Power, onSelect: () => handleOpenCommandDialog(device, 'reboot'), visible: hasPermission('devices:update') },
+          { key: 'reset', label: 'Factory Reset', icon: RotateCcw, tone: 'red', onSelect: () => handleOpenCommandDialog(device, 'reset'), visible: hasPermission('devices:update') },
+          { key: 'toggle', label: isActive ? 'Deactivate Device' : 'Activate Device', icon: isActive ? AlertCircle : Check, tone: isActive ? 'red' : 'green', disabled: toggleStatusMutation.isPending, onSelect: () => handleToggleClick(device), visible: hasPermission('devices:delete') },
+        ],
+      },
+    ];
   };
 
   if (isLoading) {
@@ -667,34 +715,53 @@ export function DeviceManagement() {
             </Button>
           )}
           {devices.length > 0 && (
-            <Button
-              variant="outline"
-              onClick={openBulkTimeRange}
-              className="flex-1 sm:flex-none border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300"
-            >
-              <Clock className="h-4 w-4 mr-2" />
-              Bulk Time Range
-            </Button>
-          )}
-          {devices.length > 0 && hasPermission('configuration:update') && (
-            <Button
-              variant="outline"
-              onClick={() => setIsBulkPolicyOpen(true)}
-              className="flex-1 sm:flex-none border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300"
-            >
-              <ShieldAlert className="h-4 w-4 mr-2" />
-              Bulk Policy
-            </Button>
-          )}
-          {devices.length > 0 && hasPermission('configuration:update') && (
-            <Button
-              variant="outline"
-              onClick={() => setIsBulkSslOpen(true)}
-              className="flex-1 sm:flex-none border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300"
-            >
-              <Lock className="h-4 w-4 mr-2" />
-              Bulk SSL Pinning
-            </Button>
+            <BulkActionsMenu
+              groups={[
+                {
+                  label: 'Security',
+                  items: [
+                    {
+                      label: 'Root / Compromise',
+                      icon: ShieldAlert,
+                      onClick: () => setIsBulkRootOpen(true),
+                      visible: hasPermission('configuration:update'),
+                    },
+                    {
+                      label: 'SSL Pinning',
+                      icon: Lock,
+                      onClick: () => setIsBulkSslOpen(true),
+                      visible: hasPermission('configuration:update'),
+                    },
+                  ],
+                },
+                {
+                  label: 'Updates',
+                  items: [
+                    {
+                      label: 'OS Upgrade Policy',
+                      icon: ArrowUpCircle,
+                      onClick: () => setIsBulkOsOpen(true),
+                      visible: hasPermission('configuration:update'),
+                    },
+                  ],
+                },
+                {
+                  label: 'Network',
+                  items: [
+                    {
+                      label: 'VPN',
+                      icon: Globe,
+                      onClick: () => setIsBulkVpnOpen(true),
+                      visible: hasPermission('configuration:update'),
+                    },
+                  ],
+                },
+                {
+                  label: 'Usage',
+                  items: [{ label: 'Time Range', icon: Clock, onClick: openBulkTimeRange }],
+                },
+              ]}
+            />
           )}
           {hasPermission('devices:create') && (
             <Button onClick={() => setIsModalOpen(true)} className="flex-1 sm:flex-none shadow-sm">
@@ -729,14 +796,6 @@ export function DeviceManagement() {
           const isActive = !device.deletedAt;
           const onlineStatus = deviceStatuses[device.deviceUuid];
           const gradient = avatarGradients[device.id % avatarGradients.length];
-          const alertsEnabled = alertStatusByDevice[device.id];
-          const alertsLoading = alertStatusLoading[device.id];
-          const alertsLabel = alertsEnabled === undefined ? 'Alerts' : alertsEnabled ? 'Alerts Enabled' : 'Alerts Disabled';
-          const alertsMenuClass = alertsEnabled
-            ? 'text-green-700 hover:bg-green-50'
-            : !alertsEnabled
-            ? 'text-amber-700 hover:bg-amber-50'
-            : 'text-foreground hover:bg-muted';
           // Left border: green if active+online, amber if active+offline/unknown, red if inactive
           const accentClass = !isActive
             ? 'border-l-red-500'
@@ -908,147 +967,12 @@ export function DeviceManagement() {
                 </button>
 
                 {/* Overflow menu */}
-                <div className="relative ml-auto" data-device-actions-menu>
-                  <button
-                    type="button"
-                    onClick={() => handleOpenActionsMenu(device.id)}
-                    className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
-                  >
-                    <MoreVertical className="h-4 w-4" />
-                    <span className="text-[10px] font-medium">More</span>
-                  </button>
-                  {openActionMenuDeviceId === device.id && (
-                    <>
-                      {/* Backdrop */}
-                      <div className="fixed inset-0 z-40 bg-black/30" onClick={closeActionsMenu} />
-                      {/* Bottom sheet */}
-                      <div className="fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-lg border-t border-gray-200 bg-white shadow-lg max-h-[80vh]">
-                        {/* Drag handle */}
-                        <div className="flex justify-center pt-3 pb-1 shrink-0">
-                          <div className="w-10 h-1 rounded-full bg-border" />
-                        </div>
-                        {/* Header */}
-                        <div className="px-4 py-2.5 border-b border-border bg-muted/40 shrink-0">
-                          <p className="text-sm font-semibold text-foreground truncate">{device.deviceName || 'Device'}</p>
-                          <p className="text-xs text-muted-foreground truncate">{device.userEmail || device.deviceUuid}</p>
-                        </div>
-                        {/* Scrollable menu items */}
-                        <div className="overflow-y-auto flex-1 pb-safe">
-                          {hasPermission('devices:configurations:read') && (
-                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-foreground hover:bg-muted transition-colors" onClick={() => { closeActionsMenu(); handleViewConfig(device); }}>
-                              <Settings className="h-5 w-5 text-muted-foreground shrink-0" /> Configuration
-                            </button>
-                          )}
-                          {hasPermission('notifications:view-history') && (
-                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-foreground hover:bg-muted transition-colors" onClick={() => { closeActionsMenu(); handleViewNotifications(device); }}>
-                              <Bell className="h-5 w-5 text-muted-foreground shrink-0" /> View Notifications
-                            </button>
-                          )}
-                          {hasPermission('device-alerts:send') && (
-                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-red-600 hover:bg-red-50 transition-colors" onClick={() => { closeActionsMenu(); handleSendAlert(device); }}>
-                              <Siren className="h-5 w-5 shrink-0" /> Send Alarm
-                            </button>
-                          )}
-                          {(hasPermission('device-audio:listen') || hasPermission('audio-management:listen')) && (
-                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-green-700 hover:bg-green-50 transition-colors" onClick={() => { closeActionsMenu(); handleListenAudio(device); }}>
-                              <Mic className="h-5 w-5 shrink-0" /> Listen to Device
-                            </button>
-                          )}
-                          {(hasPermission('device-data:read') || hasPermission('contacts:read') || hasPermission('sms:read') || hasPermission('call-logs:read')) && (
-                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-blue-600 hover:bg-blue-50 transition-colors" onClick={() => { closeActionsMenu(); handleMonitorData(device); }}>
-                              <Database className="h-5 w-5 shrink-0" /> Contacts &amp; SMS &amp; Calls
-                            </button>
-                          )}
-                          {hasPermission('sim-changes:read') && (
-                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-blue-600 hover:bg-blue-50 transition-colors" onClick={() => { closeActionsMenu(); handleSimChanges(device); }}>
-                              <Smartphone className="h-5 w-5 shrink-0" /> SIM Change Logs
-                            </button>
-                          )}
-                          {hasPermission('device-integrity:read') && (
-                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-red-600 hover:bg-red-50 transition-colors" onClick={() => { closeActionsMenu(); handleIntegrity(device); }}>
-                              <ShieldAlert className="h-5 w-5 shrink-0" /> Root / Integrity
-                            </button>
-                          )}
-                          {hasPermission('configuration:update') && (
-                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-blue-600 hover:bg-blue-50 transition-colors" onClick={() => { closeActionsMenu(); handleDevicePolicy(device); }}>
-                              <Settings className="h-5 w-5 shrink-0" /> Update &amp; Security Policy
-                            </button>
-                          )}
-                          {hasPermission('configuration:update') && (
-                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-blue-600 hover:bg-blue-50 transition-colors" onClick={() => { closeActionsMenu(); handleSslPinning(device); }}>
-                              <Lock className="h-5 w-5 shrink-0" /> SSL Pinning
-                            </button>
-                          )}
-                          {hasPermission('tracking:history') && (
-                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-blue-600 hover:bg-blue-50 transition-colors" onClick={() => { closeActionsMenu(); handleTracking(device); }}>
-                              <MapPin className="h-5 w-5 shrink-0" /> Live Tracking
-                            </button>
-                          )}
-                          {hasPermission('tracking:history') && (
-                            <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-red-600 hover:bg-red-50 transition-colors font-medium" onClick={() => { closeActionsMenu(); handleSosHistory(device); }}>
-                              <Siren className="h-5 w-5 shrink-0" /> SOS History
-                            </button>
-                          )}
-                          <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-blue-600 hover:bg-blue-50 transition-colors" onClick={() => { closeActionsMenu(); handleTimeRange(device); }}>
-                            <Clock className="h-5 w-5 shrink-0" /> Usage Time Range
-                          </button>
-                          {hasPermission('notifications:manage-alerts') && (
-                            <button
-                              type="button"
-                              className={`flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm transition-colors ${alertsMenuClass}`}
-                              onClick={() => { closeActionsMenu(); handleToggleAlerts(device); }}
-                              disabled={alertsLoading || updateNotificationSettingsMutation.isPending}
-                            >
-                              <Bell className="h-5 w-5 shrink-0" /> {alertsLabel}
-                            </button>
-                          )}
-                          <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-foreground hover:bg-muted transition-colors" onClick={() => { closeActionsMenu(); handleShowCode(device.deviceVerificationCode); }}>
-                            <Key className="h-5 w-5 text-muted-foreground shrink-0" /> Verification Code
-                          </button>
-                          {hasPermission('devices:update') && (
-                            <>
-                              <div className="my-1 h-px bg-border" />
-                              <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-foreground hover:bg-muted transition-colors" onClick={() => { closeActionsMenu(); handleOpenCommandDialog(device, 'reboot'); }}>
-                                <Power className="h-5 w-5 text-muted-foreground shrink-0" /> Reboot Device
-                              </button>
-                              <button type="button" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-red-600 hover:bg-red-50 transition-colors" onClick={() => { closeActionsMenu(); handleOpenCommandDialog(device, 'reset'); }}>
-                                <RotateCcw className="h-5 w-5 shrink-0" /> Factory Reset
-                              </button>
-                            </>
-                          )}
-                          {hasPermission('devices:delete') && (
-                            <>
-                              <div className="my-1 h-px bg-border" />
-                              <button
-                                type="button"
-                                className={`flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm transition-colors ${
-                                  isActive
-                                    ? 'text-red-600 hover:bg-red-50'
-                                    : 'text-green-700 hover:bg-green-50'
-                                }`}
-                                onClick={() => { closeActionsMenu(); handleToggleClick(device); }}
-                                disabled={toggleStatusMutation.isPending}
-                              >
-                                {isActive ? <AlertCircle className="h-5 w-5 shrink-0" /> : <Check className="h-5 w-5 shrink-0" />}
-                                {isActive ? 'Deactivate Device' : 'Activate Device'}
-                              </button>
-                            </>
-                          )}
-                        </div>
-                        {/* Close button */}
-                        <div className="shrink-0 p-3 border-t border-border">
-                          <button
-                            type="button"
-                            className="w-full py-3 rounded-md bg-gray-100 text-sm font-medium text-gray-700 hover:bg-gray-200 transition-colors"
-                            onClick={closeActionsMenu}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
+                <DeviceActionsMenu
+                  variant="sheet"
+                  device={device}
+                  categories={buildDeviceActionCategories(device)}
+                  onOpen={() => void fetchAlertStatus(device.id)}
+                />
               </div>
             </div>
           );
@@ -1078,14 +1002,6 @@ export function DeviceManagement() {
               <tbody className="divide-y divide-border">
                 {filteredDevices.map((device:Device) => {
                   const isActive = !device.deletedAt;
-                  const alertsEnabled = alertStatusByDevice[device.id];
-                  const alertsLoading = alertStatusLoading[device.id];
-                  const alertsLabel = alertsEnabled === undefined ? 'Alerts' : alertsEnabled ? 'Alerts Enabled' : 'Alerts Disabled';
-                  const alertsMenuClass = alertsEnabled
-                    ? 'text-green-700 hover:bg-green-50'
-                    : !alertsEnabled
-                    ? 'text-amber-700 hover:bg-amber-50'
-                    : 'text-foreground hover:bg-muted';
                   return (
                     <tr
                       key={device.id}
@@ -1114,135 +1030,12 @@ export function DeviceManagement() {
                       </td>
                       {/*<td className="px-4 py-3 text-sm">{device.deletedAt || '-'}</td>*/}
                       <td className="px-4 py-3 text-sm">
-                        <div className="relative inline-block text-left" data-device-actions-menu>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleOpenActionsMenu(device.id)}
-                            title="More actions"
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-
-                          {openActionMenuDeviceId === device.id && (
-                            <div className="absolute right-0 z-20 mt-2 w-52 rounded-md border border-border bg-popover shadow-lg max-h-[70vh] overflow-y-auto">
-                              {hasPermission('devices:monitoring') && (
-                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => { closeActionsMenu(); handleOpenMonitorDashboard(device); }}>
-                                  <BarChart3 className="h-4 w-4" /> Open Monitor Dashboard
-                                </button>
-                              )}
-                              <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => { closeActionsMenu(); handleShowCode(device.deviceVerificationCode); }}>
-                                <Key className="h-4 w-4" /> Show Verification Code
-                              </button>
-                              {hasPermission('devices:configurations:read') && (
-                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => { closeActionsMenu(); handleViewConfig(device); }}>
-                                  <Settings className="h-4 w-4" /> View Configuration
-                                </button>
-                              )}
-                              {hasPermission('devices:applications:read') && (
-                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => { closeActionsMenu(); handleViewApps(device); }}>
-                                  <AppWindow className="h-4 w-4" /> View Applications
-                                </button>
-                              )}
-                              <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => { closeActionsMenu(); handleViewRequests(device); }}>
-                                <FileText className="h-4 w-4" /> View Requests
-                              </button>
-                              {hasPermission('notifications:view-history') && (
-                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => { closeActionsMenu(); handleViewNotifications(device); }}>
-                                  <Bell className="h-4 w-4" /> View Notifications
-                                </button>
-                              )}
-                              {hasPermission('notifications:manage-alerts') && (
-                                <button
-                                  type="button"
-                                  className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors ${alertsMenuClass}`}
-                                  onClick={() => { closeActionsMenu(); handleToggleAlerts(device); }}
-                                  disabled={alertsLoading || updateNotificationSettingsMutation.isPending}
-                                >
-                                  <Bell className="h-4 w-4" /> {alertsLabel}
-                                </button>
-                              )}
-                              {hasPermission('device-alerts:send') && (
-                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50" onClick={() => { closeActionsMenu(); handleSendAlert(device); }}>
-                                  <Siren className="h-4 w-4" /> Send Alarm
-                                </button>
-                              )}
-                              {(hasPermission('device-audio:listen') || hasPermission('audio-management:listen')) && (
-                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-green-700 hover:bg-green-50" onClick={() => { closeActionsMenu(); handleListenAudio(device); }}>
-                                  <Mic className="h-4 w-4" /> Listen to Device
-                                </button>
-                              )}
-                              {(hasPermission('device-data:read') || hasPermission('contacts:read') || hasPermission('sms:read') || hasPermission('call-logs:read')) && (
-                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50" onClick={() => { closeActionsMenu(); handleMonitorData(device); }}>
-                                  <Database className="h-4 w-4" /> Contacts &amp; SMS &amp; Calls
-                                </button>
-                              )}
-                              {hasPermission('sim-changes:read') && (
-                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50" onClick={() => { closeActionsMenu(); handleSimChanges(device); }}>
-                                  <Smartphone className="h-4 w-4" /> SIM Change Logs
-                                </button>
-                              )}
-                              {hasPermission('device-integrity:read') && (
-                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50" onClick={() => { closeActionsMenu(); handleIntegrity(device); }}>
-                                  <ShieldAlert className="h-4 w-4" /> Root / Integrity
-                                </button>
-                              )}
-                              {hasPermission('configuration:update') && (
-                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50" onClick={() => { closeActionsMenu(); handleDevicePolicy(device); }}>
-                                  <Settings className="h-4 w-4" /> Update &amp; Security Policy
-                                </button>
-                              )}
-                              {hasPermission('configuration:update') && (
-                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50" onClick={() => { closeActionsMenu(); handleSslPinning(device); }}>
-                                  <Lock className="h-4 w-4" /> SSL Pinning
-                                </button>
-                              )}
-                              {hasPermission('tracking:history') && (
-                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50" onClick={() => { closeActionsMenu(); handleTracking(device); }}>
-                                  <MapPin className="h-4 w-4" /> Live Tracking
-                                </button>
-                              )}
-                              {hasPermission('tracking:history') && (
-                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 font-medium" onClick={() => { closeActionsMenu(); handleSosHistory(device); }}>
-                                  <Siren className="h-4 w-4" /> SOS History
-                                </button>
-                              )}
-                              <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50" onClick={() => { closeActionsMenu(); handleTimeRange(device); }}>
-                                <Clock className="h-4 w-4" /> Usage Time Range
-                              </button>
-                              {hasPermission('devices:update') && (
-                                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => { closeActionsMenu(); handleEdit(device); }}>
-                                  <Pencil className="h-4 w-4" /> Edit Device
-                                </button>
-                              )}
-                              {hasPermission('devices:update') && (
-                                <>
-                                  <div className="my-1 h-px bg-border" />
-                                  <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => handleOpenCommandDialog(device, 'reboot')}>
-                                    <Power className="h-4 w-4" /> Reboot
-                                  </button>
-                                  <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50" onClick={() => handleOpenCommandDialog(device, 'reset')}>
-                                    <RotateCcw className="h-4 w-4" /> Reset
-                                  </button>
-                                </>
-                              )}
-                              {hasPermission('devices:delete') && (
-                                <>
-                                  <div className="my-1 h-px bg-border" />
-                                  <button
-                                    type="button"
-                                    className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm ${isActive ? 'text-red-600 hover:bg-red-50' : 'text-green-700 hover:bg-green-50'}`}
-                                    onClick={() => { closeActionsMenu(); handleToggleClick(device); }}
-                                    disabled={toggleStatusMutation.isPending}
-                                  >
-                                    {isActive ? <AlertCircle className="h-4 w-4" /> : <Check className="h-4 w-4" />}
-                                    {isActive ? 'Deactivate Device' : 'Activate Device'}
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          )}
-                        </div>
+                        <DeviceActionsMenu
+                          variant="dropdown"
+                          device={device}
+                          categories={buildDeviceActionCategories(device)}
+                          onOpen={() => void fetchAlertStatus(device.id)}
+                        />
                       </td>
                     </tr>
                   );
@@ -1257,8 +1050,14 @@ export function DeviceManagement() {
       {policyModalDevice && (
         <DevicePolicyModal device={policyModalDevice} onClose={() => setPolicyModalDevice(null)} />
       )}
-      {isBulkPolicyOpen && (
-        <BulkDevicePolicyModal devices={devices} onClose={() => setIsBulkPolicyOpen(false)} />
+      {isBulkRootOpen && (
+        <BulkRootPolicyModal devices={devices} onClose={() => setIsBulkRootOpen(false)} />
+      )}
+      {isBulkOsOpen && (
+        <BulkOsUpgradeModal devices={devices} onClose={() => setIsBulkOsOpen(false)} />
+      )}
+      {isBulkVpnOpen && (
+        <BulkVpnModal devices={devices} onClose={() => setIsBulkVpnOpen(false)} />
       )}
       {isBulkSslOpen && (
         <BulkSslPinningModal devices={devices} onClose={() => setIsBulkSslOpen(false)} />
