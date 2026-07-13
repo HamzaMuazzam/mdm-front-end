@@ -257,6 +257,9 @@ $SUDO systemctl daemon-reload && ok "daemon-reloaded."
 log "Enabling ${SERVICE} to start on boot (Ubuntu restart)..."
 $SUDO systemctl enable "${SERVICE}.service" >/dev/null 2>&1 && ok "Enabled for boot."
 
+# Mark "now" so we only stream logs from this (re)start — not old sessions in the journal.
+LOG_SINCE="$(date '+%Y-%m-%d %H:%M:%S')"
+
 if [ "$SERVICE_EXISTS" = true ]; then
   log "Restarting existing service to apply the ${PROFILE} configuration..."
   $SUDO systemctl restart "${SERVICE}.service" && ok "Service restarted." || die "Restart failed. See: journalctl -u ${SERVICE} -n 50"
@@ -270,6 +273,9 @@ sleep 1
 # ── STEP: Status ──────────────────────────────────────────────
 step "Service Status"
 $SUDO systemctl --no-pager --lines=0 status "${SERVICE}.service" || true
+echo ""
+log "Active command (authoritative — this is the port actually in effect):"
+info "$($SUDO systemctl show -p ExecStart --value "${SERVICE}.service" 2>/dev/null | grep -oE 'argv\[\]=[^;]+' | sed 's/argv\[\]=//')"
 
 TOTAL_TIME=$(elapsed)
 echo ""
@@ -291,7 +297,8 @@ echo -e "  ${C_DIM}Total time: ${TOTAL_TIME}${C_RESET}"
 
 # ── STEP: Follow logs ─────────────────────────────────────────
 step "Live Service Logs  (Ctrl+C to stop following — the service keeps running)"
+info "Streaming only logs from THIS ${PROFILE} run (since ${LOG_SINCE}). Full history: journalctl -u ${SERVICE}"
 trap 'echo ""; echo ""; ok "Detached from logs — ${SERVICE} is still running (and will restart on reboot)."; echo -e "  ${C_DIM}Re-attach anytime with: journalctl -u ${SERVICE} -f${C_RESET}"; echo ""; exit 0' INT
 divider
 echo ""
-$SUDO journalctl -u "${SERVICE}.service" -f -n 100
+$SUDO journalctl -u "${SERVICE}.service" -f --since "$LOG_SINCE"
