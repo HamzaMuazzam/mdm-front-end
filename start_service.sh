@@ -209,10 +209,8 @@ fi
 
 # ── STEP: Detect existing service ─────────────────────────────
 step "Detect Existing Service"
-SERVICE_EXISTS=false
-if $SUDO systemctl list-unit-files --type=service 2>/dev/null | grep -q "^${SERVICE}\.service"; then
-  SERVICE_EXISTS=true
-  ok "Service '${SERVICE}' already exists — it will be refreshed and restarted."
+if [ -f "$UNIT_PATH" ] || $SUDO systemctl list-unit-files --type=service 2>/dev/null | grep -q "^${SERVICE}\.service"; then
+  ok "Service '${SERVICE}' already exists — its unit will be refreshed and the service restarted."
 else
   info "Service '${SERVICE}' not found — it will be created, enabled and started."
 fi
@@ -249,7 +247,7 @@ else
 fi
 
 # ── STEP: (Re)load, enable, (re)start ─────────────────────────
-step "Reload · Enable · $([ "$SERVICE_EXISTS" = true ] && echo Restart || echo Start)"
+step "Reload · Enable · Restart"
 
 log "Reloading systemd daemon..."
 $SUDO systemctl daemon-reload && ok "daemon-reloaded."
@@ -257,16 +255,15 @@ $SUDO systemctl daemon-reload && ok "daemon-reloaded."
 log "Enabling ${SERVICE} to start on boot (Ubuntu restart)..."
 $SUDO systemctl enable "${SERVICE}.service" >/dev/null 2>&1 && ok "Enabled for boot."
 
-# Mark "now" so we only stream logs from this (re)start — not old sessions in the journal.
-LOG_SINCE="$(date '+%Y-%m-%d %H:%M:%S')"
+# Capture the journal cursor BEFORE (re)starting so we can stream only this run's logs.
+# Cursor-based follow is clock-independent — avoids replaying old sessions even with a skewed clock.
+LOG_CURSOR="$($SUDO journalctl -u "${SERVICE}.service" --lines=0 --show-cursor 2>/dev/null | grep -o 'cursor: .*' | sed 's/^cursor: //')"
 
-if [ "$SERVICE_EXISTS" = true ]; then
-  log "Restarting existing service to apply the ${PROFILE} configuration..."
-  $SUDO systemctl restart "${SERVICE}.service" && ok "Service restarted." || die "Restart failed. See: journalctl -u ${SERVICE} -n 50"
-else
-  log "Starting the newly created service..."
-  $SUDO systemctl start "${SERVICE}.service" && ok "Service started." || die "Start failed. See: journalctl -u ${SERVICE} -n 50"
-fi
+# ALWAYS restart (never plain start): 'systemctl start' is a no-op on an already-running
+# service, which would leave a stale instance (old port/profile) alive. 'restart' stops any
+# running instance and launches the freshly written unit, so a port/profile change takes effect.
+log "(Re)starting ${SERVICE} to apply the ${PROFILE} configuration on port ${PORT}..."
+$SUDO systemctl restart "${SERVICE}.service" && ok "Service (re)started on port ${PORT}." || die "Restart failed. See: journalctl -u ${SERVICE} -n 50"
 
 sleep 1
 
@@ -297,8 +294,12 @@ echo -e "  ${C_DIM}Total time: ${TOTAL_TIME}${C_RESET}"
 
 # ── STEP: Follow logs ─────────────────────────────────────────
 step "Live Service Logs  (Ctrl+C to stop following — the service keeps running)"
-info "Streaming only logs from THIS ${PROFILE} run (since ${LOG_SINCE}). Full history: journalctl -u ${SERVICE}"
+info "Streaming only logs from THIS ${PROFILE} run. Full history: journalctl -u ${SERVICE}"
 trap 'echo ""; echo ""; ok "Detached from logs — ${SERVICE} is still running (and will restart on reboot)."; echo -e "  ${C_DIM}Re-attach anytime with: journalctl -u ${SERVICE} -f${C_RESET}"; echo ""; exit 0' INT
 divider
 echo ""
-$SUDO journalctl -u "${SERVICE}.service" -f --since "$LOG_SINCE"
+if [ -n "$LOG_CURSOR" ]; then
+  $SUDO journalctl -u "${SERVICE}.service" -f --after-cursor "$LOG_CURSOR"
+else
+  $SUDO journalctl -u "${SERVICE}.service" -f --lines=0
+fi
