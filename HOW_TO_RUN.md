@@ -5,7 +5,7 @@ Ubuntu/Linux so it survives crashes and machine reboots, then streams the logs. 
 machine (e.g. a Mac dev box) the same script runs the app in the foreground.
 
 - **dev**  → Vite dev server (hot reload) on **:5173**
-- **prod** → `npm run build` then `vite preview` (serves the built bundle) on **:4173**
+- **prod** → `npm run build` then `vite preview` (serves the built bundle) on **:5173**
 
 ---
 
@@ -94,7 +94,7 @@ The unit file lives at `/etc/systemd/system/mdm-frontend.service`.
 | Profile | Command served            | Port |
 |---------|---------------------------|------|
 | `dev`   | `vite` dev server         | 5173 |
-| `prod`  | `vite preview` over `dist`| 4173 |
+| `prod`  | `vite preview` over `dist`| 5173 |
 
 Environment values (API base URL, MQTT broker, etc.) come from the Vite env files
 (`.env`, `.env.production`, …) via `import.meta.env`. Make sure the correct env file is present
