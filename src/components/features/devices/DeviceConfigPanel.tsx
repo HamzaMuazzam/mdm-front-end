@@ -276,6 +276,7 @@ export function DeviceConfigPanel({
               <ConfigEditItem label="Device Admin Code Enabled" value={<BooleanBadge value={deviceConfig.isDeviceAdminCodeEnabled} />} editValue={configFormData.isDeviceAdminCodeEnabled} isEditMode={isEditMode} onChange={(v) => onChange('isDeviceAdminCodeEnabled', v)} type="checkbox" />
               <ConfigEditItem label="Device Admin Code" value={deviceConfig.deviceAdminCode || 'Not set'} editValue={configFormData.deviceAdminCode || ''} isEditMode={isEditMode} onChange={(v) => onChange('deviceAdminCode', v)} type="text" />
               <ConfigEditItem label="Allow Access to Sensitive Settings" value={<BooleanBadge value={deviceConfig.allowToAccessSensitiveSettings} />} editValue={configFormData.allowToAccessSensitiveSettings} isEditMode={isEditMode} onChange={(v) => onChange('allowToAccessSensitiveSettings', v)} type="checkbox" />
+              <ConfigEditItem label="Block Airplane Mode (strict)" value={<BooleanBadge value={deviceConfig.strictAirplaneMode ?? true} />} editValue={configFormData.strictAirplaneMode ?? true} isEditMode={isEditMode} onChange={(v) => onChange('strictAirplaneMode', v)} type="checkbox" />
             </>
           )}
 

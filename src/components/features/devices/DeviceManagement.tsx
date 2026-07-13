@@ -290,6 +290,7 @@ export function DeviceManagement() {
         deviceAdminCode: deviceConfig.deviceAdminCode || '',
         isDeviceAdminCodeEnabled: deviceConfig.isDeviceAdminCodeEnabled,
         allowToAccessSensitiveSettings: deviceConfig.allowToAccessSensitiveSettings,
+        strictAirplaneMode: deviceConfig.strictAirplaneMode ?? true,
         devicePassword: deviceConfig.devicePassword??'', // Initialize devicePassword
       });
       setIsBackgroundImageEnabled(!!deviceConfig.backgroundImageUrl);
@@ -1709,6 +1710,7 @@ export function DeviceManagement() {
                             deviceAdminCode: deviceConfig.deviceAdminCode || '',
                             isDeviceAdminCodeEnabled: deviceConfig.isDeviceAdminCodeEnabled,
                             allowToAccessSensitiveSettings: deviceConfig.allowToAccessSensitiveSettings,
+        strictAirplaneMode: deviceConfig.strictAirplaneMode ?? true,
                             devicePassword: deviceConfig.devicePassword??'', // Initialize devicePassword
                           });
                           setIsBackgroundImageEnabled(!!deviceConfig.backgroundImageUrl);

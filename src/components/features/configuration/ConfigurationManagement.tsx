@@ -108,6 +108,7 @@ export function ConfigurationManagement() {
         deviceAdminCode: config.deviceAdminCode || '',
         isDeviceAdminCodeEnabled: config.isDeviceAdminCodeEnabled,
         allowToAccessSensitiveSettings: config.allowToAccessSensitiveSettings,
+        strictAirplaneMode: config.strictAirplaneMode ?? true,
         rootDetectionEnabled: config.rootDetectionEnabled ?? true,
         rootDetectionLockOnCompromise: config.rootDetectionLockOnCompromise ?? true,
         rootDetectionWipeOnCompromise: config.rootDetectionWipeOnCompromise ?? false,
@@ -219,6 +220,7 @@ export function ConfigurationManagement() {
         deviceAdminCode: config.deviceAdminCode || '',
         isDeviceAdminCodeEnabled: config.isDeviceAdminCodeEnabled,
         allowToAccessSensitiveSettings: config.allowToAccessSensitiveSettings,
+        strictAirplaneMode: config.strictAirplaneMode ?? true,
         rootDetectionEnabled: config.rootDetectionEnabled ?? true,
         rootDetectionLockOnCompromise: config.rootDetectionLockOnCompromise ?? true,
         rootDetectionWipeOnCompromise: config.rootDetectionWipeOnCompromise ?? false,
@@ -707,6 +709,14 @@ export function ConfigurationManagement() {
                       editValue={formData.allowToAccessSensitiveSettings}
                       isEditMode={isEditMode}
                       onChange={(v) => handleInputChange('allowToAccessSensitiveSettings', v)}
+                      type="checkbox"
+                    />
+                    <ConfigEditItem
+                      label="Block Airplane Mode (strict)"
+                      value={<BooleanBadge value={config.strictAirplaneMode ?? true} />}
+                      editValue={formData.strictAirplaneMode ?? true}
+                      isEditMode={isEditMode}
+                      onChange={(v) => handleInputChange('strictAirplaneMode', v)}
                       type="checkbox"
                     />
                   </>

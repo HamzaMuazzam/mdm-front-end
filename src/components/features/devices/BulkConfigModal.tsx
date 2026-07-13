@@ -71,6 +71,7 @@ const SECTIONS: Record<BulkConfigSection, SectionDef> = {
       { key: 'isDeviceAdminCodeEnabled', label: 'Device Admin Code Enabled', kind: 'tristate' },
       { key: 'deviceAdminCode', label: 'Device Admin Code', kind: 'text' },
       { key: 'allowToAccessSensitiveSettings', label: 'Allow Sensitive Settings', kind: 'tristate' },
+      { key: 'strictAirplaneMode', label: 'Block Airplane Mode (strict)', kind: 'tristate' },
     ],
   },
   notifications: {
