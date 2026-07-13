@@ -61,6 +61,8 @@ export interface DeviceConfiguration {
   pushNotificationProtocolTypeName: string;
   wifiStateId: number;
   wifiStateName: string;
+  bluetoothStateId: number;
+  bluetoothStateName: string;
   gpsStateId: number;
   gpsStateName: string;
   notificationBarStateId: number;
@@ -148,6 +150,7 @@ export interface ApplyDevicePolicyRequest {
   wifiStateId?: number | null;
   mobileDataStateId?: number | null;
   gpsStateId?: number | null;
+  bluetoothStateId?: number | null;
   pushNotificationProtocolTypeId?: number | null;
   // Configuration: Display & Screen
   useDefaultLauncherTheme?: boolean | null;
@@ -391,6 +394,7 @@ export interface UpdateDeviceConfigurationRequest {
   applicationPermissionGranterTypeId?: number;
   pushNotificationProtocolTypeId?: number;
   wifiStateId?: number;
+  bluetoothStateId?: number;
   gpsStateId?: number;
   notificationBarStateId?: number;
   mobileDataStateId?: number;

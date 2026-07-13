@@ -74,6 +74,7 @@ export function ConfigurationManagement() {
         applicationPermissionGranterTypeId: config.applicationPermissionGranterTypeId,
         pushNotificationProtocolTypeId: config.pushNotificationProtocolTypeId,
         wifiStateId: config.wifiStateId,
+        bluetoothStateId: config.bluetoothStateId,
         gpsStateId: config.gpsStateId,
         notificationBarStateId: config.notificationBarStateId,
         mobileDataStateId: config.mobileDataStateId,
@@ -184,6 +185,7 @@ export function ConfigurationManagement() {
         applicationPermissionGranterTypeId: config.applicationPermissionGranterTypeId,
         pushNotificationProtocolTypeId: config.pushNotificationProtocolTypeId,
         wifiStateId: config.wifiStateId,
+        bluetoothStateId: config.bluetoothStateId,
         gpsStateId: config.gpsStateId,
         notificationBarStateId: config.notificationBarStateId,
         mobileDataStateId: config.mobileDataStateId,
@@ -424,6 +426,15 @@ export function ConfigurationManagement() {
                       editValue={formData.mobileDataStateId?.toString() || '0'}
                       isEditMode={isEditMode}
                       onChange={(v) => handleInputChange('mobileDataStateId', parseInt(v))}
+                      type="select"
+                      options={featureStates.map(state => ({ value: state.id.toString(), label: state.title }))}
+                    />
+                    <ConfigEditItem
+                      label="Bluetooth State"
+                      value={<StateBadge value={config.bluetoothStateName} />}
+                      editValue={formData.bluetoothStateId?.toString() || '0'}
+                      isEditMode={isEditMode}
+                      onChange={(v) => handleInputChange('bluetoothStateId', parseInt(v))}
                       type="select"
                       options={featureStates.map(state => ({ value: state.id.toString(), label: state.title }))}
                     />

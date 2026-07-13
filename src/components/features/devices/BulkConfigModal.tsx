@@ -40,6 +40,7 @@ const SECTIONS: Record<BulkConfigSection, SectionDef> = {
       { key: 'wifiStateId', label: 'WiFi State', kind: 'enum', enumSource: 'feature' },
       { key: 'mobileDataStateId', label: 'Mobile Data State', kind: 'enum', enumSource: 'feature' },
       { key: 'gpsStateId', label: 'GPS State', kind: 'enum', enumSource: 'feature' },
+      { key: 'bluetoothStateId', label: 'Bluetooth State', kind: 'enum', enumSource: 'feature' },
       { key: 'pushNotificationProtocolTypeId', label: 'Push Notification Protocol', kind: 'enum', enumSource: 'push' },
     ],
   },
