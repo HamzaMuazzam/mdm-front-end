@@ -1,14 +1,13 @@
-// ecosystem.config.js
 module.exports = {
     apps: [
         {
             name: "mdm-react-vite",
             cwd: "/root/mdm-front-end",
             script: "npm",
-            args: "run dev:server",
+            args: "run dev",
             env: {
-                NODE_ENV: "production",
-            },
-        },
-    ],
+                NODE_ENV: "development"
+            }
+        }
+    ]
 };
