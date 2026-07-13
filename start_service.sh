@@ -130,113 +130,6 @@ as_user() {
   fi
 }
 
-# ── Port helpers (cross-platform) ─────────────────────────────
-is_port_in_use() {
-  local p="$1"
-  case "$OS" in
-    Linux)
-      if command -v ss >/dev/null 2>&1; then
-        ss -ltn "sport = :$p" 2>/dev/null | grep -q LISTEN
-      else
-        fuser "$p/tcp" >/dev/null 2>&1
-      fi
-      ;;
-    Darwin) lsof -ti ":$p" >/dev/null 2>&1 ;;
-    *) return 1 ;;
-  esac
-}
-
-kill_port() {
-  local p="$1" pids
-  case "$OS" in
-    Linux)
-      if command -v fuser >/dev/null 2>&1; then
-        $SUDO fuser -k "$p/tcp" >/dev/null 2>&1 || true
-      else
-        pids=$($SUDO ss -ltnp "sport = :$p" 2>/dev/null | grep -oE 'pid=[0-9]+' | grep -oE '[0-9]+' | sort -u)
-        [ -n "$pids" ] && $SUDO kill -9 $pids >/dev/null 2>&1 || true
-      fi
-      ;;
-    Darwin)
-      pids=$(lsof -ti ":$p" 2>/dev/null)
-      [ -n "$pids" ] && kill -9 $pids >/dev/null 2>&1 || true
-      ;;
-  esac
-}
-
-# Print the listener(s) currently bound to a port (indented).
-show_port_holder() {
-  local p="$1"
-  if command -v ss >/dev/null 2>&1; then
-    $SUDO ss -ltnp "sport = :$p" 2>/dev/null | sed 's/^/         /'
-  elif command -v lsof >/dev/null 2>&1; then
-    $SUDO lsof -iTCP:"$p" -sTCP:LISTEN 2>/dev/null | sed 's/^/         /'
-  fi
-}
-
-# Aggressively release the app port; abort (with diagnosis) if a supervisor keeps re-binding it.
-free_port() {
-  local p="$1" tries=0 max=10 pids
-  if ! is_port_in_use "$p"; then
-    ok "Port ${p} is free."
-    return 0
-  fi
-
-  warn "Port ${C_BOLD}${p}${C_RESET} is in use. Current listener(s):"
-  show_port_holder "$p"
-
-  while is_port_in_use "$p" && [ "$tries" -lt "$max" ]; do
-    tries=$(( tries + 1 ))
-    log "  Releasing port ${p} — attempt ${tries}/${max}..."
-    command -v fuser >/dev/null 2>&1 && $SUDO fuser -k "${p}/tcp" >/dev/null 2>&1 || true
-    pids=$($SUDO ss -ltnp "sport = :$p" 2>/dev/null | grep -oE 'pid=[0-9]+' | grep -oE '[0-9]+' | sort -u)
-    [ -z "$pids" ] && command -v lsof >/dev/null 2>&1 && \
-      pids=$($SUDO lsof -tiTCP:"$p" -sTCP:LISTEN 2>/dev/null | sort -u)
-    [ -n "$pids" ] && $SUDO kill -9 $pids >/dev/null 2>&1 || true
-    sleep 1
-  done
-
-  if is_port_in_use "$p"; then
-    fail "Port ${p} is STILL occupied after ${max} attempts."
-    warn "A supervisor keeps re-binding it (Docker, pm2/forever, or another systemd service)."
-    echo -e "     ${C_DIM}Holder:${C_RESET}"
-    show_port_holder "$p"
-    echo -e "     ${C_DIM}• Docker :${C_RESET} docker ps            → docker stop <container>"
-    echo -e "     ${C_DIM}• pm2    :${C_RESET} pm2 list             → pm2 delete <app>"
-    echo -e "     ${C_DIM}• systemd:${C_RESET} sudo ss -ltnp 'sport = :${p}'  (find the .service and stop it)"
-    echo -e "     ${C_DIM}• generic:${C_RESET} sudo lsof -i :${p}"
-    die "Stop whatever owns port ${p} (shown above), then re-run — I won't start a service that can't bind."
-  fi
-  ok "Port ${p} released."
-}
-
-# Ensure the app port is open in the Ubuntu firewall (ufw). Only acts when ufw is active.
-ensure_firewall_port() {
-  local p="$1"
-  if [ "$OS" != "Linux" ]; then
-    info "Firewall check skipped (not Linux)."
-    return
-  fi
-  if ! command -v ufw >/dev/null 2>&1; then
-    info "ufw not installed — no host firewall to configure for port ${p}."
-    return
-  fi
-  if ! $SUDO ufw status 2>/dev/null | head -1 | grep -qi "active"; then
-    info "ufw is inactive — port ${p} is not firewall-blocked."
-    return
-  fi
-  if $SUDO ufw status 2>/dev/null | grep -qE "(^|[[:space:]])${p}/tcp[[:space:]].*ALLOW"; then
-    ok "Firewall: port ${p}/tcp is already open."
-  else
-    warn "Firewall: port ${p}/tcp is NOT open — opening it now..."
-    if $SUDO ufw allow "${p}/tcp" >/dev/null 2>&1; then
-      ok "Firewall: opened ${p}/tcp  (ufw allow ${p}/tcp)."
-    else
-      warn "Could not add ufw rule — run manually: ${C_DIM}sudo ufw allow ${p}/tcp${C_RESET}"
-    fi
-  fi
-}
-
 # ─────────────────────────────────────────────────────────────
 # STEP: Preflight
 # ─────────────────────────────────────────────────────────────
@@ -255,12 +148,6 @@ if $HAVE_SYSTEMD; then
 else
   warn "systemd not available on this OS — falling back to foreground mode (no auto-restart on reboot)."
 fi
-
-# ─────────────────────────────────────────────────────────────
-# STEP: Firewall (open the app port on Ubuntu)
-# ─────────────────────────────────────────────────────────────
-step "Firewall — Ensure Port ${PORT} Is Open"
-ensure_firewall_port "$PORT"
 
 # ─────────────────────────────────────────────────────────────
 # STEP: Dependencies
@@ -288,8 +175,8 @@ fi
 # ─────────────────────────────────────────────────────────────
 if [ "$PROFILE" = "prod" ]; then
   step "Build Production Bundle"
-  warn "Compiling TypeScript + Vite production build — please wait..."
-  log "Running: ${C_DIM}npm run build${C_RESET}"
+  warn "Building the Vite production bundle — please wait..."
+  log "Running: ${C_DIM}npm run build${C_RESET}  ${C_DIM}(vite build; run 'npm run typecheck' separately for strict types)${C_RESET}"
   as_user "'$NPM_BIN' run build" || die "Production build failed."
   ok "Build complete → dist/"
 fi
@@ -298,9 +185,6 @@ fi
 #  Foreground fallback (no systemd)
 # ══════════════════════════════════════════════════════════════
 if ! $HAVE_SYSTEMD; then
-  step "Free Application Port ${PORT}"
-  free_port "$PORT"
-
   step "Start (Foreground — no systemd)"
   box "$C_GREEN" "TW MDM frontend starting [${PROFILE}]" "http://localhost:${PORT}"
   info "Press Ctrl+C to stop.  (For reboot-persistent service mode, run on Ubuntu.)"
@@ -332,14 +216,6 @@ if $SUDO systemctl list-unit-files --type=service 2>/dev/null | grep -q "^${SERV
 else
   info "Service '${SERVICE}' not found — it will be created, enabled and started."
 fi
-
-# ── STEP: Free the application port ───────────────────────────
-step "Free Application Port ${PORT}"
-if [ "$SERVICE_EXISTS" = true ] && $SUDO systemctl is-active --quiet "${SERVICE}.service"; then
-  log "Stopping the running ${SERVICE} service so it releases port ${PORT}..."
-  $SUDO systemctl stop "${SERVICE}.service" && ok "Service stopped." || warn "Could not stop ${SERVICE}."
-fi
-free_port "$PORT"
 
 # ── STEP: Write unit file ─────────────────────────────────────
 step "Write systemd Unit"

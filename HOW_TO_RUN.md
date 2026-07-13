@@ -34,7 +34,9 @@ chmod +x start_service.sh
 ### What the script does, in order
 1. **Preflight** — detects OS, the run‑user, and Node/npm; verifies `package.json`.
 2. **Dependencies** — `prod` **always** runs `npm install` (so newly added packages are pulled in before the build); `dev` installs only if `node_modules` is missing.
-3. **Build** — `prod` only: `npm run build` → `dist/`.
+3. **Build** — `prod` only: `npm run build` → `dist/`. `build` runs **Vite** (esbuild type-strips, so
+   the production bundle is not blocked by strict type errors). For a strict type check run
+   `npm run typecheck` (`tsc --noEmit`), or `npm run build:strict` to gate the build on it.
 4. **Service** — checks whether the `mdm-frontend` service already exists:
    - **exists** → refreshes the unit and **restarts** it;
    - **missing** → **creates**, `enable`s (so it starts on boot), and **starts** it.

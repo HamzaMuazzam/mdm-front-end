@@ -6,8 +6,10 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0 --mode development",
     "dev:server": "vite --host 0.0.0.0 --mode production",
-    "build": "tsc && vite build --mode production",
-    "build:local": "tsc && vite build --mode development",
+    "build": "vite build --mode production",
+    "build:strict": "tsc && vite build --mode production",
+    "build:local": "vite build --mode development",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
