@@ -4,9 +4,9 @@ module.exports = {
         {
             name: "mdm-react-vite",
             script: "npm",
-            args: "run dev",
+            args: "run dev:server",
             env: {
-                NODE_ENV: "development",
+                NODE_ENV: "production",
             },
         },
     ],
