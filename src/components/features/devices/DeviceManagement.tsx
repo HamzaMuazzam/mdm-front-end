@@ -17,10 +17,11 @@ import { BulkOsUpgradeModal } from './BulkOsUpgradeModal';
 import { BulkVpnModal } from './BulkVpnModal';
 import { BulkSslPinningModal } from './BulkSslPinningModal';
 import { BulkConfigModal, type BulkConfigSection } from './BulkConfigModal';
+import { ScreenMirroringModal } from './ScreenMirroringModal';
 import { BulkActionsMenu } from './BulkActionsMenu';
 import { DeviceActionsMenu, type DeviceActionCategory, type ActionTone } from './DeviceActionsMenu';
 import { DeviceConfigPanel } from './DeviceConfigPanel';
-import { Settings, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, BarChart3, Power, RotateCcw, Siren, Mic, Database, Map, Plus, RefreshCw, Search, Clock, CheckSquare, Square, Users, ShieldAlert, ArrowUpCircle, Globe, Wifi } from 'lucide-react';
+import { Settings, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, BarChart3, Power, RotateCcw, Siren, Mic, Database, Map, Plus, RefreshCw, Search, Clock, CheckSquare, Square, Users, ShieldAlert, ArrowUpCircle, Globe, Wifi, MonitorPlay } from 'lucide-react';
 import { timeRangeService } from '@/api/services/timerange.service';
 import QRCode from 'qrcode';
 import type { CreateDeviceRequest, UpdateDeviceRequest, Device, UpdateDeviceConfigurationRequest } from '@/types/device.types';
@@ -65,6 +66,7 @@ export function DeviceManagement() {
   const [isBulkVpnOpen, setIsBulkVpnOpen] = useState(false);
   const [isBulkSslOpen, setIsBulkSslOpen] = useState(false);
   const [bulkConfigSection, setBulkConfigSection] = useState<BulkConfigSection | null>(null);
+  const [screenMirrorDevice, setScreenMirrorDevice] = useState<Device | null>(null);
   const [bulkSelectedUuids, setBulkSelectedUuids] = useState<Set<string>>(new Set());
   const [bulkSearchQuery, setBulkSearchQuery] = useState('');
   const [bulkStartTime, setBulkStartTime] = useState('09:00');
@@ -572,6 +574,7 @@ export function DeviceManagement() {
         icon: BarChart3,
         items: [
           { key: 'monitor', label: 'Monitor Dashboard', icon: BarChart3, onSelect: () => handleOpenMonitorDashboard(device), visible: hasPermission('devices:monitoring') },
+          { key: 'screen', label: 'Screen Mirroring', icon: MonitorPlay, tone: 'blue', onSelect: () => setScreenMirrorDevice(device), visible: hasPermission('devices:monitoring') },
           { key: 'config', label: 'Configuration', icon: Settings, onSelect: () => handleViewConfig(device), visible: hasPermission('devices:configurations:read') },
           { key: 'apps', label: 'Applications', icon: AppWindow, onSelect: () => handleViewApps(device), visible: hasPermission('devices:applications:read') },
           { key: 'requests', label: 'Requests', icon: FileText, onSelect: () => handleViewRequests(device) },
@@ -1077,6 +1080,9 @@ export function DeviceManagement() {
       )}
       {bulkConfigSection && (
         <BulkConfigModal section={bulkConfigSection} devices={devices} onClose={() => setBulkConfigSection(null)} />
+      )}
+      {screenMirrorDevice && (
+        <ScreenMirroringModal device={screenMirrorDevice} onClose={() => setScreenMirrorDevice(null)} />
       )}
 
       {/* ── Bulk Time Range Modal ────────────────────────────────────────────── */}
