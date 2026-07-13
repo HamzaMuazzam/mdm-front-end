@@ -164,21 +164,50 @@ kill_port() {
   esac
 }
 
-# Release the app port if something is holding it.
-free_port() {
+# Print the listener(s) currently bound to a port (indented).
+show_port_holder() {
   local p="$1"
-  if is_port_in_use "$p"; then
-    warn "Port ${C_BOLD}${p}${C_RESET} is already in use — releasing it..."
-    kill_port "$p"
-    sleep 1
-    if is_port_in_use "$p"; then
-      warn "Port ${p} is still busy — the app may fail to bind. Check what's holding it: ${C_DIM}ss -ltnp 'sport = :${p}'${C_RESET}"
-    else
-      ok "Port ${p} released."
-    fi
-  else
-    ok "Port ${p} is free."
+  if command -v ss >/dev/null 2>&1; then
+    $SUDO ss -ltnp "sport = :$p" 2>/dev/null | sed 's/^/         /'
+  elif command -v lsof >/dev/null 2>&1; then
+    $SUDO lsof -iTCP:"$p" -sTCP:LISTEN 2>/dev/null | sed 's/^/         /'
   fi
+}
+
+# Aggressively release the app port; abort (with diagnosis) if a supervisor keeps re-binding it.
+free_port() {
+  local p="$1" tries=0 max=10 pids
+  if ! is_port_in_use "$p"; then
+    ok "Port ${p} is free."
+    return 0
+  fi
+
+  warn "Port ${C_BOLD}${p}${C_RESET} is in use. Current listener(s):"
+  show_port_holder "$p"
+
+  while is_port_in_use "$p" && [ "$tries" -lt "$max" ]; do
+    tries=$(( tries + 1 ))
+    log "  Releasing port ${p} — attempt ${tries}/${max}..."
+    command -v fuser >/dev/null 2>&1 && $SUDO fuser -k "${p}/tcp" >/dev/null 2>&1 || true
+    pids=$($SUDO ss -ltnp "sport = :$p" 2>/dev/null | grep -oE 'pid=[0-9]+' | grep -oE '[0-9]+' | sort -u)
+    [ -z "$pids" ] && command -v lsof >/dev/null 2>&1 && \
+      pids=$($SUDO lsof -tiTCP:"$p" -sTCP:LISTEN 2>/dev/null | sort -u)
+    [ -n "$pids" ] && $SUDO kill -9 $pids >/dev/null 2>&1 || true
+    sleep 1
+  done
+
+  if is_port_in_use "$p"; then
+    fail "Port ${p} is STILL occupied after ${max} attempts."
+    warn "A supervisor keeps re-binding it (Docker, pm2/forever, or another systemd service)."
+    echo -e "     ${C_DIM}Holder:${C_RESET}"
+    show_port_holder "$p"
+    echo -e "     ${C_DIM}• Docker :${C_RESET} docker ps            → docker stop <container>"
+    echo -e "     ${C_DIM}• pm2    :${C_RESET} pm2 list             → pm2 delete <app>"
+    echo -e "     ${C_DIM}• systemd:${C_RESET} sudo ss -ltnp 'sport = :${p}'  (find the .service and stop it)"
+    echo -e "     ${C_DIM}• generic:${C_RESET} sudo lsof -i :${p}"
+    die "Stop whatever owns port ${p} (shown above), then re-run — I won't start a service that can't bind."
+  fi
+  ok "Port ${p} released."
 }
 
 # Ensure the app port is open in the Ubuntu firewall (ufw). Only acts when ufw is active.
