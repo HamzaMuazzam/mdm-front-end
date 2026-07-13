@@ -6,7 +6,7 @@
 #  Installs (or refreshes) a systemd service `mdm-frontend` that runs the Vite app,
 #  restarts automatically on crash AND on Ubuntu reboot, then streams its logs.
 #    dev  → vite dev server on :5173
-#    prod → `npm run build` then `vite preview` on :4173
+#    prod → `npm run build` then `vite preview` on :5173
 #
 #  On a machine without systemd (e.g. a Mac dev box) it falls back to running the
 #  app in the foreground with the same output.
@@ -65,7 +65,7 @@ if [ "$#" -lt 1 ] || [ -z "${1// }" ]; then
   echo ""
   echo -e "  ${C_BOLD}Usage:${C_RESET} $0 <dev|prod>"
   echo -e "  ${C_DIM}  dev  ${C_RESET}→ Vite dev server (hot reload)        http://localhost:5173"
-  echo -e "  ${C_DIM}  prod ${C_RESET}→ production build + preview server    http://localhost:4173"
+  echo -e "  ${C_DIM}  prod ${C_RESET}→ production build + preview server    http://localhost:5173"
   echo ""
   echo -e "  ${C_DIM}Example:${C_RESET} $0 prod"
   echo ""
@@ -81,7 +81,7 @@ fi
 SERVICE="mdm-frontend"
 UNIT_PATH="/etc/systemd/system/${SERVICE}.service"
 DEV_PORT=5173
-PROD_PORT=4173
+PROD_PORT=5173
 PORT=$([ "$PROFILE" = "prod" ] && echo "$PROD_PORT" || echo "$DEV_PORT")
 NODE_ENV=$([ "$PROFILE" = "prod" ] && echo "production" || echo "development")
 
