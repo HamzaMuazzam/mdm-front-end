@@ -27,6 +27,12 @@ export interface Device {
   integrityCompromised?: boolean;
   simEventType?: string | null;
   simAlert?: boolean;
+  // OTA update rollout tracking (reported via device state sync)
+  appVersionCode?: number | null;
+  appVersionName?: string | null;
+  latestAppVersionCode?: number | null;
+  /** true = on latest release; false = outdated; null/undefined = never reported */
+  appUpToDate?: boolean | null;
 }
 
 export interface CreateDeviceRequest {

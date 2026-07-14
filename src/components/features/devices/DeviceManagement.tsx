@@ -662,6 +662,11 @@ export function DeviceManagement() {
                 const offlineCount = devices.length - liveCount;
                 const rootedCount  = devices.filter((d) => d.integrityCompromised).length;
                 const atRiskCount  = devices.filter((d) => !d.integrityCompromised && d.integrityStatus === 'SUSPICIOUS').length;
+                // OTA rollout: only meaningful when at least one active release exists
+                const hasRelease     = devices.some((d) => d.latestAppVersionCode != null);
+                const updatedCount   = devices.filter((d) => d.appUpToDate === true).length;
+                const outdatedCount  = devices.filter((d) => d.appUpToDate === false).length;
+                const unreportedCount = devices.filter((d) => d.appUpToDate == null).length;
                 const simCount     = devices.filter((d) => d.simAlert).length;
                 return (
                   <div className="flex items-center gap-1.5 flex-wrap">
@@ -701,6 +706,32 @@ export function DeviceManagement() {
                       >
                         {simCount} SIM alert{simCount !== 1 ? 's' : ''}
                       </span>
+                    )}
+                    {hasRelease && (
+                      <>
+                        <span
+                          className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-xs font-medium text-emerald-700"
+                          title="Devices running the latest uploaded app release"
+                        >
+                          {updatedCount} updated
+                        </span>
+                        {outdatedCount > 0 && (
+                          <span
+                            className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-xs font-medium text-amber-700"
+                            title="Devices still running an older app version than the latest release"
+                          >
+                            {outdatedCount} outdated
+                          </span>
+                        )}
+                        {unreportedCount > 0 && (
+                          <span
+                            className="inline-flex items-center gap-1 rounded-full bg-gray-100 border border-gray-200 px-2 py-0.5 text-xs font-medium text-gray-600"
+                            title="Devices that have not reported their app version yet (waiting for next device sync)"
+                          >
+                            {unreportedCount} no version yet
+                          </span>
+                        )}
+                      </>
                     )}
                   </div>
                 );
@@ -902,6 +933,25 @@ export function DeviceManagement() {
                   {(device.model || device.osVersion) && (
                     <p className="text-[11px] text-muted-foreground/80 mt-0.5">
                       {[device.model, device.osVersion].filter(Boolean).join(' · ')}
+                    </p>
+                  )}
+                  {device.appVersionName != null && (
+                    <p className="text-[11px] mt-0.5">
+                      <span className="text-muted-foreground/80">
+                        App v{device.appVersionName}
+                        {device.appVersionCode != null ? ` (${device.appVersionCode})` : ''}
+                      </span>{' '}
+                      {device.appUpToDate === true && (
+                        <span className="font-semibold text-emerald-600">· up to date</span>
+                      )}
+                      {device.appUpToDate === false && (
+                        <span
+                          className="font-semibold text-amber-600"
+                          title={`Latest release is version code ${device.latestAppVersionCode}`}
+                        >
+                          · update pending
+                        </span>
+                      )}
                     </p>
                   )}
                   {device.description && (
@@ -1154,6 +1204,32 @@ export function DeviceManagement() {
                         <div className="min-w-0">
                           <p className="truncate text-[13px] text-gray-700">{device.model || '—'}</p>
                           <p className="truncate text-[11px] text-gray-400">{device.osVersion || '—'}</p>
+                          {device.appVersionName != null ? (
+                            <p
+                              className={`truncate text-[11px] font-medium ${
+                                device.appUpToDate === true
+                                  ? 'text-emerald-600'
+                                  : device.appUpToDate === false
+                                    ? 'text-amber-600'
+                                    : 'text-gray-500'
+                              }`}
+                              title={
+                                device.appUpToDate === false && device.latestAppVersionCode != null
+                                  ? `Outdated — latest release is version code ${device.latestAppVersionCode}`
+                                  : device.appUpToDate === true
+                                    ? 'Running the latest uploaded release'
+                                    : 'Installed app version reported by the device'
+                              }
+                            >
+                              App v{device.appVersionName}
+                              {device.appVersionCode != null ? ` (${device.appVersionCode})` : ''}
+                              {device.appUpToDate === true ? ' ✓' : device.appUpToDate === false ? ' — outdated' : ''}
+                            </p>
+                          ) : (
+                            <p className="truncate text-[11px] text-gray-300" title="No app version reported yet — waiting for the next device sync">
+                              App v —
+                            </p>
+                          )}
                         </div>
                       </td>
                       <td>
