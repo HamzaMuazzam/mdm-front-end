@@ -132,6 +132,27 @@ export interface TrackingConfigRequest {
   baseURL?: string;
 }
 
+// ── Tracking config: bulk assignment ──────────────────────────────────────────
+
+/** Safe bounds for the heartbeat interval (seconds). Mirrors backend TrackingConfigBounds. */
+export const HEARTBEAT_MIN_SECONDS = 30;
+export const HEARTBEAT_MAX_SECONDS = 86400;
+
+/** Omitted fields are left untouched on each target device. */
+export interface TrackingConfigBulkRequest {
+  deviceUuids: string[];
+  heartbeatTimer?: number;
+  configurationTimer?: number;
+  uploadTimer?: number;
+}
+
+export interface TrackingConfigBulkResult {
+  deviceUuid: string;
+  success: boolean;
+  heartbeatTimer: number | null;
+  message: string;
+}
+
 // ── Tracking bulk create ──────────────────────────────────────────────────────
 
 export interface TrackingUploadPoint {
@@ -314,6 +335,17 @@ export const trackingService = {
       `/v1/tracking/${deviceUuid}/config`, req
     );
     return res.data;
+  },
+
+  /**
+   * Apply the same tracking timers (e.g. heartbeat) to many devices at once.
+   * The backend persists per device and pushes each one over MQTT.
+   */
+  async bulkUpdateConfig(req: TrackingConfigBulkRequest): Promise<TrackingConfigBulkResult[]> {
+    const res = await apiClient.put<ApiResponse<TrackingConfigBulkResult[]>>(
+      '/v1/tracking-config/bulk', req
+    );
+    return res.data.data ?? [];
   },
 
   async getGeofenceEvents(

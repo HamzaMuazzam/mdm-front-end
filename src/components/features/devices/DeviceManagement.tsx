@@ -17,11 +17,12 @@ import { BulkOsUpgradeModal } from './BulkOsUpgradeModal';
 import { BulkVpnModal } from './BulkVpnModal';
 import { BulkSslPinningModal } from './BulkSslPinningModal';
 import { BulkConfigModal, type BulkConfigSection } from './BulkConfigModal';
+import { BulkHeartbeatModal } from './BulkHeartbeatModal';
 import { ScreenMirroringModal } from './ScreenMirroringModal';
 import { BulkActionsMenu } from './BulkActionsMenu';
 import { DeviceActionsMenu, type DeviceActionCategory, type ActionTone } from './DeviceActionsMenu';
 import { DeviceConfigPanel } from './DeviceConfigPanel';
-import { Settings, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, BarChart3, Power, RotateCcw, Siren, Mic, Database, Map, Plus, RefreshCw, Search, Clock, CheckSquare, Square, Users, ShieldAlert, ArrowUpCircle, Globe, Wifi, MonitorPlay } from 'lucide-react';
+import { Settings, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, BarChart3, Power, RotateCcw, Siren, Mic, Database, Map, Plus, RefreshCw, Search, Clock, CheckSquare, Square, Users, ShieldAlert, ArrowUpCircle, Globe, Wifi, MonitorPlay, Activity } from 'lucide-react';
 import { timeRangeService } from '@/api/services/timerange.service';
 import QRCode from 'qrcode';
 import type { CreateDeviceRequest, UpdateDeviceRequest, Device, UpdateDeviceConfigurationRequest } from '@/types/device.types';
@@ -65,6 +66,7 @@ export function DeviceManagement() {
   const [isBulkOsOpen, setIsBulkOsOpen] = useState(false);
   const [isBulkVpnOpen, setIsBulkVpnOpen] = useState(false);
   const [isBulkSslOpen, setIsBulkSslOpen] = useState(false);
+  const [isBulkHeartbeatOpen, setIsBulkHeartbeatOpen] = useState(false);
   const [bulkConfigSection, setBulkConfigSection] = useState<BulkConfigSection | null>(null);
   const [screenMirrorDevice, setScreenMirrorDevice] = useState<Device | null>(null);
   const [bulkSelectedUuids, setBulkSelectedUuids] = useState<Set<string>>(new Set());
@@ -793,6 +795,17 @@ export function DeviceManagement() {
                   ],
                 },
                 {
+                  label: 'Tracking',
+                  items: [
+                    {
+                      label: 'Heartbeat Timer',
+                      icon: Activity,
+                      onClick: () => setIsBulkHeartbeatOpen(true),
+                      visible: hasPermission('tracking:live-tracking'),
+                    },
+                  ],
+                },
+                {
                   label: 'Usage',
                   items: [{ label: 'Time Range', icon: Clock, onClick: openBulkTimeRange }],
                 },
@@ -1154,6 +1167,9 @@ export function DeviceManagement() {
       )}
       {isBulkSslOpen && (
         <BulkSslPinningModal devices={devices} onClose={() => setIsBulkSslOpen(false)} />
+      )}
+      {isBulkHeartbeatOpen && (
+        <BulkHeartbeatModal devices={devices} onClose={() => setIsBulkHeartbeatOpen(false)} />
       )}
       {bulkConfigSection && (
         <BulkConfigModal section={bulkConfigSection} devices={devices} onClose={() => setBulkConfigSection(null)} />
