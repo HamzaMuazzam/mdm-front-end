@@ -19,6 +19,14 @@ export interface Device {
   defaultLauncher?: string;
   deletedAt?: string | null;
   deviceVerificationCode?: number;
+  // Live presence + security snapshot (enriched by the device list API)
+  lastSeenAt?: number | null;
+  online?: boolean;
+  integrityStatus?: string | null;
+  integritySeverity?: string | null;
+  integrityCompromised?: boolean;
+  simEventType?: string | null;
+  simAlert?: boolean;
 }
 
 export interface CreateDeviceRequest {

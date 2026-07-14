@@ -658,6 +658,8 @@ export function DeviceManagement() {
               {devices.length > 0 && (() => {
                 const liveCount    = devices.filter((d) => deviceStatuses[d.deviceUuid] === 'online').length;
                 const offlineCount = devices.length - liveCount;
+                const rootedCount  = devices.filter((d) => d.integrityCompromised).length;
+                const simCount     = devices.filter((d) => d.simAlert).length;
                 return (
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
@@ -671,6 +673,23 @@ export function DeviceManagement() {
                       <span className="h-1.5 w-1.5 rounded-full bg-gray-400 shrink-0" />
                       {offlineCount} offline
                     </span>
+                    {rootedCount > 0 && (
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full bg-red-50 border border-red-200 px-2 py-0.5 text-xs font-medium text-red-700"
+                        title="Devices flagged as rooted / integrity-compromised"
+                      >
+                        <ShieldAlert className="h-3 w-3 shrink-0" />
+                        {rootedCount} rooted
+                      </span>
+                    )}
+                    {simCount > 0 && (
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-xs font-medium text-amber-700"
+                        title="Devices with a recent SIM removal / swap alert"
+                      >
+                        {simCount} SIM alert{simCount !== 1 ? 's' : ''}
+                      </span>
+                    )}
                   </div>
                 );
               })()}
@@ -812,6 +831,7 @@ export function DeviceManagement() {
         {filteredDevices.map((device: Device) => {
           const isActive = !device.deletedAt;
           const onlineStatus = deviceStatuses[device.deviceUuid];
+          const isOffline = onlineStatus === 'offline' || (onlineStatus == null && device.online === false);
           const gradient = avatarGradients[device.id % avatarGradients.length];
           // Left border: green if active+online, amber if active+offline/unknown, red if inactive
           const accentClass = !isActive
@@ -864,6 +884,27 @@ export function DeviceManagement() {
                   {device.description && (
                     <p className="text-[11px] text-muted-foreground/60 italic truncate mt-0.5">{device.description}</p>
                   )}
+                  {/* Security flags — mirrors the desktop table chips */}
+                  {(device.integrityCompromised || device.simAlert) && (
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1">
+                      {device.integrityCompromised && (
+                        <span
+                          className="inline-flex items-center gap-0.5 rounded bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-red-600"
+                          title={`Integrity: ${device.integrityStatus ?? 'COMPROMISED'}${device.integritySeverity ? ` (${device.integritySeverity})` : ''}`}
+                        >
+                          <ShieldAlert className="h-3 w-3" /> Rooted
+                        </span>
+                      )}
+                      {device.simAlert && (
+                        <span
+                          className="inline-flex items-center rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700"
+                          title={`SIM ${device.simEventType ?? 'change'}`}
+                        >
+                          SIM {device.simEventType === 'REMOVED' ? 'removed' : device.simEventType === 'SWAPPED' ? 'swapped' : 'alert'}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -871,6 +912,11 @@ export function DeviceManagement() {
               <div className="border-t border-border/50 bg-muted/30 px-4 py-2 flex items-center gap-2">
                 <Monitor className="h-3 w-3 text-muted-foreground/60 shrink-0" />
                 <p className="text-[11px] font-mono text-muted-foreground truncate">{device.deviceUuid}</p>
+                {isOffline && device.lastSeenAt ? (
+                  <span className="ml-auto shrink-0 text-[10px] text-muted-foreground/70 whitespace-nowrap">
+                    Last seen {timeAgo(device.lastSeenAt)}
+                  </span>
+                ) : null}
               </div>
 
               {/* ── Quick action buttons ── */}
@@ -1014,6 +1060,8 @@ export function DeviceManagement() {
               <tbody className="divide-y divide-gray-100">
                 {filteredDevices.map((device:Device) => {
                   const isActive = !device.deletedAt;
+                  const liveStatus = deviceStatuses[device.deviceUuid];
+                  const isOffline = liveStatus === 'offline' || (liveStatus == null && device.online === false);
                   return (
                     <tr
                       key={device.id}
@@ -1028,12 +1076,33 @@ export function DeviceManagement() {
                             <Smartphone className="h-4 w-4" />
                           </div>
                           <div className="min-w-0">
-                            <p className={`truncate text-[13px] font-medium ${isActive ? 'text-gray-900' : 'text-gray-500'}`}>
-                              {device.deviceName || 'Unnamed Device'}
-                            </p>
+                            <div className="flex items-center gap-1.5">
+                              <p className={`truncate text-[13px] font-medium ${isActive ? 'text-gray-900' : 'text-gray-500'}`}>
+                                {device.deviceName || 'Unnamed Device'}
+                              </p>
+                              {device.integrityCompromised && (
+                                <span
+                                  className="inline-flex shrink-0 items-center gap-0.5 rounded bg-red-50 px-1 py-0.5 text-[10px] font-semibold text-red-600"
+                                  title={`Integrity: ${device.integrityStatus ?? 'COMPROMISED'}${device.integritySeverity ? ` (${device.integritySeverity})` : ''}`}
+                                >
+                                  <ShieldAlert className="h-3 w-3" /> Rooted
+                                </span>
+                              )}
+                              {device.simAlert && (
+                                <span
+                                  className="inline-flex shrink-0 items-center rounded bg-amber-50 px-1 py-0.5 text-[10px] font-semibold text-amber-700"
+                                  title={`SIM ${device.simEventType ?? 'change'}`}
+                                >
+                                  SIM {device.simEventType === 'REMOVED' ? 'removed' : device.simEventType === 'SWAPPED' ? 'swapped' : 'alert'}
+                                </span>
+                              )}
+                            </div>
                             <p className="truncate font-mono text-[11px] text-gray-400" title={device.deviceUuid}>
                               {device.deviceUuid}
                             </p>
+                            {isOffline && device.lastSeenAt ? (
+                              <p className="truncate text-[10px] text-gray-400">Last seen {timeAgo(device.lastSeenAt)}</p>
+                            ) : null}
                           </div>
                         </div>
                       </td>
@@ -1780,6 +1849,22 @@ export function DeviceManagement() {
 
     </div>
   );
+}
+
+/** Compact relative-time formatter for "last seen" timestamps (epoch millis). */
+function timeAgo(ms?: number | null): string {
+  if (!ms) return 'unknown';
+  const secs = Math.max(0, Math.floor((Date.now() - ms) / 1000));
+  if (secs < 60) return `${secs}s ago`;
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months}mo ago`;
+  return `${Math.floor(months / 12)}y ago`;
 }
 
 function DeviceStatusDot({ status }: { status?: 'online' | 'offline' }) {
