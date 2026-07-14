@@ -661,6 +661,7 @@ export function DeviceManagement() {
                 const liveCount    = devices.filter((d) => deviceStatuses[d.deviceUuid] === 'online').length;
                 const offlineCount = devices.length - liveCount;
                 const rootedCount  = devices.filter((d) => d.integrityCompromised).length;
+                const atRiskCount  = devices.filter((d) => !d.integrityCompromised && d.integrityStatus === 'SUSPICIOUS').length;
                 const simCount     = devices.filter((d) => d.simAlert).length;
                 return (
                   <div className="flex items-center gap-1.5 flex-wrap">
@@ -678,10 +679,19 @@ export function DeviceManagement() {
                     {rootedCount > 0 && (
                       <span
                         className="inline-flex items-center gap-1 rounded-full bg-red-50 border border-red-200 px-2 py-0.5 text-xs font-medium text-red-700"
-                        title="Devices flagged as rooted / integrity-compromised"
+                        title="Devices with a confirmed working root (conclusive evidence)"
                       >
                         <ShieldAlert className="h-3 w-3 shrink-0" />
                         {rootedCount} rooted
+                      </span>
+                    )}
+                    {atRiskCount > 0 && (
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full bg-orange-50 border border-orange-200 px-2 py-0.5 text-xs font-medium text-orange-700"
+                        title="Devices with dangerous integrity indicators (su/Magisk files, SELinux permissive, unlocked bootloader) — not confirmed rooted"
+                      >
+                        <ShieldAlert className="h-3 w-3 shrink-0" />
+                        {atRiskCount} at risk
                       </span>
                     )}
                     {simCount > 0 && (
@@ -898,7 +908,7 @@ export function DeviceManagement() {
                     <p className="text-[11px] text-muted-foreground/60 italic truncate mt-0.5">{device.description}</p>
                   )}
                   {/* Security flags — mirrors the desktop table chips */}
-                  {(device.integrityCompromised || device.simAlert) && (
+                  {(device.integrityCompromised || device.integrityStatus === 'SUSPICIOUS' || device.simAlert) && (
                     <div className="mt-1.5 flex flex-wrap items-center gap-1">
                       {device.integrityCompromised && (
                         <span
@@ -906,6 +916,14 @@ export function DeviceManagement() {
                           title={`Integrity: ${device.integrityStatus ?? 'COMPROMISED'}${device.integritySeverity ? ` (${device.integritySeverity})` : ''}`}
                         >
                           <ShieldAlert className="h-3 w-3" /> Rooted
+                        </span>
+                      )}
+                      {!device.integrityCompromised && device.integrityStatus === 'SUSPICIOUS' && (
+                        <span
+                          className="inline-flex items-center gap-0.5 rounded bg-orange-50 px-1.5 py-0.5 text-[10px] font-semibold text-orange-600"
+                          title={`Integrity: SUSPICIOUS${device.integritySeverity ? ` (${device.integritySeverity})` : ''} — dangerous indicators, not confirmed rooted`}
+                        >
+                          <ShieldAlert className="h-3 w-3" /> At risk
                         </span>
                       )}
                       {device.simAlert && (
@@ -1099,6 +1117,14 @@ export function DeviceManagement() {
                                   title={`Integrity: ${device.integrityStatus ?? 'COMPROMISED'}${device.integritySeverity ? ` (${device.integritySeverity})` : ''}`}
                                 >
                                   <ShieldAlert className="h-3 w-3" /> Rooted
+                                </span>
+                              )}
+                              {!device.integrityCompromised && device.integrityStatus === 'SUSPICIOUS' && (
+                                <span
+                                  className="inline-flex shrink-0 items-center gap-0.5 rounded bg-orange-50 px-1 py-0.5 text-[10px] font-semibold text-orange-600"
+                                  title={`Integrity: SUSPICIOUS${device.integritySeverity ? ` (${device.integritySeverity})` : ''} — dangerous indicators, not confirmed rooted`}
+                                >
+                                  <ShieldAlert className="h-3 w-3" /> At risk
                                 </span>
                               )}
                               {device.simAlert && (

@@ -55,17 +55,24 @@ const STATUS_META: Record<
     banner: 'bg-emerald-50 border-emerald-200 text-emerald-800',
   },
   SUSPICIOUS: {
-    label: 'Suspicious',
+    label: 'At Risk',
     icon: <Shield className="h-5 w-5" />,
     badge: 'bg-amber-50 text-amber-700 border-amber-200',
     banner: 'bg-amber-50 border-amber-200 text-amber-800',
   },
   COMPROMISED: {
-    label: 'Compromised',
+    label: 'Rooted',
     icon: <ShieldAlert className="h-5 w-5" />,
     badge: 'bg-red-50 text-red-700 border-red-200',
     banner: 'bg-red-50 border-red-300 text-red-800',
   },
+};
+
+const STATUS_HINT: Record<IntegrityStatus, string> = {
+  CLEAN: 'No integrity indicators detected.',
+  SUSPICIOUS:
+    'Dangerous indicators detected (e.g. su/Magisk files, SELinux permissive, unlocked bootloader) — root is NOT confirmed.',
+  COMPROMISED: 'Conclusive evidence of a working root on this device.',
 };
 
 function severityChip(severity: string): string {
@@ -272,6 +279,7 @@ export function DeviceIntegrityPage() {
               {banner.icon}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold">Device is {banner.label.toLowerCase()}</p>
+                <p className="text-[11px] opacity-80">{STATUS_HINT[currentStatus]}</p>
                 <p className="text-[11px] opacity-80">
                   Severity {stats?.currentSeverity ?? 'NONE'} · attestation{' '}
                   {stats?.playIntegrityVerdict ?? 'unavailable'}

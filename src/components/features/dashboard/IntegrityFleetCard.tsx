@@ -25,8 +25,8 @@ export function IntegrityFleetCard() {
     const prev = prevCompromised.current;
     if (prev !== null && compromised > prev) {
       toast({
-        title: 'Device compromise detected',
-        description: `${compromised - prev} more device(s) flagged. ${compromised} device(s) currently compromised.`,
+        title: 'Rooted device detected',
+        description: `${compromised - prev} more device(s) confirmed rooted. ${compromised} rooted device(s) in the fleet.`,
         variant: 'destructive',
       });
     }
@@ -44,14 +44,14 @@ export function IntegrityFleetCard() {
       }`}
     >
       <CardHeader className="pb-2">
-        <CardDescription className="text-xs text-gray-500">Compromised Devices</CardDescription>
+        <CardDescription className="text-xs text-gray-500">Rooted Devices</CardDescription>
         <CardTitle className={`text-2xl font-semibold ${danger ? 'text-red-700' : 'text-gray-900'}`}>
           {numberFormatter.format(compromised)}
         </CardTitle>
       </CardHeader>
       <CardContent className="flex items-center justify-between pt-2">
         <span className="text-xs text-gray-500">
-          {numberFormatter.format(data?.suspicious ?? 0)} suspicious ·{' '}
+          {numberFormatter.format(data?.suspicious ?? 0)} at risk ·{' '}
           {numberFormatter.format(data?.clean ?? 0)} clean
         </span>
         <div
