@@ -1001,52 +1001,59 @@ export function DeviceManagement() {
         <CardContent className="h-full p-0">
           <div className="h-full overflow-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 sticky top-0">
-                <tr>
-                  {/*<th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">ID</th>*/}
-                  <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wide text-gray-500">Live</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Device UUID</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Device Name</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">User Email</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Model</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">OS Version</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Description</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Status</th>
-                  {/*<th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Deleted At</th>*/}
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Actions</th>
+              <thead className="sticky top-0 z-10 border-b border-gray-200 bg-gray-50/80 backdrop-blur">
+                <tr className="text-[11px] uppercase tracking-wider text-gray-400 [&>th]:px-3 [&>th]:py-2.5 [&>th]:font-semibold">
+                  <th className="w-12 text-center">Live</th>
+                  <th className="text-left">Device</th>
+                  <th className="text-left">User</th>
+                  <th className="text-left">Model / OS</th>
+                  <th className="text-left">Description</th>
+                  <th className="w-16 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-gray-100">
                 {filteredDevices.map((device:Device) => {
                   const isActive = !device.deletedAt;
                   return (
                     <tr
                       key={device.id}
-                      className={`hover:bg-muted/50 ${!isActive ? 'opacity-50 bg-muted/30' : ''}`}
+                      className={`group transition-colors hover:bg-blue-50/40 [&>td]:px-3 [&>td]:py-2 [&>td]:align-middle ${!isActive ? 'bg-gray-50 opacity-60 hover:opacity-100' : ''}`}
                     >
-                      {/*<td className="px-4 py-3 text-sm">{device.id}</td>*/}
-                      <td className="px-4 py-3 text-sm text-center">
+                      <td className="w-12 text-center">
                         <DeviceStatusDot status={deviceStatuses[device.deviceUuid]} />
                       </td>
-                      <td className="px-4 py-3 text-sm">{device.deviceUuid}</td>
-                      <td className="px-4 py-3 text-sm">{device.deviceName}</td>
-                      <td className="px-4 py-3 text-sm">{device.userEmail}</td>
-                      <td className="px-4 py-3 text-sm">{device.model}</td>
-                      <td className="px-4 py-3 text-sm">{device.osVersion}</td>
-                      <td className="px-4 py-3 text-sm">{device.description || '-'}</td>
-                      <td className="px-4 py-3 text-sm">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                            isActive
-                              ? 'bg-green-50 text-green-700 border-green-200'
-                              : 'bg-red-50 text-red-700 border-red-200'
-                          }`}
-                        >
-                          {isActive ? 'Active' : 'Inactive'}
+                      <td>
+                        <div className="flex items-center gap-2.5">
+                          <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${isActive ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-400'}`}>
+                            <Smartphone className="h-4 w-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className={`truncate text-[13px] font-medium ${isActive ? 'text-gray-900' : 'text-gray-500'}`}>
+                              {device.deviceName || 'Unnamed Device'}
+                            </p>
+                            <p className="truncate font-mono text-[11px] text-gray-400" title={device.deviceUuid}>
+                              {device.deviceUuid}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="block max-w-[220px] truncate text-[13px] text-gray-600" title={device.userEmail || ''}>
+                          {device.userEmail || '—'}
                         </span>
                       </td>
-                      {/*<td className="px-4 py-3 text-sm">{device.deletedAt || '-'}</td>*/}
-                      <td className="px-4 py-3 text-sm">
+                      <td>
+                        <div className="min-w-0">
+                          <p className="truncate text-[13px] text-gray-700">{device.model || '—'}</p>
+                          <p className="truncate text-[11px] text-gray-400">{device.osVersion || '—'}</p>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="block max-w-[220px] truncate text-[13px] text-gray-500" title={device.description || ''}>
+                          {device.description || '—'}
+                        </span>
+                      </td>
+                      <td className="w-16 text-right">
                         <DeviceActionsMenu
                           variant="dropdown"
                           device={device}
