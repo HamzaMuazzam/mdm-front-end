@@ -110,6 +110,8 @@ export function ConfigurationManagement() {
         allowToAccessSensitiveSettings: config.allowToAccessSensitiveSettings,
         strictAirplaneMode: config.strictAirplaneMode ?? true,
         factoryResetLock: config.factoryResetLock ?? true,
+        networkResetLock: config.networkResetLock ?? true,
+        appsControlLock: config.appsControlLock ?? false,
         rootDetectionEnabled: config.rootDetectionEnabled ?? true,
         rootDetectionLockOnCompromise: config.rootDetectionLockOnCompromise ?? true,
         rootDetectionWipeOnCompromise: config.rootDetectionWipeOnCompromise ?? false,
@@ -223,6 +225,8 @@ export function ConfigurationManagement() {
         allowToAccessSensitiveSettings: config.allowToAccessSensitiveSettings,
         strictAirplaneMode: config.strictAirplaneMode ?? true,
         factoryResetLock: config.factoryResetLock ?? true,
+        networkResetLock: config.networkResetLock ?? true,
+        appsControlLock: config.appsControlLock ?? false,
         rootDetectionEnabled: config.rootDetectionEnabled ?? true,
         rootDetectionLockOnCompromise: config.rootDetectionLockOnCompromise ?? true,
         rootDetectionWipeOnCompromise: config.rootDetectionWipeOnCompromise ?? false,
@@ -727,6 +731,22 @@ export function ConfigurationManagement() {
                       editValue={formData.factoryResetLock ?? true}
                       isEditMode={isEditMode}
                       onChange={(v) => handleInputChange('factoryResetLock', v)}
+                      type="checkbox"
+                    />
+                    <ConfigEditItem
+                      label="Network Reset Lock (Wi-Fi, mobile & Bluetooth)"
+                      value={<BooleanBadge value={config.networkResetLock ?? true} />}
+                      editValue={formData.networkResetLock ?? true}
+                      isEditMode={isEditMode}
+                      onChange={(v) => handleInputChange('networkResetLock', v)}
+                      type="checkbox"
+                    />
+                    <ConfigEditItem
+                      label="Block App Tampering (apps control)"
+                      value={<BooleanBadge value={config.appsControlLock ?? false} />}
+                      editValue={formData.appsControlLock ?? false}
+                      isEditMode={isEditMode}
+                      onChange={(v) => handleInputChange('appsControlLock', v)}
                       type="checkbox"
                     />
                   </>

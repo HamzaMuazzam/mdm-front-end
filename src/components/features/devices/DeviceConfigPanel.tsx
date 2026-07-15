@@ -278,6 +278,8 @@ export function DeviceConfigPanel({
               <ConfigEditItem label="Allow Access to Sensitive Settings" value={<BooleanBadge value={deviceConfig.allowToAccessSensitiveSettings} />} editValue={configFormData.allowToAccessSensitiveSettings} isEditMode={isEditMode} onChange={(v) => onChange('allowToAccessSensitiveSettings', v)} type="checkbox" />
               <ConfigEditItem label="Block Airplane Mode (strict)" value={<BooleanBadge value={deviceConfig.strictAirplaneMode ?? true} />} editValue={configFormData.strictAirplaneMode ?? true} isEditMode={isEditMode} onChange={(v) => onChange('strictAirplaneMode', v)} type="checkbox" />
               <ConfigEditItem label="Factory Reset Lock" value={<BooleanBadge value={deviceConfig.factoryResetLock ?? true} />} editValue={configFormData.factoryResetLock ?? true} isEditMode={isEditMode} onChange={(v) => onChange('factoryResetLock', v)} type="checkbox" />
+              <ConfigEditItem label="Network Reset Lock (Wi-Fi, mobile & Bluetooth)" value={<BooleanBadge value={deviceConfig.networkResetLock ?? true} />} editValue={configFormData.networkResetLock ?? true} isEditMode={isEditMode} onChange={(v) => onChange('networkResetLock', v)} type="checkbox" />
+              <ConfigEditItem label="Block App Tampering (apps control)" value={<BooleanBadge value={deviceConfig.appsControlLock ?? false} />} editValue={configFormData.appsControlLock ?? false} isEditMode={isEditMode} onChange={(v) => onChange('appsControlLock', v)} type="checkbox" />
             </>
           )}
 

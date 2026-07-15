@@ -18,7 +18,7 @@ import { BulkVpnModal } from './BulkVpnModal';
 import { BulkSslPinningModal } from './BulkSslPinningModal';
 import { BulkConfigModal, type BulkConfigSection } from './BulkConfigModal';
 import { BulkHeartbeatModal } from './BulkHeartbeatModal';
-import { BulkFactoryResetLockModal } from './BulkFactoryResetLockModal';
+import { BulkResetOptionsLockModal } from './BulkResetOptionsLockModal';
 import { ScreenMirroringModal } from './ScreenMirroringModal';
 import { BulkActionsMenu } from './BulkActionsMenu';
 import { DeviceActionsMenu, type DeviceActionCategory, type ActionTone } from './DeviceActionsMenu';
@@ -64,7 +64,7 @@ export function DeviceManagement() {
   // ── Update & Security Policy modal state ──────────────────────────────────
   const [policyModalDevice, setPolicyModalDevice] = useState<Device | null>(null);
   const [isBulkRootOpen, setIsBulkRootOpen] = useState(false);
-  const [isBulkFactoryResetLockOpen, setIsBulkFactoryResetLockOpen] = useState(false);
+  const [isBulkResetOptionsOpen, setIsBulkResetOptionsOpen] = useState(false);
   const [isBulkOsOpen, setIsBulkOsOpen] = useState(false);
   const [isBulkVpnOpen, setIsBulkVpnOpen] = useState(false);
   const [isBulkSslOpen, setIsBulkSslOpen] = useState(false);
@@ -296,6 +296,8 @@ export function DeviceManagement() {
         allowToAccessSensitiveSettings: deviceConfig.allowToAccessSensitiveSettings,
         strictAirplaneMode: deviceConfig.strictAirplaneMode ?? true,
         factoryResetLock: deviceConfig.factoryResetLock ?? true,
+        networkResetLock: deviceConfig.networkResetLock ?? true,
+        appsControlLock: deviceConfig.appsControlLock ?? false,
         devicePassword: deviceConfig.devicePassword??'', // Initialize devicePassword
       });
       setIsBackgroundImageEnabled(!!deviceConfig.backgroundImageUrl);
@@ -806,9 +808,9 @@ export function DeviceManagement() {
                       visible: hasPermission('configuration:update'),
                     },
                     {
-                      label: 'Factory Reset Lock',
+                      label: 'Reset Options Lock',
                       icon: ShieldOff,
-                      onClick: () => setIsBulkFactoryResetLockOpen(true),
+                      onClick: () => setIsBulkResetOptionsOpen(true),
                       visible: hasPermission('configuration:update'),
                     },
                   ],
@@ -1270,8 +1272,8 @@ export function DeviceManagement() {
       {isBulkRootOpen && (
         <BulkRootPolicyModal devices={devices} onClose={() => setIsBulkRootOpen(false)} />
       )}
-      {isBulkFactoryResetLockOpen && (
-        <BulkFactoryResetLockModal devices={devices} onClose={() => setIsBulkFactoryResetLockOpen(false)} />
+      {isBulkResetOptionsOpen && (
+        <BulkResetOptionsLockModal devices={devices} onClose={() => setIsBulkResetOptionsOpen(false)} />
       )}
       {isBulkOsOpen && (
         <BulkOsUpgradeModal devices={devices} onClose={() => setIsBulkOsOpen(false)} />
@@ -1918,6 +1920,8 @@ export function DeviceManagement() {
                             allowToAccessSensitiveSettings: deviceConfig.allowToAccessSensitiveSettings,
         strictAirplaneMode: deviceConfig.strictAirplaneMode ?? true,
         factoryResetLock: deviceConfig.factoryResetLock ?? true,
+        networkResetLock: deviceConfig.networkResetLock ?? true,
+        appsControlLock: deviceConfig.appsControlLock ?? false,
                             devicePassword: deviceConfig.devicePassword??'', // Initialize devicePassword
                           });
                           setIsBackgroundImageEnabled(!!deviceConfig.backgroundImageUrl);

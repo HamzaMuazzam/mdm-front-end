@@ -116,6 +116,8 @@ export interface DeviceConfiguration {
   allowToAccessSensitiveSettings: boolean;
   strictAirplaneMode: boolean;
   factoryResetLock: boolean;
+  networkResetLock: boolean;
+  appsControlLock: boolean;
   devicePassword?: string | null;
   // Root / compromise detection policy
   rootDetectionEnabled?: boolean;
@@ -187,6 +189,8 @@ export interface ApplyDevicePolicyRequest {
   allowToAccessSensitiveSettings?: boolean | null;
   strictAirplaneMode?: boolean | null;
   factoryResetLock?: boolean | null;
+  networkResetLock?: boolean | null;
+  appsControlLock?: boolean | null;
   // Configuration: Notifications / Location / Volume / Permissions
   notificationBarStateId?: number | null;
   enableNotifications?: boolean | null;
@@ -448,6 +452,8 @@ export interface UpdateDeviceConfigurationRequest {
   allowToAccessSensitiveSettings?: boolean;
   strictAirplaneMode?: boolean;
   factoryResetLock?: boolean;
+  networkResetLock?: boolean;
+  appsControlLock?: boolean;
   devicePassword?: string;
   // Root / compromise detection policy
   rootDetectionEnabled?: boolean;
