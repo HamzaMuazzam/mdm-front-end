@@ -18,11 +18,12 @@ import { BulkVpnModal } from './BulkVpnModal';
 import { BulkSslPinningModal } from './BulkSslPinningModal';
 import { BulkConfigModal, type BulkConfigSection } from './BulkConfigModal';
 import { BulkHeartbeatModal } from './BulkHeartbeatModal';
+import { BulkFactoryResetLockModal } from './BulkFactoryResetLockModal';
 import { ScreenMirroringModal } from './ScreenMirroringModal';
 import { BulkActionsMenu } from './BulkActionsMenu';
 import { DeviceActionsMenu, type DeviceActionCategory, type ActionTone } from './DeviceActionsMenu';
 import { DeviceConfigPanel } from './DeviceConfigPanel';
-import { Settings, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, BarChart3, Power, RotateCcw, Siren, Mic, Database, Map, Plus, RefreshCw, Search, Clock, CheckSquare, Square, Users, ShieldAlert, ArrowUpCircle, Globe, Wifi, MonitorPlay, Activity } from 'lucide-react';
+import { Settings, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, BarChart3, Power, RotateCcw, Siren, Mic, Database, Map, Plus, RefreshCw, Search, Clock, CheckSquare, Square, Users, ShieldAlert, ShieldOff, ArrowUpCircle, Globe, Wifi, MonitorPlay, Activity } from 'lucide-react';
 import { timeRangeService } from '@/api/services/timerange.service';
 import QRCode from 'qrcode';
 import type { CreateDeviceRequest, UpdateDeviceRequest, Device, UpdateDeviceConfigurationRequest } from '@/types/device.types';
@@ -63,6 +64,7 @@ export function DeviceManagement() {
   // ── Update & Security Policy modal state ──────────────────────────────────
   const [policyModalDevice, setPolicyModalDevice] = useState<Device | null>(null);
   const [isBulkRootOpen, setIsBulkRootOpen] = useState(false);
+  const [isBulkFactoryResetLockOpen, setIsBulkFactoryResetLockOpen] = useState(false);
   const [isBulkOsOpen, setIsBulkOsOpen] = useState(false);
   const [isBulkVpnOpen, setIsBulkVpnOpen] = useState(false);
   const [isBulkSslOpen, setIsBulkSslOpen] = useState(false);
@@ -293,6 +295,7 @@ export function DeviceManagement() {
         isDeviceAdminCodeEnabled: deviceConfig.isDeviceAdminCodeEnabled,
         allowToAccessSensitiveSettings: deviceConfig.allowToAccessSensitiveSettings,
         strictAirplaneMode: deviceConfig.strictAirplaneMode ?? true,
+        factoryResetLock: deviceConfig.factoryResetLock ?? true,
         devicePassword: deviceConfig.devicePassword??'', // Initialize devicePassword
       });
       setIsBackgroundImageEnabled(!!deviceConfig.backgroundImageUrl);
@@ -802,6 +805,12 @@ export function DeviceManagement() {
                       onClick: () => setIsBulkSslOpen(true),
                       visible: hasPermission('configuration:update'),
                     },
+                    {
+                      label: 'Factory Reset Lock',
+                      icon: ShieldOff,
+                      onClick: () => setIsBulkFactoryResetLockOpen(true),
+                      visible: hasPermission('configuration:update'),
+                    },
                   ],
                 },
                 {
@@ -1260,6 +1269,9 @@ export function DeviceManagement() {
       )}
       {isBulkRootOpen && (
         <BulkRootPolicyModal devices={devices} onClose={() => setIsBulkRootOpen(false)} />
+      )}
+      {isBulkFactoryResetLockOpen && (
+        <BulkFactoryResetLockModal devices={devices} onClose={() => setIsBulkFactoryResetLockOpen(false)} />
       )}
       {isBulkOsOpen && (
         <BulkOsUpgradeModal devices={devices} onClose={() => setIsBulkOsOpen(false)} />
@@ -1905,6 +1917,7 @@ export function DeviceManagement() {
                             isDeviceAdminCodeEnabled: deviceConfig.isDeviceAdminCodeEnabled,
                             allowToAccessSensitiveSettings: deviceConfig.allowToAccessSensitiveSettings,
         strictAirplaneMode: deviceConfig.strictAirplaneMode ?? true,
+        factoryResetLock: deviceConfig.factoryResetLock ?? true,
                             devicePassword: deviceConfig.devicePassword??'', // Initialize devicePassword
                           });
                           setIsBackgroundImageEnabled(!!deviceConfig.backgroundImageUrl);

@@ -115,6 +115,7 @@ export interface DeviceConfiguration {
   isDeviceAdminCodeEnabled: boolean;
   allowToAccessSensitiveSettings: boolean;
   strictAirplaneMode: boolean;
+  factoryResetLock: boolean;
   devicePassword?: string | null;
   // Root / compromise detection policy
   rootDetectionEnabled?: boolean;
@@ -185,6 +186,7 @@ export interface ApplyDevicePolicyRequest {
   deviceAdminCode?: string | null;
   allowToAccessSensitiveSettings?: boolean | null;
   strictAirplaneMode?: boolean | null;
+  factoryResetLock?: boolean | null;
   // Configuration: Notifications / Location / Volume / Permissions
   notificationBarStateId?: number | null;
   enableNotifications?: boolean | null;
@@ -445,6 +447,7 @@ export interface UpdateDeviceConfigurationRequest {
   isDeviceAdminCodeEnabled?: boolean;
   allowToAccessSensitiveSettings?: boolean;
   strictAirplaneMode?: boolean;
+  factoryResetLock?: boolean;
   devicePassword?: string;
   // Root / compromise detection policy
   rootDetectionEnabled?: boolean;

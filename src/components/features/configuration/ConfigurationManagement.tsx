@@ -109,6 +109,7 @@ export function ConfigurationManagement() {
         isDeviceAdminCodeEnabled: config.isDeviceAdminCodeEnabled,
         allowToAccessSensitiveSettings: config.allowToAccessSensitiveSettings,
         strictAirplaneMode: config.strictAirplaneMode ?? true,
+        factoryResetLock: config.factoryResetLock ?? true,
         rootDetectionEnabled: config.rootDetectionEnabled ?? true,
         rootDetectionLockOnCompromise: config.rootDetectionLockOnCompromise ?? true,
         rootDetectionWipeOnCompromise: config.rootDetectionWipeOnCompromise ?? false,
@@ -221,6 +222,7 @@ export function ConfigurationManagement() {
         isDeviceAdminCodeEnabled: config.isDeviceAdminCodeEnabled,
         allowToAccessSensitiveSettings: config.allowToAccessSensitiveSettings,
         strictAirplaneMode: config.strictAirplaneMode ?? true,
+        factoryResetLock: config.factoryResetLock ?? true,
         rootDetectionEnabled: config.rootDetectionEnabled ?? true,
         rootDetectionLockOnCompromise: config.rootDetectionLockOnCompromise ?? true,
         rootDetectionWipeOnCompromise: config.rootDetectionWipeOnCompromise ?? false,
@@ -717,6 +719,14 @@ export function ConfigurationManagement() {
                       editValue={formData.strictAirplaneMode ?? true}
                       isEditMode={isEditMode}
                       onChange={(v) => handleInputChange('strictAirplaneMode', v)}
+                      type="checkbox"
+                    />
+                    <ConfigEditItem
+                      label="Factory Reset Lock"
+                      value={<BooleanBadge value={config.factoryResetLock ?? true} />}
+                      editValue={formData.factoryResetLock ?? true}
+                      isEditMode={isEditMode}
+                      onChange={(v) => handleInputChange('factoryResetLock', v)}
                       type="checkbox"
                     />
                   </>
