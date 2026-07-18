@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -23,7 +23,7 @@ import { ScreenMirroringModal } from './ScreenMirroringModal';
 import { BulkActionsMenu } from './BulkActionsMenu';
 import { DeviceActionsMenu, type DeviceActionCategory, type ActionTone } from './DeviceActionsMenu';
 import { DeviceConfigPanel } from './DeviceConfigPanel';
-import { Settings, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, BarChart3, Power, RotateCcw, Siren, Mic, Database, Map, Plus, RefreshCw, Search, Clock, CheckSquare, Square, Users, ShieldAlert, ShieldOff, ArrowUpCircle, Globe, Wifi, MonitorPlay, Activity } from 'lucide-react';
+import { Settings, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, BarChart3, Power, RotateCcw, Siren, Mic, Database, Map, Plus, RefreshCw, Search, Clock, CheckSquare, Square, Users, ShieldAlert, ShieldOff, ArrowUpCircle, Globe, Wifi, MonitorPlay, Activity, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { timeRangeService } from '@/api/services/timerange.service';
 import QRCode from 'qrcode';
 import type { CreateDeviceRequest, UpdateDeviceRequest, Device, UpdateDeviceConfigurationRequest } from '@/types/device.types';
@@ -95,6 +95,57 @@ export function DeviceManagement() {
         );
       })
     : devices;
+
+  // ── Column sorting ─────────────────────────────────────────────────────────
+  type SortKey = 'live' | 'device' | 'user' | 'model' | 'description';
+  type SortDir = 'asc' | 'desc';
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
+
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      // asc → desc → unsorted (back to default order)
+      if (sortDir === 'asc') {
+        setSortDir('desc');
+      } else {
+        setSortKey(null);
+        setSortDir('asc');
+      }
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  };
+
+  const sortedDevices = useMemo(() => {
+    if (!sortKey) return filteredDevices;
+
+    const liveRank = (d: Device): number => {
+      const status = deviceStatuses[d.deviceUuid];
+      const isOffline = status === 'offline' || (status == null && d.online === false);
+      // online first when ascending
+      return isOffline ? 1 : 0;
+    };
+    const valueFor = (d: Device): string | number => {
+      switch (sortKey) {
+        case 'live': return liveRank(d);
+        case 'device': return (d.deviceName || d.deviceUuid || '').toLowerCase();
+        case 'user': return (d.userEmail || '').toLowerCase();
+        case 'model': return (d.model || '').toLowerCase();
+        case 'description': return (d.description || '').toLowerCase();
+        default: return '';
+      }
+    };
+
+    const dir = sortDir === 'asc' ? 1 : -1;
+    // Copy first — never mutate the query cache array in place.
+    return [...filteredDevices].sort((a, b) => {
+      const av = valueFor(a);
+      const bv = valueFor(b);
+      if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
+      return String(av).localeCompare(String(bv), undefined, { numeric: true, sensitivity: 'base' }) * dir;
+    });
+  }, [filteredDevices, sortKey, sortDir, deviceStatuses]);
   const { data: deviceConfig, isLoading: isLoadingConfig } = useDeviceConfiguration(configDeviceId);
   const createMutation = useCreateDevice();
   const updateMutation = useUpdateDevice();
@@ -1141,16 +1192,16 @@ export function DeviceManagement() {
             <table className="w-full">
               <thead className="sticky top-0 z-10 border-b border-gray-200 bg-gray-50/80 backdrop-blur">
                 <tr className="text-[11px] uppercase tracking-wider text-gray-400 [&>th]:px-3 [&>th]:py-2.5 [&>th]:font-semibold">
-                  <th className="w-12 text-center">Live</th>
-                  <th className="text-left">Device</th>
-                  <th className="text-left">User</th>
-                  <th className="text-left">Model / OS</th>
-                  <th className="text-left">Description</th>
+                  <SortableTh label="Live" sortKey="live" activeKey={sortKey} dir={sortDir} onSort={toggleSort} align="center" className="w-12" />
+                  <SortableTh label="Device" sortKey="device" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                  <SortableTh label="User" sortKey="user" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                  <SortableTh label="Model / OS" sortKey="model" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                  <SortableTh label="Description" sortKey="description" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
                   <th className="w-16 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filteredDevices.map((device:Device) => {
+                {sortedDevices.map((device:Device) => {
                   const isActive = !device.deletedAt;
                   const liveStatus = deviceStatuses[device.deviceUuid];
                   const isOffline = liveStatus === 'offline' || (liveStatus == null && device.online === false);
@@ -1987,6 +2038,45 @@ export function DeviceManagement() {
 }
 
 /** Compact relative-time formatter for "last seen" timestamps (epoch millis). */
+/** Clickable table header cell that toggles column sort (asc → desc → none). */
+function SortableTh({
+  label,
+  sortKey,
+  activeKey,
+  dir,
+  onSort,
+  align = 'left',
+  className = '',
+}: {
+  label: string;
+  sortKey: 'live' | 'device' | 'user' | 'model' | 'description';
+  activeKey: 'live' | 'device' | 'user' | 'model' | 'description' | null;
+  dir: 'asc' | 'desc';
+  onSort: (key: 'live' | 'device' | 'user' | 'model' | 'description') => void;
+  align?: 'left' | 'center' | 'right';
+  className?: string;
+}) {
+  const isActive = activeKey === sortKey;
+  const justify = align === 'center' ? 'justify-center' : align === 'right' ? 'justify-end' : 'justify-start';
+  return (
+    <th className={`text-${align} ${className}`} aria-sort={isActive ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'}>
+      <button
+        type="button"
+        onClick={() => onSort(sortKey)}
+        className={`group inline-flex items-center gap-1 ${justify} uppercase tracking-wider transition-colors hover:text-gray-700 ${isActive ? 'text-gray-700' : ''}`}
+        title={`Sort by ${label}`}
+      >
+        <span>{label}</span>
+        {isActive ? (
+          dir === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
+        ) : (
+          <ChevronsUpDown className="h-3 w-3 text-gray-300 group-hover:text-gray-400" />
+        )}
+      </button>
+    </th>
+  );
+}
+
 function timeAgo(ms?: number | null): string {
   if (!ms) return 'unknown';
   const secs = Math.max(0, Math.floor((Date.now() - ms) / 1000));
