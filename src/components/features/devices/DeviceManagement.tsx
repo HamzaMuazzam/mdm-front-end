@@ -19,6 +19,7 @@ import { BulkSslPinningModal } from './BulkSslPinningModal';
 import { BulkConfigModal, type BulkConfigSection } from './BulkConfigModal';
 import { BulkHeartbeatModal } from './BulkHeartbeatModal';
 import { BulkResetOptionsLockModal } from './BulkResetOptionsLockModal';
+import { BulkAppBlockModal } from './BulkAppBlockModal';
 import { ScreenMirroringModal } from './ScreenMirroringModal';
 import { BulkActionsMenu } from './BulkActionsMenu';
 import { DeviceActionsMenu, type DeviceActionCategory, type ActionTone } from './DeviceActionsMenu';
@@ -69,6 +70,7 @@ export function DeviceManagement() {
   const [isBulkVpnOpen, setIsBulkVpnOpen] = useState(false);
   const [isBulkSslOpen, setIsBulkSslOpen] = useState(false);
   const [isBulkHeartbeatOpen, setIsBulkHeartbeatOpen] = useState(false);
+  const [isBulkAppBlockOpen, setIsBulkAppBlockOpen] = useState(false);
   const [bulkConfigSection, setBulkConfigSection] = useState<BulkConfigSection | null>(null);
   const [screenMirrorDevice, setScreenMirrorDevice] = useState<Device | null>(null);
   const [bulkSelectedUuids, setBulkSelectedUuids] = useState<Set<string>>(new Set());
@@ -867,6 +869,17 @@ export function DeviceManagement() {
                   ],
                 },
                 {
+                  label: 'Applications',
+                  items: [
+                    {
+                      label: 'App Block / Unblock',
+                      icon: AppWindow,
+                      onClick: () => setIsBulkAppBlockOpen(true),
+                      visible: hasPermission('devices:applications:read'),
+                    },
+                  ],
+                },
+                {
                   label: 'Updates',
                   items: [
                     {
@@ -1337,6 +1350,9 @@ export function DeviceManagement() {
       )}
       {isBulkHeartbeatOpen && (
         <BulkHeartbeatModal devices={devices} onClose={() => setIsBulkHeartbeatOpen(false)} />
+      )}
+      {isBulkAppBlockOpen && (
+        <BulkAppBlockModal devices={devices} onClose={() => setIsBulkAppBlockOpen(false)} />
       )}
       {bulkConfigSection && (
         <BulkConfigModal section={bulkConfigSection} devices={devices} onClose={() => setBulkConfigSection(null)} />

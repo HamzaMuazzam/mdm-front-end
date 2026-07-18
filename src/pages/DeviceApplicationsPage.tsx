@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useDeviceApplications, useDevicesQuery, useUpdateDeviceApplication } from '@/hooks/useDevices';
+import { useBulkAppBlock, useDeviceApplications, useDevicesQuery, useUpdateDeviceApplication } from '@/hooks/useDevices';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -115,12 +115,18 @@ export function DeviceApplicationsPage() {
   const { data: devices = [] } = useDevicesQuery();
   const { data: deviceApps = [], isLoading, refetch } = useDeviceApplications(numericDeviceId);
   const updateMutation = useUpdateDeviceApplication();
+  const bulkBlockMutation = useBulkAppBlock();
 
   const device = devices.find(d => d.id === numericDeviceId);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [systemAppFilter, setSystemAppFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [visibilityFilter, setVisibilityFilter] = useState<string>('all');
+  const [autoUpdateFilter, setAutoUpdateFilter] = useState<string>('all');
+
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   const [editingApp, setEditingApp] = useState<DeviceApplication | null>(null);
   const [editFormData, setEditFormData] = useState<UpdateDeviceApplicationRequest>({});
@@ -138,9 +144,70 @@ export function DeviceApplicationsPage() {
       if (categoryFilter !== 'all' && app.applicationCategory !== categoryFilter) return false;
       if (systemAppFilter === 'system' && !app.isSystemApp) return false;
       if (systemAppFilter === 'user' && app.isSystemApp) return false;
+      if (statusFilter === 'allowed' && !app.isAllowed) return false;
+      if (statusFilter === 'blocked' && app.isAllowed) return false;
+      if (visibilityFilter === 'visible' && !app.showIcon) return false;
+      if (visibilityFilter === 'hidden' && app.showIcon) return false;
+      if (autoUpdateFilter === 'on' && !app.installUpdate) return false;
+      if (autoUpdateFilter === 'off' && app.installUpdate) return false;
       return true;
     });
-  }, [deviceApps, searchQuery, categoryFilter, systemAppFilter]);
+  }, [deviceApps, searchQuery, categoryFilter, systemAppFilter, statusFilter, visibilityFilter, autoUpdateFilter]);
+
+  const hasActiveFilters =
+    searchQuery.trim() !== '' || categoryFilter !== 'all' || systemAppFilter !== 'all' ||
+    statusFilter !== 'all' || visibilityFilter !== 'all' || autoUpdateFilter !== 'all';
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setCategoryFilter('all');
+    setSystemAppFilter('all');
+    setStatusFilter('all');
+    setVisibilityFilter('all');
+    setAutoUpdateFilter('all');
+  };
+
+  // ── Selection (bulk block/unblock) ─────────────────────────────────────
+  const allFilteredSelected = filteredApps.length > 0 && filteredApps.every(app => selectedIds.has(app.id));
+
+  const toggleSelectAll = () => {
+    setSelectedIds(allFilteredSelected ? new Set() : new Set(filteredApps.map(app => app.id)));
+  };
+
+  const toggleSelectOne = (id: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const selectedApps = useMemo(
+    () => deviceApps.filter(app => selectedIds.has(app.id)),
+    [deviceApps, selectedIds]
+  );
+
+  const handleBulkBlock = async (isAllowed: boolean) => {
+    if (!device?.deviceUuid || selectedApps.length === 0) return;
+    try {
+      const results = await bulkBlockMutation.mutateAsync({
+        deviceUuids: [device.deviceUuid],
+        appPackageIds: selectedApps.map(app => app.appPackageId),
+        isAllowed,
+      });
+      const updated = results.reduce((sum, r) => sum + (r.updated || 0), 0);
+      const failed = results.filter(r => !r.success).length;
+      toast({
+        variant: failed === 0 ? 'success' : 'destructive',
+        title: isAllowed ? 'Apps Unblocked' : 'Apps Blocked',
+        description: `${updated} app(s) ${isAllowed ? 'unblocked' : 'blocked'}${failed ? `, ${failed} device(s) failed` : ''}.`,
+      });
+      setSelectedIds(new Set());
+    } catch (err: any) {
+      const message = err?.response?.data?.message || err?.message || 'Bulk update failed. Please try again.';
+      toast({ variant: 'destructive', title: 'Bulk Update Error', description: message });
+    }
+  };
 
   const handleBack = () => {
     navigate(ROUTES.DASHBOARD, { state: { activeTab: 'devices' } });
@@ -302,12 +369,53 @@ export function DeviceApplicationsPage() {
                 onChange={(e) => setSystemAppFilter(e.target.value)}
                 className="appearance-none h-9 bg-white border border-gray-300 rounded-md px-3 pr-8 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
               >
-                <option value="all">All Apps</option>
+                <option value="all">All Types</option>
                 <option value="system">System</option>
                 <option value="user">User</option>
               </select>
               <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             </div>
+            <div className="relative">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="appearance-none h-9 bg-white border border-gray-300 rounded-md px-3 pr-8 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+              >
+                <option value="all">All Statuses</option>
+                <option value="allowed">Allowed</option>
+                <option value="blocked">Blocked</option>
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            </div>
+            <div className="relative">
+              <select
+                value={visibilityFilter}
+                onChange={(e) => setVisibilityFilter(e.target.value)}
+                className="appearance-none h-9 bg-white border border-gray-300 rounded-md px-3 pr-8 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+              >
+                <option value="all">All Visibility</option>
+                <option value="visible">Visible</option>
+                <option value="hidden">Hidden</option>
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            </div>
+            <div className="relative">
+              <select
+                value={autoUpdateFilter}
+                onChange={(e) => setAutoUpdateFilter(e.target.value)}
+                className="appearance-none h-9 bg-white border border-gray-300 rounded-md px-3 pr-8 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+              >
+                <option value="all">Auto Update: Any</option>
+                <option value="on">Auto Update: On</option>
+                <option value="off">Auto Update: Off</option>
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            </div>
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9 gap-1.5 text-xs text-muted-foreground">
+                <X className="h-3.5 w-3.5" />Clear
+              </Button>
+            )}
             <div className="text-xs text-muted-foreground whitespace-nowrap">
               {filteredApps.length}/{deviceApps.length}
             </div>
@@ -336,6 +444,46 @@ export function DeviceApplicationsPage() {
           </div>
         </div>
 
+        {/* ── Bulk selection bar ───────────────────────────────────── */}
+        {selectedIds.size > 0 && (
+          <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5">
+            <span className="text-sm font-medium text-blue-900">
+              {selectedIds.size} app{selectedIds.size !== 1 ? 's' : ''} selected
+            </span>
+            <div className="flex items-center gap-2 ml-auto">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleBulkBlock(false)}
+                disabled={bulkBlockMutation.isPending || !device?.deviceUuid}
+                className="h-8 gap-1.5 text-xs border-red-300 text-red-700 hover:bg-red-50 hover:text-red-800"
+              >
+                {bulkBlockMutation.isPending ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <ShieldOff className="h-3.5 w-3.5" />}
+                Block Selected
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleBulkBlock(true)}
+                disabled={bulkBlockMutation.isPending || !device?.deviceUuid}
+                className="h-8 gap-1.5 text-xs border-green-300 text-green-700 hover:bg-green-50 hover:text-green-800"
+              >
+                {bulkBlockMutation.isPending ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Shield className="h-3.5 w-3.5" />}
+                Unblock Selected
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setSelectedIds(new Set())}
+                disabled={bulkBlockMutation.isPending}
+                className="h-8 text-xs text-muted-foreground"
+              >
+                Clear
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* ── Content ──────────────────────────────────────────────── */}
         {isLoading ? (
           <LoadingSkeleton />
@@ -352,8 +500,15 @@ export function DeviceApplicationsPage() {
                     key={app.id}
                     className={`rounded-lg border border-gray-200 border-l-4 ${accentClass} bg-white shadow-sm overflow-hidden`}
                   >
-                    {/* Card header: avatar + name + status */}
+                    {/* Card header: checkbox + avatar + name + status */}
                     <div className="flex items-start gap-3 p-4 pb-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(app.id)}
+                        onChange={() => toggleSelectOne(app.id)}
+                        aria-label={`Select ${app.appName}`}
+                        className="mt-3.5 h-4 w-4 shrink-0 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      />
                       <div className={`w-12 h-12 rounded-md ${avatarGradient} flex items-center justify-center shrink-0 overflow-hidden`}>
                         {app.appIconBase64 ? (
                           <img src={getBase64ImageSrc(app.appIconBase64)!} alt={app.appName} className="w-full h-full object-cover" />
@@ -440,6 +595,15 @@ export function DeviceApplicationsPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-gray-200 bg-gray-50">
+                        <th className="pl-5 pr-2 py-3 w-10">
+                          <input
+                            type="checkbox"
+                            checked={allFilteredSelected}
+                            onChange={toggleSelectAll}
+                            aria-label="Select all applications"
+                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          />
+                        </th>
                         <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Application</th>
                         <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Category</th>
                         <th className="px-5 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">Type</th>
@@ -453,7 +617,16 @@ export function DeviceApplicationsPage() {
                     </thead>
                     <tbody className="divide-y divide-border">
                       {filteredApps.map((app) => (
-                        <tr key={app.id} className="group hover:bg-gray-50 transition-colors">
+                        <tr key={app.id} className={`group transition-colors ${selectedIds.has(app.id) ? 'bg-blue-50/60' : 'hover:bg-gray-50'}`}>
+                          <td className="pl-5 pr-2 py-3.5 w-10">
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.has(app.id)}
+                              onChange={() => toggleSelectOne(app.id)}
+                              aria-label={`Select ${app.appName}`}
+                              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                            />
+                          </td>
                           <td className="px-5 py-3.5">
                             <div className="flex items-center gap-3">
                               <div className={`flex-shrink-0 w-10 h-10 rounded-md ${getCategoryGradient(app.applicationCategory)} flex items-center justify-center overflow-hidden`}>
@@ -521,7 +694,7 @@ export function DeviceApplicationsPage() {
             </Card>
           </>
         ) : deviceApps.length > 0 ? (
-          <EmptySearchState query={searchQuery} onClear={() => setSearchQuery('')} />
+          <EmptySearchState query={searchQuery} onClear={clearFilters} />
         ) : (
           <EmptyState />
         )}
@@ -906,9 +1079,11 @@ function EmptySearchState({ query, onClear }: { query: string; onClear: () => vo
       </div>
       <h3 className="text-base font-semibold text-gray-900 mb-1">No Results Found</h3>
       <p className="text-sm text-muted-foreground text-center max-w-sm mb-4">
-        No applications match "<span className="font-medium">{query}</span>". Try a different search term.
+        {query.trim()
+          ? <>No applications match "<span className="font-medium">{query}</span>". Try a different search term or adjust the filters.</>
+          : 'No applications match the current filters.'}
       </p>
-      <Button variant="outline" size="sm" onClick={onClear}>Clear Search</Button>
+      <Button variant="outline" size="sm" onClick={onClear}>Clear Filters</Button>
     </div>
   );
 }

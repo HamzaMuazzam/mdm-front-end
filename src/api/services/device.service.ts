@@ -1,5 +1,5 @@
 import { apiClient } from '../client';
-import type { Device, CreateDeviceRequest, UpdateDeviceRequest, DeviceConfiguration, UpdateDeviceConfigurationRequest, ConfigEnumItem, DeviceApplication, UpdateDeviceApplicationRequest, BlockedAppRequest, BlockedAppReviewRequest, DeviceDashboardAnalytics, DeviceMonitorStateDashboard, DeviceAppUsageHistoryItem, DeviceAppUsageHistoryQuery, ApplyDevicePolicyRequest, ApplyPolicyResult } from '@/types/device.types';
+import type { Device, CreateDeviceRequest, UpdateDeviceRequest, DeviceConfiguration, UpdateDeviceConfigurationRequest, ConfigEnumItem, DeviceApplication, UpdateDeviceApplicationRequest, BlockedAppRequest, BlockedAppReviewRequest, DeviceDashboardAnalytics, DeviceMonitorStateDashboard, DeviceAppUsageHistoryItem, DeviceAppUsageHistoryQuery, ApplyDevicePolicyRequest, ApplyPolicyResult, BulkAppBlockRequest, BulkAppBlockResult } from '@/types/device.types';
 import type { ApiResponse, PaginatedResponse } from '@/types/api.types';
 
 export const deviceService = {
@@ -87,6 +87,12 @@ export const deviceService = {
       }
       throw error;
     }
+  },
+
+  /** Bulk block/unblock apps by package id on one or many devices. */
+  async bulkBlockApplications(payload: BulkAppBlockRequest): Promise<BulkAppBlockResult[]> {
+    const response = await apiClient.post<ApiResponse<BulkAppBlockResult[]>>('/v1/device-applications/bulk-block', payload);
+    return response.data.data;
   },
 
   async getBlockedAppRequests(deviceId: number): Promise<BlockedAppRequest[]> {

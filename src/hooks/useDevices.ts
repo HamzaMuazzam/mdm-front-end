@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { deviceService } from '@/api/services/device.service';
 import { toast } from '@/hooks/useToast';
-import type { CreateDeviceRequest, UpdateDeviceRequest, UpdateDeviceConfigurationRequest, UpdateDeviceApplicationRequest, BlockedAppReviewRequest, DeviceAppUsageHistoryQuery, ApplyDevicePolicyRequest } from '@/types/device.types';
+import type { CreateDeviceRequest, UpdateDeviceRequest, UpdateDeviceConfigurationRequest, UpdateDeviceApplicationRequest, BlockedAppReviewRequest, DeviceAppUsageHistoryQuery, ApplyDevicePolicyRequest, BulkAppBlockRequest } from '@/types/device.types';
 
 const DEVICES_QUERY_KEY = ['devices'];
 const DEVICE_ANALYTICS_QUERY_KEY = ['deviceAnalytics'];
@@ -238,6 +238,18 @@ export function useUpdateDeviceApplication() {
         title: 'Update Error',
         description: message,
       });
+    },
+  });
+}
+
+/** Bulk block/unblock apps by package id on one or many devices. Toasting is left to callers. */
+export function useBulkAppBlock() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: BulkAppBlockRequest) => deviceService.bulkBlockApplications(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['deviceApplications'] });
     },
   });
 }

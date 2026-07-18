@@ -210,6 +210,22 @@ export interface ApplyPolicyResult {
   message: string;
 }
 
+/** Bulk block/unblock apps by package id on one or many devices. */
+export interface BulkAppBlockRequest {
+  deviceUuids: string[];
+  appPackageIds: string[];
+  /** false → block, true → unblock (allow) */
+  isAllowed: boolean;
+}
+
+export interface BulkAppBlockResult {
+  deviceUuid: string;
+  success: boolean;
+  updated: number;
+  skipped: number;
+  message: string;
+}
+
 export interface DeviceApplication {
   id: number;
   deviceId: number;
