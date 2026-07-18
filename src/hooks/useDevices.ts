@@ -242,6 +242,16 @@ export function useUpdateDeviceApplication() {
   });
 }
 
+/** Distinct app catalog across the fleet (app picker for bulk block). */
+export function useAppCatalog(enabled = true) {
+  return useQuery({
+    queryKey: ['appCatalog'],
+    queryFn: deviceService.getAppCatalog,
+    enabled,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 /** Bulk block/unblock apps by package id on one or many devices. Toasting is left to callers. */
 export function useBulkAppBlock() {
   const queryClient = useQueryClient();

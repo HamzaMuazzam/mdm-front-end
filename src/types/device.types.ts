@@ -226,6 +226,15 @@ export interface BulkAppBlockResult {
   message: string;
 }
 
+/** One distinct app across the fleet (app picker for bulk block). */
+export interface AppCatalogItem {
+  appPackageId: string;
+  appName: string;
+  appIconBase64: string | null;
+  isSystemApp: boolean;
+  deviceCount: number;
+}
+
 export interface DeviceApplication {
   id: number;
   deviceId: number;

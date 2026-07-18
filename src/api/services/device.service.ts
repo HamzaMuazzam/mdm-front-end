@@ -1,5 +1,5 @@
 import { apiClient } from '../client';
-import type { Device, CreateDeviceRequest, UpdateDeviceRequest, DeviceConfiguration, UpdateDeviceConfigurationRequest, ConfigEnumItem, DeviceApplication, UpdateDeviceApplicationRequest, BlockedAppRequest, BlockedAppReviewRequest, DeviceDashboardAnalytics, DeviceMonitorStateDashboard, DeviceAppUsageHistoryItem, DeviceAppUsageHistoryQuery, ApplyDevicePolicyRequest, ApplyPolicyResult, BulkAppBlockRequest, BulkAppBlockResult } from '@/types/device.types';
+import type { Device, CreateDeviceRequest, UpdateDeviceRequest, DeviceConfiguration, UpdateDeviceConfigurationRequest, ConfigEnumItem, DeviceApplication, UpdateDeviceApplicationRequest, BlockedAppRequest, BlockedAppReviewRequest, DeviceDashboardAnalytics, DeviceMonitorStateDashboard, DeviceAppUsageHistoryItem, DeviceAppUsageHistoryQuery, ApplyDevicePolicyRequest, ApplyPolicyResult, BulkAppBlockRequest, BulkAppBlockResult, AppCatalogItem } from '@/types/device.types';
 import type { ApiResponse, PaginatedResponse } from '@/types/api.types';
 
 export const deviceService = {
@@ -87,6 +87,12 @@ export const deviceService = {
       }
       throw error;
     }
+  },
+
+  /** Distinct app catalog across the fleet (app picker for bulk block). */
+  async getAppCatalog(): Promise<AppCatalogItem[]> {
+    const response = await apiClient.get<ApiResponse<AppCatalogItem[]>>('/v1/device-applications/catalog');
+    return response.data.data;
   },
 
   /** Bulk block/unblock apps by package id on one or many devices. */
