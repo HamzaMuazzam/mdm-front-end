@@ -1095,8 +1095,12 @@ function BooleanBadge({ value }: { value: boolean }) {
   );
 }
 
-function StateBadge({ value }: { value: string }) {
-  const isAny = value.toUpperCase() === 'ANY';
+function StateBadge({ value }: { value?: string | null }) {
+  // Connectivity state names (wifi/mobileData/bluetooth/gps/notificationBar) can
+  // come back null/undefined from the API — guard before calling toUpperCase().
+  const normalized = (value ?? '').toUpperCase();
+  const isAny = normalized === 'ANY';
+  const display = value == null || value === '' ? '—' : value;
   return (
     <span
       className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -1105,7 +1109,7 @@ function StateBadge({ value }: { value: string }) {
           : 'bg-gray-100 text-gray-700'
       }`}
     >
-      {value}
+      {display}
     </span>
   );
 }
