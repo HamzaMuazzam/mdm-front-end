@@ -15,12 +15,13 @@ import {
   RefreshCw,
   PackageSearch,
   HardDrive,
+  FileBarChart,
   X,
 } from 'lucide-react';
 
 interface SidebarProps {
-  activeTab: 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager';
-  onTabChange: (tab: 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager') => void;
+  activeTab: 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager' | 'reports';
+  onTabChange: (tab: 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager' | 'reports') => void;
   isMobileOpen?: boolean;
   onMobileClose?: () => void;
 }
@@ -70,6 +71,15 @@ export function Sidebar({ activeTab, onTabChange, isMobileOpen = false, onMobile
             isActive={activeTab === 'analytics'}
             isCollapsed={collapsed}
             onClick={() => handleNavClick('analytics')}
+          />
+        )}
+        {hasPermission('user:analytics') && (
+          <NavButton
+            icon={<FileBarChart className="h-4 w-4" />}
+            label="Reports"
+            isActive={activeTab === 'reports'}
+            isCollapsed={collapsed}
+            onClick={() => handleNavClick('reports')}
           />
         )}
         {hasPermission('user:read') && (

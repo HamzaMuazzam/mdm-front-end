@@ -12,10 +12,11 @@ import { SecurityGroupManagement } from '@/components/features/security-groups/S
 import { AppUpdateManagement } from '@/components/features/app-update/AppUpdateManagement';
 import { AppManagement } from '@/components/features/app-management/AppManagement';
 import { FileManagerPage } from '@/components/features/file-manager/FileManagerPage';
+import { ReportsDashboard } from '@/components/features/reports/ReportsDashboard';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { usePermissionsQuery } from '@/hooks/usePermissions';
 
-type TabType = 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager';
+type TabType = 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager' | 'reports';
 
 interface LocationState {
   activeTab?: TabType;
@@ -31,7 +32,8 @@ function isTabType(value: string | null): value is TabType {
     value === 'security-groups' ||
     value === 'app-update' ||
     value === 'app-management' ||
-    value === 'file-manager'
+    value === 'file-manager' ||
+    value === 'reports'
   );
 }
 
@@ -106,6 +108,8 @@ export function DashboardPage() {
     } else if (tab === 'file-manager') {
       queryClient.invalidateQueries({ queryKey: ['fileManagerCommands'] });
       queryClient.invalidateQueries({ queryKey: ['fileEvents'] });
+    } else if (tab === 'reports') {
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
     }
   };
 
@@ -159,6 +163,11 @@ export function DashboardPage() {
         {activeTab === 'file-manager' && (
           <ErrorBoundary moduleName="File Manager">
             <FileManagerPage />
+          </ErrorBoundary>
+        )}
+        {activeTab === 'reports' && (
+          <ErrorBoundary moduleName="Reports">
+            <ReportsDashboard />
           </ErrorBoundary>
         )}
       </div>
