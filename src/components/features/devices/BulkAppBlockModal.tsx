@@ -115,8 +115,8 @@ export function BulkAppBlockModal({ devices, onClose }: { devices: Device[]; onC
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-lg bg-white shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center bg-black/40 p-0 lg:p-4">
+      <div className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-t-2xl rounded-b-none animate-sheet-up pb-safe lg:animate-none lg:rounded-lg lg:pb-0 bg-white shadow-xl">
         <div className="flex items-center justify-between border-b border-border px-5 pt-5 pb-4 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="rounded-md bg-blue-50 p-2">

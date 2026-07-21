@@ -515,7 +515,7 @@ function DevicesPanel() {
 
       <Card className="border border-gray-200 bg-white shadow-sm">
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
+          <div className="hidden overflow-x-auto lg:block">
             <table className="w-full text-left">
               <thead className="border-b border-gray-200 bg-gray-50">
                 <tr>
@@ -577,6 +577,67 @@ function DevicesPanel() {
                 )}
               </tbody>
             </table>
+          </div>
+          <div className="space-y-3 p-3 lg:hidden">
+            {data.rows.map((r) => (
+              <div key={r.deviceUuid} className="rounded-xl border border-gray-200 bg-white p-4 active:bg-gray-50">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-gray-900">{r.deviceName ?? '—'}</p>
+                    <p className="truncate text-xs text-gray-500">{r.deviceUuid}</p>
+                  </div>
+                  <StatusBadge label={r.complianceStatus.replace('_', ' ')} tone={complianceTone(r.complianceStatus)} />
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2">
+                  <div className="min-w-0">
+                    <p className="text-xs text-gray-500">Owner</p>
+                    <p className="truncate text-sm text-gray-900">{r.ownerName ?? '—'}</p>
+                    {r.ownerEmail && <p className="truncate text-xs text-gray-500">{r.ownerEmail}</p>}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs text-gray-500">Model / OS</p>
+                    <p className="truncate text-sm text-gray-900">
+                      {r.model ?? '—'} · {r.osVersion ? `Android ${r.osVersion}` : '—'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Online</p>
+                    <div className="mt-0.5">
+                      <StatusBadge label={r.online ? 'Online' : 'Offline'} tone={r.online ? 'green' : 'gray'} />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Integrity</p>
+                    <div className="mt-0.5">
+                      <StatusBadge label={r.integrityStatus ?? 'NOT_SCANNED'} tone={integrityTone(r.integrityStatus)} />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">SIM Alerts</p>
+                    <p className="text-sm font-semibold text-gray-900">{r.simAlerts > 0 ? <span className="text-red-600">{nf.format(r.simAlerts)}</span> : '0'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Score</p>
+                    <div className="mt-1 flex items-center gap-1.5">
+                      <div className="h-1.5 w-14 overflow-hidden rounded-full bg-gray-100">
+                        <div
+                          className={`h-full rounded-full ${r.complianceScore >= 85 ? 'bg-emerald-500' : r.complianceScore >= 60 ? 'bg-amber-500' : 'bg-red-500'}`}
+                          style={{ width: `${r.complianceScore}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-semibold tabular-nums text-gray-900">{r.complianceScore}</span>
+                    </div>
+                  </div>
+                </div>
+                {r.issues.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-xs text-gray-500">Issues</p>
+                    <p className="text-sm text-gray-900">{r.issues.join('; ')}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+            {data.rows.length === 0 && <p className="px-3 py-8 text-center text-sm text-gray-500">No devices in scope.</p>}
           </div>
         </CardContent>
       </Card>
@@ -652,7 +713,7 @@ function SecurityPanel() {
         <Card className="border border-gray-200 bg-white shadow-sm">
           <CardContent className="p-4">
             <CardTitleRow title="Recent Integrity Events" />
-            <div className="overflow-x-auto">
+            <div className="hidden overflow-x-auto lg:block">
               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-gray-200">
@@ -685,13 +746,38 @@ function SecurityPanel() {
                 </tbody>
               </table>
             </div>
+            <div className="space-y-3 lg:hidden">
+              {data.recentIntegrityEvents.map((e, i) => (
+                <div key={`${e.deviceUuid}-${e.eventTime}-${i}`} className="rounded-xl border border-gray-200 bg-white p-4 active:bg-gray-50">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="min-w-0 truncate text-sm font-semibold text-gray-900">{e.deviceName ?? e.deviceUuid ?? '—'}</p>
+                    <StatusBadge label={e.status ?? '—'} tone={integrityTone(e.status)} />
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2">
+                    <div>
+                      <p className="text-xs text-gray-500">Severity</p>
+                      <p className="text-sm text-gray-900">{e.severity ?? '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Alert</p>
+                      <div className="mt-0.5">{e.securityAlert ? <StatusBadge label="ALERT" tone="red" /> : <span className="text-sm text-gray-900">—</span>}</div>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-xs text-gray-500">Time</p>
+                      <p className="text-sm text-gray-900">{formatDateTime(e.eventTime)}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {data.recentIntegrityEvents.length === 0 && <p className="px-2 py-6 text-center text-xs text-gray-500">No integrity events recorded.</p>}
+            </div>
           </CardContent>
         </Card>
 
         <Card className="border border-gray-200 bg-white shadow-sm">
           <CardContent className="p-4">
             <CardTitleRow title="Recent SIM Events" />
-            <div className="overflow-x-auto">
+            <div className="hidden overflow-x-auto lg:block">
               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-gray-200">
@@ -723,6 +809,31 @@ function SecurityPanel() {
                   )}
                 </tbody>
               </table>
+            </div>
+            <div className="space-y-3 lg:hidden">
+              {data.recentSimEvents.map((e, i) => (
+                <div key={`${e.deviceUuid}-${e.eventTime}-${i}`} className="rounded-xl border border-gray-200 bg-white p-4 active:bg-gray-50">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="min-w-0 truncate text-sm font-semibold text-gray-900">{e.deviceName ?? e.deviceUuid ?? '—'}</p>
+                    <StatusBadge label={e.eventType ?? '—'} tone={e.eventType === 'SWAPPED' ? 'red' : e.eventType === 'REMOVED' ? 'amber' : 'blue'} />
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2">
+                    <div className="min-w-0">
+                      <p className="text-xs text-gray-500">Carrier</p>
+                      <p className="truncate text-sm text-gray-900">{e.carrierName ?? '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Alert</p>
+                      <div className="mt-0.5">{e.securityAlert ? <StatusBadge label="ALERT" tone="red" /> : <span className="text-sm text-gray-900">—</span>}</div>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-xs text-gray-500">Time</p>
+                      <p className="text-sm text-gray-900">{formatDateTime(e.eventTime)}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {data.recentSimEvents.length === 0 && <p className="px-2 py-6 text-center text-xs text-gray-500">No SIM events recorded.</p>}
             </div>
           </CardContent>
         </Card>
@@ -804,7 +915,7 @@ function UsersPanel() {
 
       <Card className="border border-gray-200 bg-white shadow-sm">
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
+          <div className="hidden overflow-x-auto lg:block">
             <table className="w-full text-left">
               <thead className="border-b border-gray-200 bg-gray-50">
                 <tr>
@@ -839,6 +950,34 @@ function UsersPanel() {
                 )}
               </tbody>
             </table>
+          </div>
+          <div className="space-y-3 p-3 lg:hidden">
+            {data.rows.map((r) => (
+              <div key={r.userId} className="rounded-xl border border-gray-200 bg-white p-4 active:bg-gray-50">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-gray-900">{r.fullName ?? '—'}</p>
+                    <p className="truncate text-xs text-gray-500">{r.email}</p>
+                  </div>
+                  <StatusBadge label={r.active ? 'Active' : 'Inactive'} tone={r.active ? 'green' : 'gray'} />
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2">
+                  <div>
+                    <p className="text-xs text-gray-500">Role</p>
+                    <p className="truncate text-sm text-gray-900">{r.role ?? '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Devices Owned</p>
+                    <p className="text-sm font-semibold tabular-nums text-gray-900">{nf.format(r.devicesOwned)}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-xs text-gray-500">Created</p>
+                    <p className="text-sm text-gray-900">{formatDateTime(r.createdAt)}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {data.rows.length === 0 && <p className="px-3 py-8 text-center text-sm text-gray-500">No users found.</p>}
           </div>
         </CardContent>
       </Card>
@@ -920,12 +1059,12 @@ export function ReportsDashboard() {
       </div>
 
       {/* Sub-tab bar */}
-      <div className="flex flex-wrap gap-1 rounded-lg border border-gray-200 bg-white p-1 shadow-sm">
+      <div className="flex flex-wrap gap-1 rounded-lg border border-gray-200 bg-white p-1 shadow-sm max-lg:flex-nowrap max-lg:overflow-x-auto">
         {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+            className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors max-lg:min-h-[44px] max-lg:shrink-0 max-lg:whitespace-nowrap ${
               tab === t.id ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
             }`}
           >

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Sidebar } from '@/components/layout/Sidebar';
+import { BottomNav } from '@/components/layout/BottomNav';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { UserManagement } from '@/components/features/users/UserManagement';
 import { DeviceManagement } from '@/components/features/devices/DeviceManagement';
@@ -17,6 +18,19 @@ import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { usePermissionsQuery } from '@/hooks/usePermissions';
 
 type TabType = 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager' | 'reports';
+
+const TAB_TITLES: Record<TabType, string> = {
+  analytics: 'Analytics',
+  reports: 'Reports',
+  users: 'Users',
+  subscriptions: 'Subscriptions',
+  devices: 'Devices',
+  configuration: 'Configuration',
+  'security-groups': 'Security Groups',
+  'app-update': 'App Update',
+  'app-management': 'App Management',
+  'file-manager': 'File Manager',
+};
 
 interface LocationState {
   activeTab?: TabType;
@@ -115,9 +129,11 @@ export function DashboardPage() {
 
   return (
     <DashboardLayout
+      title={TAB_TITLES[activeTab]}
       sidebar={(mobileProps) => (
         <Sidebar activeTab={activeTab} onTabChange={handleTabChange} {...mobileProps} />
       )}
+      bottomNav={<BottomNav activeTab={activeTab} onTabChange={handleTabChange} />}
     >
       <div className={activeTab === 'devices' || activeTab === 'users' || activeTab === 'security-groups' || activeTab === 'app-management' || activeTab === 'file-manager' ? 'h-full p-4 sm:p-6 lg:p-8' : 'p-4 sm:p-6 lg:p-8 pb-10'}>
         {activeTab === 'analytics' && (

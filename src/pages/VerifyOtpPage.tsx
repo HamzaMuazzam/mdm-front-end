@@ -82,6 +82,9 @@ export function VerifyOtpPage() {
               <Input
                 id="otp"
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="one-time-code"
                 placeholder="6-digit code"
                 maxLength={6}
                 className="w-full"

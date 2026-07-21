@@ -741,23 +741,38 @@ export function DeviceMonitorDashboardPage() {
             ) : (
               <>
                 {/* Mobile card list */}
-                <div className="flex flex-col divide-y divide-border sm:hidden">
+                <div className="space-y-3 lg:hidden">
                   {appUsageRows.map((item) => (
-                    <div key={`${item.packageName}-${item.recordDate}`} className="px-4 py-3 space-y-1">
-                      <p className="font-medium text-sm text-foreground">{item.appName}</p>
-                      <p className="text-xs font-mono text-muted-foreground truncate">{item.packageName}</p>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                        <span><span className="font-medium text-foreground">Time:</span> {formatDuration(item.foregroundTimeMillis)}</span>
-                        <span><span className="font-medium text-foreground">Date:</span> {formatDateTime(item.recordDate)}</span>
+                    <div
+                      key={`${item.packageName}-${item.recordDate}`}
+                      className="rounded-xl border border-gray-200 bg-white p-4"
+                    >
+                      <p className="text-sm font-semibold text-gray-900">{item.appName}</p>
+                      <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
+                        <div className="col-span-2">
+                          <p className="text-xs text-gray-500">Package</p>
+                          <p className="break-all text-sm text-gray-900">{item.packageName}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Foreground Time</p>
+                          <p className="text-sm text-gray-900">{formatDuration(item.foregroundTimeMillis)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Record Date</p>
+                          <p className="text-sm text-gray-900">{formatDateTime(item.recordDate)}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <p className="text-xs text-gray-500">Window</p>
+                          <p className="text-sm text-gray-900">
+                            {formatDateTime(item.usageStart)} - {formatDateTime(item.usageEnd)}
+                          </p>
+                        </div>
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        <span className="font-medium text-foreground">Window:</span> {formatDateTime(item.usageStart)} – {formatDateTime(item.usageEnd)}
-                      </p>
                     </div>
                   ))}
                 </div>
                 {/* Desktop table */}
-                <div className="hidden sm:block overflow-x-auto">
+                <div className="hidden lg:block overflow-x-auto">
                   <table className="w-full min-w-[720px]">
                     <thead>
                       <tr className="border-b border-gray-200 bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ComponentType } from 'react';
+import { useEffect, useRef, useState, type ComponentType, type ReactNode } from 'react';
 import { ChevronDown, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -20,7 +20,17 @@ export interface BulkActionGroup {
  * toolbar button. Actions are grouped by category so the toolbar stays clean as more modules are
  * added. Empty groups (all items hidden by permission) are omitted automatically.
  */
-export function BulkActionsMenu({ groups }: { groups: BulkActionGroup[] }) {
+export function BulkActionsMenu({
+  groups,
+  variant = 'dropdown',
+  renderTrigger,
+}: {
+  groups: BulkActionGroup[];
+  /** `dropdown` (default, desktop toolbar) or `sheet` (mobile bottom sheet). */
+  variant?: 'dropdown' | 'sheet';
+  /** Custom trigger (mobile tile etc.). Receives the open callback. */
+  renderTrigger?: (open: () => void) => ReactNode;
+}) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -44,6 +54,71 @@ export function BulkActionsMenu({ groups }: { groups: BulkActionGroup[] }) {
     .filter((g) => g.items.length > 0);
 
   if (visibleGroups.length === 0) return null;
+
+  // ── Mobile: bottom sheet ──────────────────────────────────────────────
+  if (variant === 'sheet') {
+    return (
+      <div className="flex-1 min-w-0" ref={rootRef}>
+        {renderTrigger ? (
+          renderTrigger(() => setOpen(true))
+        ) : (
+          <Button variant="outline" onClick={() => setOpen(true)} className="w-full">
+            <Layers className="h-4 w-4 mr-2" />
+            Bulk
+          </Button>
+        )}
+        {open && (
+          <>
+            <div
+              className="fixed inset-0 z-40 bg-black/40 animate-overlay-in"
+              onClick={() => setOpen(false)}
+            />
+            <div className="no-press fixed bottom-0 inset-x-0 z-50 flex flex-col rounded-t-2xl bg-white shadow-2xl animate-sheet-up max-h-[80vh]">
+              <div className="flex justify-center pt-2.5 pb-1 shrink-0">
+                <div className="h-1 w-10 rounded-full bg-gray-300" />
+              </div>
+              <div className="px-5 py-2.5 border-b border-border shrink-0">
+                <p className="text-sm font-semibold text-foreground">Bulk Operations</p>
+                <p className="text-xs text-muted-foreground">Apply a change to multiple devices at once</p>
+              </div>
+              <div className="overflow-y-auto flex-1 pb-safe">
+                {visibleGroups.map((group) => (
+                  <div key={group.label}>
+                    <p className="px-5 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {group.label}
+                    </p>
+                    {group.items.map((item) => (
+                      <button
+                        key={item.label}
+                        type="button"
+                        onClick={() => {
+                          setOpen(false);
+                          item.onClick();
+                        }}
+                        className="flex w-full min-h-[48px] items-center gap-3 px-5 text-left text-sm font-medium text-foreground active:bg-muted transition-colors"
+                      >
+                        <item.icon className="h-4 w-4 text-blue-600 shrink-0" />
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                ))}
+              </div>
+              <div className="shrink-0 p-3 border-t border-border pb-safe">
+                <button
+                  type="button"
+                  className="w-full min-h-[48px] rounded-xl bg-gray-100 text-sm font-medium text-gray-700 active:bg-gray-200 transition-colors"
+                  onClick={() => setOpen(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex-1 sm:flex-none" ref={rootRef}>

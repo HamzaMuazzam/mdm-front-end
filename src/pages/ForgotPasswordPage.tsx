@@ -117,7 +117,7 @@ export function ForgotPasswordPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="otp">OTP</Label>
-                <Input id="otp" type="text" placeholder="6-digit code" maxLength={6} className="w-full" {...form2.register('otp')} />
+                <Input id="otp" type="text" inputMode="numeric" pattern="[0-9]*" autoComplete="one-time-code" placeholder="6-digit code" maxLength={6} className="w-full" {...form2.register('otp')} />
                 {form2.formState.errors.otp && (
                   <p className="text-sm text-destructive">{form2.formState.errors.otp.message}</p>
                 )}

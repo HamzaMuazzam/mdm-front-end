@@ -216,21 +216,25 @@ export function DeviceNotificationsPage() {
               <p className="py-6 text-center text-sm text-muted-foreground">No notifications found for the current filters.</p>
             ) : (
               <>
-                <div className="flex flex-col divide-y divide-border sm:hidden">
+                <div className="space-y-3 lg:hidden">
                   {notifications.map((item) => (
-                    <div key={item.id} className="px-4 py-3 space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <p className="font-medium text-sm text-foreground">{item.appName || item.packageName}</p>
-                        <span className="text-[11px] font-semibold uppercase text-muted-foreground">{item.priority}</span>
+                    <div key={item.id} className="min-h-[44px] rounded-xl border border-gray-200 bg-white p-4 active:bg-gray-50">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm font-semibold text-foreground">{item.title || item.appName || 'Unknown'}</p>
+                        <span className="inline-flex shrink-0 items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold uppercase text-gray-700">
+                          {item.priority}
+                        </span>
                       </div>
-                      <p className="text-xs font-mono text-muted-foreground truncate">{item.packageName}</p>
-                      {item.title && <p className="text-sm font-semibold text-foreground">{item.title}</p>}
-                      {item.message && <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">{item.message}</p>}
-                      <p className="text-xs text-muted-foreground">{formatDateTime(item.receivedAt)}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {item.appName || 'Unknown'}
+                        <span className="font-mono"> · {item.packageName}</span>
+                      </p>
+                      {item.message && <p className="mt-1.5 text-sm text-gray-600 line-clamp-3 break-words">{item.message}</p>}
+                      <p className="mt-1.5 text-xs text-muted-foreground">{formatDateTime(item.receivedAt)}</p>
                     </div>
                   ))}
                 </div>
-                <div className="hidden sm:block overflow-x-auto">
+                <div className="hidden lg:block overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-gray-50">
                       <tr>

@@ -210,3 +210,119 @@
     display: none;
   }
 }
+
+/* ================================================================
+   Mobile native-app feel — applies ONLY below the lg breakpoint.
+   Desktop (>= 1024px) rendering is intentionally untouched.
+   ================================================================ */
+
+/* Safe-area helpers (no visual effect on desktop; env() = 0 there) */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+.mb-safe {
+  margin-bottom: env(safe-area-inset-bottom);
+}
+
+/* Bottom-sheet / overlay micro-animations (used by mobile-only UI) */
+@keyframes sheet-slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes overlay-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.animate-sheet-up {
+  animation: sheet-slide-up 220ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.animate-overlay-in {
+  animation: overlay-fade-in 150ms ease-out;
+}
+
+@media (max-width: 1023.98px) {
+  html {
+    /* stop mobile browsers from auto-inflating text */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    /* remove the blue tap flash on touch */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    /* kills double-tap-to-zoom while keeping pan/pinch scroll gestures */
+    touch-action: manipulation;
+    /* no rubber-band overscroll of the whole page (native-app feel) */
+    overscroll-behavior-y: none;
+  }
+
+  /* iOS zooms into inputs whose font-size < 16px — prevent it */
+  input:not([type='checkbox']):not([type='radio']):not([type='range']),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  /* Comfortable 44px minimum touch targets for interactive controls */
+  button,
+  [role='button'],
+  select,
+  input:not([type='checkbox']):not([type='radio']):not([type='range']) {
+    min-height: 44px;
+  }
+
+  /* Opt-outs where 44px would break tight inline UI (map controls, etc.) */
+  .touch-compact,
+  .leaflet-container a,
+  .leaflet-container button {
+    min-height: 0 !important;
+  }
+
+  /* Native-style press feedback: quick scale-down on touch */
+  button,
+  [role='button'] {
+    transition-property: background-color, border-color, color, fill, stroke,
+      transform, box-shadow, opacity;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+  button:active,
+  [role='button']:active {
+    transform: scale(0.96);
+  }
+  /* Full-width bars/sheets shouldn't visually shrink when pressed */
+  .no-press:active,
+  .no-press *:active {
+    transform: none;
+  }
+
+  /* Momentum scrolling + hidden scrollbars inside scroll containers */
+  .overflow-x-auto,
+  .overflow-y-auto,
+  .overflow-auto {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .overflow-x-auto::-webkit-scrollbar,
+  .overflow-y-auto::-webkit-scrollbar,
+  .overflow-auto::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+
+  /* Generous spacing between stacked tappable list rows */
+  .mobile-touch-list > * + * {
+    margin-top: 0.5rem;
+  }
+}

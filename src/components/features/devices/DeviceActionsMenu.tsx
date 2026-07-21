@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ComponentType } from 'react';
-import { MoreVertical, ChevronDown, ChevronRight, ArrowLeft } from 'lucide-react';
+import { MoreVertical, ChevronDown, ChevronRight, ArrowLeft, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Device } from '@/types/device.types';
 
@@ -77,12 +77,15 @@ export function DeviceActionsMenu({
   categories,
   variant,
   onOpen,
+  fullWidthTrigger = false,
 }: {
   device: Device;
   categories: DeviceActionCategory[];
   variant: 'dropdown' | 'sheet';
   /** Fired once when the menu transitions to open (e.g. to lazily fetch alert status). */
   onOpen?: () => void;
+  /** Sheet variant only: render the trigger as a full-width "Actions" bar (mobile card footer). */
+  fullWidthTrigger?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [activeKey, setActiveKey] = useState<string | null>(null);
@@ -159,19 +162,30 @@ export function DeviceActionsMenu({
   // ── Mobile: bottom sheet with drill-in ───────────────────────────────────
   const active = activeKey ? groups.find((g) => g.key === activeKey) ?? null : null;
   return (
-    <div className="relative ml-auto">
-      <button
-        type="button"
-        onClick={openMenu}
-        className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
-      >
-        <MoreVertical className="h-4 w-4" />
-        <span className="text-[10px] font-medium">More</span>
-      </button>
+    <div className={fullWidthTrigger ? 'w-full' : 'relative ml-auto'}>
+      {fullWidthTrigger ? (
+        <button
+          type="button"
+          onClick={openMenu}
+          className="w-full min-h-[48px] flex items-center justify-center gap-2 text-sm font-semibold text-blue-600 active:bg-blue-50 transition-colors"
+        >
+          <SlidersHorizontal className="h-4 w-4" />
+          Actions
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={openMenu}
+          className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
+        >
+          <MoreVertical className="h-4 w-4" />
+          <span className="text-[10px] font-medium">More</span>
+        </button>
+      )}
       {open && (
         <>
-          <div className="fixed inset-0 z-40 bg-black/30" onClick={close} />
-          <div className="fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-lg border-t border-gray-200 bg-white shadow-lg max-h-[80vh]">
+          <div className="fixed inset-0 z-40 bg-black/40 animate-overlay-in" onClick={close} />
+          <div className="no-press fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl animate-sheet-up max-h-[80vh]">
             <div className="flex justify-center pt-3 pb-1 shrink-0">
               <div className="w-10 h-1 rounded-full bg-border" />
             </div>

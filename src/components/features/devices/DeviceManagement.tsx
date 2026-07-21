@@ -21,10 +21,10 @@ import { BulkHeartbeatModal } from './BulkHeartbeatModal';
 import { BulkResetOptionsLockModal } from './BulkResetOptionsLockModal';
 import { BulkAppBlockModal } from './BulkAppBlockModal';
 import { ScreenMirroringModal } from './ScreenMirroringModal';
-import { BulkActionsMenu } from './BulkActionsMenu';
+import { BulkActionsMenu, type BulkActionGroup } from './BulkActionsMenu';
 import { DeviceActionsMenu, type DeviceActionCategory, type ActionTone } from './DeviceActionsMenu';
 import { DeviceConfigPanel } from './DeviceConfigPanel';
-import { Settings, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, BarChart3, Power, RotateCcw, Siren, Mic, Database, Map, Plus, RefreshCw, Search, Clock, CheckSquare, Square, Users, ShieldAlert, ShieldOff, ArrowUpCircle, Globe, Wifi, MonitorPlay, Activity, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { Layers, Settings, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, BarChart3, Power, RotateCcw, Siren, Mic, Database, Map, Plus, RefreshCw, Search, Clock, CheckSquare, Square, Users, ShieldAlert, ShieldOff, ArrowUpCircle, Globe, Wifi, MonitorPlay, Activity, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { timeRangeService } from '@/api/services/timerange.service';
 import QRCode from 'qrcode';
 import type { CreateDeviceRequest, UpdateDeviceRequest, Device, UpdateDeviceConfigurationRequest } from '@/types/device.types';
@@ -703,10 +703,212 @@ export function DeviceManagement() {
     'bg-gray-200 text-gray-600',
   ];
 
+  /** Shared bulk-operations config — desktop dropdown + mobile sheet render the same groups. */
+  const bulkActionGroups: BulkActionGroup[] = [
+                {
+                  label: 'Security',
+                  items: [
+                    {
+                      label: 'Root / Compromise',
+                      icon: ShieldAlert,
+                      onClick: () => setIsBulkRootOpen(true),
+                      visible: hasPermission('configuration:update'),
+                    },
+                    {
+                      label: 'SSL Pinning',
+                      icon: Lock,
+                      onClick: () => setIsBulkSslOpen(true),
+                      visible: hasPermission('configuration:update'),
+                    },
+                    {
+                      label: 'Reset Options Lock',
+                      icon: ShieldOff,
+                      onClick: () => setIsBulkResetOptionsOpen(true),
+                      visible: hasPermission('configuration:update'),
+                    },
+                  ],
+                },
+                {
+                  label: 'Applications',
+                  items: [
+                    {
+                      label: 'App Block / Unblock',
+                      icon: AppWindow,
+                      onClick: () => setIsBulkAppBlockOpen(true),
+                      visible: hasPermission('devices:applications:read'),
+                    },
+                  ],
+                },
+                {
+                  label: 'Updates',
+                  items: [
+                    {
+                      label: 'OS Upgrade Policy',
+                      icon: ArrowUpCircle,
+                      onClick: () => setIsBulkOsOpen(true),
+                      visible: hasPermission('configuration:update'),
+                    },
+                  ],
+                },
+                {
+                  label: 'Network',
+                  items: [
+                    {
+                      label: 'VPN',
+                      icon: Globe,
+                      onClick: () => setIsBulkVpnOpen(true),
+                      visible: hasPermission('configuration:update'),
+                    },
+                  ],
+                },
+                {
+                  label: 'Configuration',
+                  items: [
+                    { label: 'Connectivity', icon: Wifi, onClick: () => setBulkConfigSection('connectivity'), visible: hasPermission('configuration:update') },
+                    { label: 'Display & Screen', icon: Monitor, onClick: () => setBulkConfigSection('display'), visible: hasPermission('configuration:update') },
+                    { label: 'Security & Controls', icon: Lock, onClick: () => setBulkConfigSection('security'), visible: hasPermission('configuration:update') },
+                    { label: 'Notifications & More', icon: Bell, onClick: () => setBulkConfigSection('notifications'), visible: hasPermission('configuration:update') },
+                  ],
+                },
+                {
+                  label: 'Tracking',
+                  items: [
+                    {
+                      label: 'Heartbeat Timer',
+                      icon: Activity,
+                      onClick: () => setIsBulkHeartbeatOpen(true),
+                      visible: hasPermission('tracking:live-tracking'),
+                    },
+                  ],
+                },
+                {
+                  label: 'Usage',
+                  items: [{ label: 'Time Range', icon: Clock, onClick: openBulkTimeRange }],
+                },
+              ];
+
+  // Fleet stats for the mobile toolbar (desktop header computes its own inline)
+  const mLiveCount = devices.filter((d) => deviceStatuses[d.deviceUuid] === 'online').length;
+  const mOfflineCount = devices.length - mLiveCount;
+  const mRootedCount = devices.filter((d) => d.integrityCompromised).length;
+  const mAtRiskCount = devices.filter((d) => !d.integrityCompromised && d.integrityStatus === 'SUSPICIOUS').length;
+  const mSimCount = devices.filter((d) => d.simAlert).length;
+  const mHasRelease = devices.some((d) => d.latestAppVersionCode != null);
+  const mUpdatedCount = devices.filter((d) => d.appUpToDate === true).length;
+  const mOutdatedCount = devices.filter((d) => d.appUpToDate === false).length;
+
   return (
     <div className="flex h-full flex-col">
+      {/* ── Mobile toolbar (< sm): stats strip + search + primary tools ── */}
+      <div className="sm:hidden mb-4 space-y-3">
+        {/* Fleet stats — swipeable strip */}
+        {devices.length > 0 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto whitespace-nowrap -mx-4 px-4">
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium bg-gray-100 text-gray-700">{devices.length} total</span>
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium border border-green-200 bg-green-50 text-green-700">
+              <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse shrink-0" />
+              {mLiveCount} live
+            </span>
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium bg-gray-100 text-gray-700">
+              <span className="h-1.5 w-1.5 rounded-full bg-gray-400 shrink-0" />
+              {mOfflineCount} offline
+            </span>
+            {mRootedCount > 0 && (
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium border border-red-200 bg-red-50 text-red-700">
+                <ShieldAlert className="h-3 w-3 shrink-0" /> {mRootedCount} rooted
+              </span>
+            )}
+            {mAtRiskCount > 0 && (
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium border border-orange-200 bg-orange-50 text-orange-700">
+                <ShieldAlert className="h-3 w-3 shrink-0" /> {mAtRiskCount} at risk
+              </span>
+            )}
+            {mSimCount > 0 && (
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium border border-amber-200 bg-amber-50 text-amber-700">
+                {mSimCount} SIM alert{mSimCount !== 1 ? 's' : ''}
+              </span>
+            )}
+            {mHasRelease && (
+              <>
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium border border-emerald-200 bg-emerald-50 text-emerald-700">
+                  {mUpdatedCount} updated
+                </span>
+                {mOutdatedCount > 0 && (
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium border border-amber-200 bg-amber-50 text-amber-700">
+                    {mOutdatedCount} outdated
+                  </span>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Search + refresh */}
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search devices…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-9 pr-9 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="touch-compact absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 rounded-full text-muted-foreground active:bg-gray-100"
+                aria-label="Clear search"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => refetchDevices()}
+            disabled={isFetching}
+            aria-label="Refresh devices"
+            className="h-11 w-11 shrink-0 rounded-xl border border-gray-200 bg-white shadow-sm flex items-center justify-center text-gray-600 active:bg-gray-50 disabled:opacity-50 transition-colors"
+          >
+            <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+
+        {/* Primary tools — QR / Track All / Bulk */}
+        <div className="flex gap-2">
+          <button type="button" onClick={() => setIsQrModalOpen(true)} className="flex-1 min-h-[56px] w-full rounded-xl border border-gray-200 bg-white shadow-sm flex flex-col items-center justify-center gap-1 text-[11px] font-medium text-gray-700 active:bg-gray-50 transition-colors">
+            <QrCode className="h-5 w-5 text-gray-600" />
+            QR View
+          </button>
+          {hasPermission('tracking:history') && devices.length > 0 && (
+            <button
+              type="button"
+              onClick={() => window.open('/devices/track-all', '_blank')}
+              className="flex-1 min-h-[56px] w-full rounded-xl border border-gray-200 bg-white shadow-sm flex flex-col items-center justify-center gap-1 text-[11px] font-medium text-gray-700 active:bg-gray-50 transition-colors"
+            >
+              <Map className="h-5 w-5 text-blue-600" />
+              Track All
+            </button>
+          )}
+          {devices.length > 0 && (
+            <BulkActionsMenu
+              variant="sheet"
+              groups={bulkActionGroups}
+              renderTrigger={(open) => (
+                <button type="button" onClick={open} className="flex-1 min-h-[56px] w-full rounded-xl border border-gray-200 bg-white shadow-sm flex flex-col items-center justify-center gap-1 text-[11px] font-medium text-gray-700 active:bg-gray-50 transition-colors">
+                  <Layers className="h-5 w-5 text-blue-600" />
+                  Bulk Ops
+                </button>
+              )}
+            />
+          )}
+        </div>
+      </div>
+
       {/* ── Page header ─────────────────────────────────────────── */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start mb-4 sm:mb-6">
+      <div className="hidden sm:flex gap-3 sm:flex-row sm:justify-between sm:items-start sm:mb-6">
         {/* Mobile: icon + title stacked */}
         <div className="flex items-center gap-3">
           <div className="p-2.5 bg-blue-50 rounded-md sm:hidden">
@@ -843,90 +1045,7 @@ export function DeviceManagement() {
             </Button>
           )}
           {devices.length > 0 && (
-            <BulkActionsMenu
-              groups={[
-                {
-                  label: 'Security',
-                  items: [
-                    {
-                      label: 'Root / Compromise',
-                      icon: ShieldAlert,
-                      onClick: () => setIsBulkRootOpen(true),
-                      visible: hasPermission('configuration:update'),
-                    },
-                    {
-                      label: 'SSL Pinning',
-                      icon: Lock,
-                      onClick: () => setIsBulkSslOpen(true),
-                      visible: hasPermission('configuration:update'),
-                    },
-                    {
-                      label: 'Reset Options Lock',
-                      icon: ShieldOff,
-                      onClick: () => setIsBulkResetOptionsOpen(true),
-                      visible: hasPermission('configuration:update'),
-                    },
-                  ],
-                },
-                {
-                  label: 'Applications',
-                  items: [
-                    {
-                      label: 'App Block / Unblock',
-                      icon: AppWindow,
-                      onClick: () => setIsBulkAppBlockOpen(true),
-                      visible: hasPermission('devices:applications:read'),
-                    },
-                  ],
-                },
-                {
-                  label: 'Updates',
-                  items: [
-                    {
-                      label: 'OS Upgrade Policy',
-                      icon: ArrowUpCircle,
-                      onClick: () => setIsBulkOsOpen(true),
-                      visible: hasPermission('configuration:update'),
-                    },
-                  ],
-                },
-                {
-                  label: 'Network',
-                  items: [
-                    {
-                      label: 'VPN',
-                      icon: Globe,
-                      onClick: () => setIsBulkVpnOpen(true),
-                      visible: hasPermission('configuration:update'),
-                    },
-                  ],
-                },
-                {
-                  label: 'Configuration',
-                  items: [
-                    { label: 'Connectivity', icon: Wifi, onClick: () => setBulkConfigSection('connectivity'), visible: hasPermission('configuration:update') },
-                    { label: 'Display & Screen', icon: Monitor, onClick: () => setBulkConfigSection('display'), visible: hasPermission('configuration:update') },
-                    { label: 'Security & Controls', icon: Lock, onClick: () => setBulkConfigSection('security'), visible: hasPermission('configuration:update') },
-                    { label: 'Notifications & More', icon: Bell, onClick: () => setBulkConfigSection('notifications'), visible: hasPermission('configuration:update') },
-                  ],
-                },
-                {
-                  label: 'Tracking',
-                  items: [
-                    {
-                      label: 'Heartbeat Timer',
-                      icon: Activity,
-                      onClick: () => setIsBulkHeartbeatOpen(true),
-                      visible: hasPermission('tracking:live-tracking'),
-                    },
-                  ],
-                },
-                {
-                  label: 'Usage',
-                  items: [{ label: 'Time Range', icon: Clock, onClick: openBulkTimeRange }],
-                },
-              ]}
-            />
+            <BulkActionsMenu groups={bulkActionGroups} />
           )}
           {hasPermission('devices:create') && (
             <Button onClick={() => setIsModalOpen(true)} className="flex-1 sm:flex-none shadow-sm">
@@ -1074,120 +1193,11 @@ export function DeviceManagement() {
                   </span>
                 ) : null}
               </div>
-
-              {/* ── Quick action buttons ── */}
-              <div className="border-t border-border/50 px-2 py-1.5 flex flex-wrap items-center gap-0.5">
-                {hasPermission('devices:monitoring') && (
-                  <button
-                    type="button"
-                    onClick={() => handleOpenMonitorDashboard(device)}
-                    className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
-                  >
-                    <BarChart3 className="h-4 w-4" />
-                    <span className="text-[10px] font-medium">Monitor</span>
-                  </button>
-                )}
-                {hasPermission('devices:applications:read') && (
-                  <button
-                    type="button"
-                    onClick={() => handleViewApps(device)}
-                    className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
-                  >
-                    <AppWindow className="h-4 w-4" />
-                    <span className="text-[10px] font-medium">Apps</span>
-                  </button>
-                )}
-                {hasPermission('devices:update') && (
-                  <button
-                    type="button"
-                    onClick={() => handleEdit(device)}
-                    className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
-                  >
-                    <Pencil className="h-4 w-4" />
-                    <span className="text-[10px] font-medium">Edit</span>
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => handleViewRequests(device)}
-                  className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
-                >
-                  <FileText className="h-4 w-4" />
-                  <span className="text-[10px] font-medium">Requests</span>
-                </button>
-                {hasPermission('notifications:view-history') && (
-                  <button
-                    type="button"
-                    onClick={() => handleViewNotifications(device)}
-                    className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
-                  >
-                    <Bell className="h-4 w-4" />
-                    <span className="text-[10px] font-medium">Notifications</span>
-                  </button>
-                )}
-                {hasPermission('notifications:manage-alerts') && (
-                  <button
-                    type="button"
-                    onClick={() => handleToggleAlerts(device)}
-                    className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
-                  >
-                    <Bell className="h-4 w-4" />
-                    <span className="text-[10px] font-medium">Alerts</span>
-                  </button>
-                )}
-                {hasPermission('device-alerts:send') && (
-                  <button
-                    type="button"
-                    onClick={() => handleSendAlert(device)}
-                    className="flex flex-col items-center gap-0.5 px-2.5 py-2 rounded-md bg-red-600 hover:bg-red-700 active:bg-red-800 transition-colors text-white"
-                  >
-                    <Siren className="h-4 w-4" />
-                    <span className="text-[10px] font-semibold">Send Alarm</span>
-                  </button>
-                )}
-
-                {(hasPermission('device-audio:listen') || hasPermission('audio-management:listen')) && (
-                  <button
-                    type="button"
-                    onClick={() => handleListenAudio(device)}
-                    className="flex flex-col items-center gap-0.5 px-2.5 py-2 rounded-md bg-green-600 hover:bg-green-700 active:bg-green-800 transition-colors text-white"
-                  >
-                    <Mic className="h-4 w-4" />
-                    <span className="text-[10px] font-semibold">Listen</span>
-                  </button>
-                )}
-                {(hasPermission('device-data:read') || hasPermission('contacts:read') || hasPermission('sms:read') || hasPermission('call-logs:read')) && (
-                  <button
-                    type="button"
-                    onClick={() => handleMonitorData(device)}
-                    className="flex flex-col items-center gap-0.5 px-2.5 py-2 rounded-md bg-blue-600 hover:bg-blue-700 active:bg-blue-800 transition-colors text-white"
-                  >
-                    <Database className="h-4 w-4" />
-                    <span className="text-[10px] font-semibold">Data</span>
-                  </button>
-                )}
-                {hasPermission('tracking:history') && (
-                  <button
-                    type="button"
-                    onClick={() => handleTracking(device)}
-                    className="flex flex-col items-center gap-0.5 px-2.5 py-2 rounded-md bg-blue-600 hover:bg-blue-700 active:bg-blue-800 transition-colors text-white"
-                  >
-                    <MapPin className="h-4 w-4" />
-                    <span className="text-[10px] font-semibold">Tracking</span>
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => handleTimeRange(device)}
-                  className="flex flex-col items-center gap-0.5 px-2.5 py-2 rounded-md bg-blue-600 hover:bg-blue-700 active:bg-blue-800 transition-colors text-white"
-                >
-                  <Clock className="h-4 w-4" />
-                  <span className="text-[10px] font-semibold">Time Range</span>
-                </button>
-
-                {/* Overflow menu */}
+              {/* ── Actions — everything lives in the bottom sheet ── */}
+              <div className="border-t border-border/50">
                 <DeviceActionsMenu
                   variant="sheet"
+                  fullWidthTrigger
                   device={device}
                   categories={buildDeviceActionCategories(device)}
                   onOpen={() => void fetchAlertStatus(device.id)}
@@ -1199,6 +1209,19 @@ export function DeviceManagement() {
       </div>
 
       {/* ── Desktop: full table (hidden below sm) ──────────────────────────── */}
+      {/* ── Mobile FAB: Add Device (thumb reach, above bottom nav) ── */}
+      {hasPermission('devices:create') && (
+        <button
+          type="button"
+          onClick={() => setIsModalOpen(true)}
+          aria-label="Add device"
+          className="sm:hidden fixed right-4 z-30 h-14 w-14 rounded-full bg-primary text-white shadow-lg shadow-blue-600/30 flex items-center justify-center active:scale-95 transition-transform"
+          style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom) + 0.75rem)' }}
+        >
+          <Plus className="h-6 w-6" />
+        </button>
+      )}
+
       <Card className="hidden sm:flex flex-col flex-1 min-h-0">
         <CardContent className="h-full p-0">
           <div className="h-full overflow-auto">
