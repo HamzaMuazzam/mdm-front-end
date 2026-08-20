@@ -1,4 +1,5 @@
 import { apiClient } from '../client';
+import type { BulkTarget } from '@/types/bulk.types';
 import type { ApiResponse } from '@/types/api.types';
 
 // ── History ───────────────────────────────────────────────────────────────────
@@ -140,7 +141,10 @@ export const HEARTBEAT_MAX_SECONDS = 86400;
 
 /** Omitted fields are left untouched on each target device. */
 export interface TrackingConfigBulkRequest {
-  deviceUuids: string[];
+  /** Legacy explicit list — prefer `target`. */
+  deviceUuids?: string[];
+  /** Groups and/or devices to apply the timers to. */
+  target?: BulkTarget;
   heartbeatTimer?: number;
   configurationTimer?: number;
   uploadTimer?: number;
@@ -241,23 +245,6 @@ export interface AnalyticsData {
   dailyDistance: DailyDistancePoint[];
   eventCounts: Record<string, number>;
   mostVisitedPlaces: VisitedPlace[];
-}
-
-// ── Device Groups (Module 5) ──────────────────────────────────────────────────
-
-export interface DeviceGroup {
-  id: number;
-  name: string;
-  description: string | null;
-  deviceUuids: string[];
-  deviceCount: number;
-  createdAt: string;
-}
-
-export interface DeviceGroupRequest {
-  name: string;
-  description?: string;
-  deviceUuids: string[];
 }
 
 // ── Service ───────────────────────────────────────────────────────────────────
@@ -400,24 +387,5 @@ export const trackingService = {
     return res.data;
   },
 
-  // ── Device Groups (Module 5) ───────────────────────────────────────────────
-  async getDeviceGroups(): Promise<ApiResponse<DeviceGroup[]>> {
-    const res = await apiClient.get<ApiResponse<DeviceGroup[]>>('/v1/device-groups');
-    return res.data;
-  },
-
-  async createDeviceGroup(req: DeviceGroupRequest): Promise<ApiResponse<DeviceGroup>> {
-    const res = await apiClient.post<ApiResponse<DeviceGroup>>('/v1/device-groups', req);
-    return res.data;
-  },
-
-  async updateDeviceGroup(id: number, req: DeviceGroupRequest): Promise<ApiResponse<DeviceGroup>> {
-    const res = await apiClient.put<ApiResponse<DeviceGroup>>(`/v1/device-groups/${id}`, req);
-    return res.data;
-  },
-
-  async deleteDeviceGroup(id: number): Promise<ApiResponse<void>> {
-    const res = await apiClient.delete<ApiResponse<void>>(`/v1/device-groups/${id}`);
-    return res.data;
-  },
+  // Device groups moved to api/services/deviceGroup.service.ts
 };

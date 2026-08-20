@@ -16,12 +16,13 @@ import {
   PackageSearch,
   HardDrive,
   FileBarChart,
+  Layers,
   X,
 } from 'lucide-react';
 
 interface SidebarProps {
-  activeTab: 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager' | 'reports';
-  onTabChange: (tab: 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager' | 'reports') => void;
+  activeTab: 'analytics' | 'users' | 'devices' | 'device-groups' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager' | 'reports';
+  onTabChange: (tab: 'analytics' | 'users' | 'devices' | 'device-groups' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager' | 'reports') => void;
   isMobileOpen?: boolean;
   onMobileClose?: () => void;
 }
@@ -107,6 +108,15 @@ export function Sidebar({ activeTab, onTabChange, isMobileOpen = false, onMobile
             isActive={activeTab === 'devices'}
             isCollapsed={collapsed}
             onClick={() => handleNavClick('devices')}
+          />
+        )}
+        {hasPermission('devices:read') && (
+          <NavButton
+            icon={<Layers className="h-4 w-4" />}
+            label="Device Groups"
+            isActive={activeTab === 'device-groups'}
+            isCollapsed={collapsed}
+            onClick={() => handleNavClick('device-groups')}
           />
         )}
         {hasPermission('configuration:read') && (

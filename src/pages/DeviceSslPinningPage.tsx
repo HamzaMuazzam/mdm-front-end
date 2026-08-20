@@ -9,6 +9,7 @@ import {
   Plus,
   Loader2,
   AlertTriangle,
+  Copy,
 } from 'lucide-react';
 import { useDevicesQuery } from '@/hooks/useDevices';
 import {
@@ -20,6 +21,7 @@ import {
 import type { SslPinningPolicy } from '@/api/services/sslPinning.service';
 import { ROUTES } from '@/utils/constants';
 import { usePermissionStore } from '@/store/permissionStore';
+import { BulkSslPinningModal } from '@/components/features/devices/BulkSslPinningModal';
 
 function maskPin(pin: string): string {
   if (pin.length <= 16) return pin;
@@ -41,6 +43,7 @@ export function DeviceSslPinningPage() {
   const saveMutation = useSaveSslPinningPolicy(deviceUuid);
   const toggleMutation = useToggleSslPinningPolicy(deviceUuid);
   const deleteMutation = useDeleteSslPinningPolicy(deviceUuid);
+  const [isApplyMoreOpen, setIsApplyMoreOpen] = useState(false);
 
   const [domain, setDomain] = useState('');
   const [pin, setPin] = useState('');
@@ -109,7 +112,20 @@ export function DeviceSslPinningPage() {
           <>
             {/* Add form */}
             <div className="rounded-lg border border-gray-200 bg-white p-4 mb-5">
-              <p className="text-xs font-semibold text-gray-500 mb-3">ADD PINNED CERTIFICATE</p>
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <p className="text-xs font-semibold text-gray-500">ADD PINNED CERTIFICATE</p>
+                {device && (
+                  <button
+                    type="button"
+                    onClick={() => setIsApplyMoreOpen(true)}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-blue-200 px-2.5 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-50"
+                    title="Assign this device's enabled pins to groups or other devices"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    Apply to more devices…
+                  </button>
+                )}
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-[1fr,1.5fr,auto] gap-3">
                 <input
                   type="text"
@@ -222,6 +238,16 @@ export function DeviceSslPinningPage() {
           </>
         )}
       </div>
+      {isApplyMoreOpen && device && (
+        <BulkSslPinningModal
+          devices={devices}
+          lockedDeviceUuids={[device.deviceUuid]}
+          initialEntries={policies
+            .filter((p) => p.isEnabled && p.scope === 'DEVICE')
+            .map((p) => ({ targetDomain: p.targetDomain, pinValue: p.pinValue, isEnabled: true }))}
+          onClose={() => setIsApplyMoreOpen(false)}
+        />
+      )}
     </div>
   );
 }

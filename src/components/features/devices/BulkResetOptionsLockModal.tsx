@@ -3,7 +3,7 @@ import { ShieldOff } from 'lucide-react';
 import type { Device } from '@/types/device.types';
 import { useApplyDevicePolicy } from '@/hooks/useDevices';
 import { toast } from '@/hooks/useToast';
-import { BulkPolicyScaffold } from './BulkPolicyScaffold';
+import { BulkPolicyScaffold, type BulkApplyContext } from './BulkPolicyScaffold';
 
 type LockChoice = 'nochange' | 'lock' | 'unlock';
 
@@ -61,11 +61,11 @@ export function BulkResetOptionsLockModal({ devices, onClose }: { devices: Devic
 
   const hasSelection = factoryReset !== 'nochange' || networkReset !== 'nochange';
 
-  const handleApply = async (deviceUuids: string[]) => {
+  const handleApply = async ({ target }: BulkApplyContext) => {
     if (!hasSelection) return;
     try {
       const results = await applyMutation.mutateAsync({
-        deviceUuids,
+        target,
         ...(toBool(factoryReset) !== undefined ? { factoryResetLock: toBool(factoryReset) } : {}),
         ...(toBool(networkReset) !== undefined ? { networkResetLock: toBool(networkReset) } : {}),
       });

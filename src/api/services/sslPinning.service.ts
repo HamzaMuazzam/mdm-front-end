@@ -1,4 +1,5 @@
 import { apiClient } from '../client';
+import type { BulkTarget } from '@/types/bulk.types';
 import type { ApiResponse } from '@/types/api.types';
 
 export interface SslPinningPolicy {
@@ -29,7 +30,10 @@ export interface SslPinEntryInput {
 }
 
 export interface SslPinningBulkRequest {
-  deviceUuids: string[];
+  /** Legacy explicit list — prefer `target`. */
+  deviceUuids?: string[];
+  /** Groups and/or devices to assign the pins to. */
+  target?: BulkTarget;
   pins: SslPinEntryInput[];
 }
 

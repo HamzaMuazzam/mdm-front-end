@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   Upload,
-  Bell,
   Download,
   RefreshCw,
   CheckCircle,
@@ -15,15 +14,19 @@ import {
   AlertTriangle,
   Zap,
   FileText,
-  Shield,
+  Rocket,
+  X,
+  Globe,
+  Layers,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { appUpdateService } from '@/api/services/app-update.service';
-import type { AppUpdate, UpdatePlatform, UpdateType } from '@/types/app-update.types';
+import type { AppUpdate, AppUpdateTarget, UpdatePlatform, UpdateType } from '@/types/app-update.types';
 import { usePermissionStore } from '@/store/permissionStore';
+import { ReleaseUpdateModal } from './ReleaseUpdateModal';
 
 const PLATFORMS: UpdatePlatform[] = ['ANDROID', 'IOS'];
 const UPDATE_TYPES: UpdateType[] = ['NORMAL', 'CRITICAL'];
@@ -81,9 +84,10 @@ export function AppUpdateManagement() {
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
-  // Notify
-  const [notifying, setNotifying] = useState(false);
+  // Release
+  const [releaseTarget, setReleaseTarget] = useState<AppUpdate | null>(null);
   const [notifyMsg, setNotifyMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [removingTargetId, setRemovingTargetId] = useState<number | null>(null);
 
   // Latest
   const [latest, setLatest] = useState<AppUpdate | null>(null);
@@ -107,7 +111,9 @@ export function AppUpdateManagement() {
   async function loadLatest() {
     setLatestLoading(true);
     try {
-      const res = await appUpdateService.getLatestUpdate(platform);
+      // Admin view: the active release regardless of who it is targeted at (the device-facing
+      // /latest is target-filtered and would hide a Pilot-only release from this card).
+      const res = await appUpdateService.getCurrentRelease(platform);
       setLatest(res.success ? res.data : null);
     } catch { setLatest(null); }
     finally { setLatestLoading(false); }
@@ -139,24 +145,29 @@ export function AppUpdateManagement() {
       formData.append('platform', platform);
       formData.append('releaseNotes', releaseNotes);
       formData.append('file', selectedFile);
-      await appUpdateService.uploadUpdate(formData);
-      setUploadMsg({ ok: true, text: 'Update uploaded successfully.' });
+      const uploaded = await appUpdateService.uploadUpdate(formData);
+      setUploadMsg({ ok: true, text: 'Uploaded. No device receives it until you release it — choose the groups or devices now.' });
       setVersionCode(''); setReleaseNotes(''); setSelectedFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
       loadLatest(); loadHistory(0); setPage(0);
+      if (uploaded?.data) setReleaseTarget(uploaded.data);
     } catch (err: any) {
       setUploadMsg({ ok: false, text: err?.response?.data?.message || 'Upload failed.' });
     } finally { setUploading(false); }
   }
 
-  async function handleNotify() {
-    setNotifying(true); setNotifyMsg(null);
+  async function handleRemoveTarget(target: AppUpdateTarget) {
+    if (!latest) return;
+    setRemovingTargetId(target.id);
+    setNotifyMsg(null);
     try {
-      await appUpdateService.notifyUsers(platform);
-      setNotifyMsg({ ok: true, text: `Notification sent to ${platform} users.` });
+      await appUpdateService.removeTarget(latest.id, target.id);
+      setNotifyMsg({ ok: true, text: `Withdrawn: ${target.label}. Devices it covered stop receiving v${latest.versionCode}.` });
+      loadLatest();
+      loadHistory(page);
     } catch (err: any) {
-      setNotifyMsg({ ok: false, text: err?.response?.data?.message || 'Notification failed.' });
-    } finally { setNotifying(false); }
+      setNotifyMsg({ ok: false, text: err?.response?.data?.message || 'Could not withdraw the release target.' });
+    } finally { setRemovingTargetId(null); }
   }
 
   async function handleDownload(item: AppUpdate) {
@@ -407,17 +418,54 @@ export function AppUpdateManagement() {
                   )}
                 </div>
 
+                {/* Release targets */}
+                <div className="rounded-md border border-gray-200 bg-gray-50 p-3">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Released to</p>
+                    {typeof latest.targetedDeviceCount === 'number' && (latest.targets?.length || 0) > 0 && (
+                      <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700">
+                        {latest.targetedDeviceCount} of your devices
+                      </span>
+                    )}
+                  </div>
+                  {!latest.targets || latest.targets.length === 0 ? (
+                    <p className="flex items-center gap-1.5 text-sm text-amber-700">
+                      <AlertTriangle className="h-4 w-4" /> Not released yet — no device will install this build until you release it.
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {latest.targets.map((t) => (
+                        <span
+                          key={t.id}
+                          className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium ${
+                            t.platformWide ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-blue-200 bg-white text-blue-700'
+                          }`}
+                          title={t.createdByEmail ? `Released by ${t.createdByEmail} · ${formatDateTime(t.createdAt)}` : formatDateTime(t.createdAt)}
+                        >
+                          {t.platformWide ? <Globe className="h-3 w-3" /> : <Layers className="h-3 w-3" />}
+                          {t.label}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveTarget(t)}
+                            disabled={removingTargetId === t.id}
+                            className="ml-0.5 rounded p-0.5 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                            title="Withdraw this target"
+                          >
+                            {removingTargetId === t.id ? <RefreshCw className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex flex-col gap-3">
                   <Button
-                    onClick={handleNotify}
-                    disabled={notifying}
+                    onClick={() => setReleaseTarget(latest)}
                     className="w-full bg-primary hover:bg-primary-hover text-white shadow-sm"
                   >
-                    {notifying ? (
-                      <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />Sending…</>
-                    ) : (
-                      <><Bell className="h-4 w-4 mr-2" />Notify {platform === 'ANDROID' ? 'Android' : 'iOS'} Users</>
-                    )}
+                    <Rocket className="h-4 w-4 mr-2" />
+                    {(latest.targets?.length || 0) > 0 ? 'Release to more groups / devices…' : 'Release to…'}
                   </Button>
 
                   {notifyMsg && (
@@ -515,6 +563,11 @@ export function AppUpdateManagement() {
                       </div>
 
                       {/* Release notes */}
+                      {item.targetSummary && (
+                        <p className="mb-2 flex items-center gap-1.5 text-xs text-blue-700">
+                          <Rocket className="h-3 w-3" /> {item.targetSummary}
+                        </p>
+                      )}
                       {item.releaseNotes && (
                         <div className="px-4 pb-3">
                           <p className="text-xs text-muted-foreground italic leading-relaxed">"{item.releaseNotes}"</p>
@@ -570,6 +623,7 @@ export function AppUpdateManagement() {
                       <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
                       <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">File Size</th>
                       <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Release Notes</th>
+                      <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Released To</th>
                       <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Created At</th>
                       <th className="text-center px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Download</th>
                     </tr>
@@ -597,6 +651,16 @@ export function AppUpdateManagement() {
                         <td className="px-5 py-3.5">
                           <span className="text-sm text-muted-foreground max-w-[200px] truncate block" title={item.releaseNotes || ''}>
                             {item.releaseNotes || '—'}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <span
+                            className={`block max-w-[220px] truncate text-xs ${
+                              !item.targets || item.targets.length === 0 ? 'text-amber-700' : item.platformWide ? 'text-amber-800' : 'text-blue-700'
+                            }`}
+                            title={item.targetSummary || ''}
+                          >
+                            {item.targetSummary || (item.isActive ? 'Not released yet' : '—')}
                           </span>
                         </td>
                         <td className="px-5 py-3.5 text-xs text-muted-foreground whitespace-nowrap">{formatDateTime(item.createdAt)}</td>
@@ -648,6 +712,18 @@ export function AppUpdateManagement() {
           )}
         </CardContent>
       </Card>
+
+      {releaseTarget && (
+        <ReleaseUpdateModal
+          update={releaseTarget}
+          onClose={() => setReleaseTarget(null)}
+          onReleased={() => {
+            setNotifyMsg(null);
+            loadLatest();
+            loadHistory(page);
+          }}
+        />
+      )}
     </div>
   );
 }

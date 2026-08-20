@@ -12,8 +12,10 @@ import {
   ShieldOff,
   AlertTriangle,
   Loader2,
+  Copy,
 } from 'lucide-react';
 import { useDevicesQuery } from '@/hooks/useDevices';
+import { BulkTimeRangeModal } from '@/components/features/devices/BulkTimeRangeModal';
 import {
   timeRangeService,
   type TimeRangeRecord,
@@ -49,9 +51,10 @@ const COMMON_TIMEZONES = [
 export function DeviceTimeRangePage() {
   const { deviceId } = useParams<{ deviceId: string }>();
   const navigate = useNavigate();
-  const { data: devicesPage } = useDevicesQuery();
+  const { data: devices = [] } = useDevicesQuery();
 
-  const device = devicesPage?.content?.find((d: { deviceUuid?: string }) => d.deviceUuid === deviceId);
+  const device = devices.find((d) => d.deviceUuid === deviceId);
+  const [isApplyMoreOpen, setIsApplyMoreOpen] = useState(false);
 
   const [record, setRecord] = useState<TimeRangeRecord | null>(null);
   const [loading, setLoading] = useState(true);
@@ -328,6 +331,18 @@ export function DeviceTimeRangePage() {
               </button>
             )}
           </div>
+
+          {device && (
+            <button
+              type="button"
+              onClick={() => setIsApplyMoreOpen(true)}
+              className="flex w-full items-center justify-center gap-2 rounded-md border border-blue-200 px-4 py-2 text-xs font-medium text-blue-700 hover:bg-blue-50"
+              title="Push this time range to groups or other devices"
+            >
+              <Copy className="h-3.5 w-3.5" />
+              Apply to more devices…
+            </button>
+          )}
         </div>
 
         {/* Audit info */}
@@ -358,6 +373,14 @@ export function DeviceTimeRangePage() {
         </div>
 
       </div>
+      {isApplyMoreOpen && device && (
+        <BulkTimeRangeModal
+          devices={devices}
+          lockedDeviceUuids={[device.deviceUuid]}
+          preset={{ startTime, endTime, timezone, enabled }}
+          onClose={() => setIsApplyMoreOpen(false)}
+        />
+      )}
     </div>
   );
 }

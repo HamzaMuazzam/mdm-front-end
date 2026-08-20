@@ -3,7 +3,7 @@ import { Globe } from 'lucide-react';
 import type { Device } from '@/types/device.types';
 import { useApplyDevicePolicy } from '@/hooks/useDevices';
 import { toast } from '@/hooks/useToast';
-import { BulkPolicyScaffold } from './BulkPolicyScaffold';
+import { BulkPolicyScaffold, type BulkApplyContext } from './BulkPolicyScaffold';
 import { VpnSection, defaultDevicePolicy, vpnToPayload, type DevicePolicyState } from './DevicePolicyForm';
 
 /** Bulk "VPN" — apply the same managed-VPN configuration to many devices. */
@@ -14,9 +14,9 @@ export function BulkVpnModal({ devices, onClose }: { devices: Device[]; onClose:
   // Guard: if VPN is being enabled, require a protocol + server address.
   const vpnValid = !policy.vpnEnabled || (policy.vpnProtocolTypeId !== '' && policy.vpnServerAddress.trim().length > 0);
 
-  const handleApply = async (deviceUuids: string[]) => {
+  const handleApply = async ({ target }: BulkApplyContext) => {
     try {
-      const results = await applyMutation.mutateAsync({ deviceUuids, ...vpnToPayload(policy) });
+      const results = await applyMutation.mutateAsync({ target, ...vpnToPayload(policy) });
       const ok = results.filter((r) => r.success).length;
       const failed = results.length - ok;
       toast({

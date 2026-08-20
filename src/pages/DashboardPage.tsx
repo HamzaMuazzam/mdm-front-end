@@ -6,6 +6,7 @@ import { BottomNav } from '@/components/layout/BottomNav';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { UserManagement } from '@/components/features/users/UserManagement';
 import { DeviceManagement } from '@/components/features/devices/DeviceManagement';
+import { DeviceGroupManagement } from '@/components/features/device-groups/DeviceGroupManagement';
 import { SubscriptionsManagement } from '@/components/features/subscriptions/SubscriptionsManagement';
 import { ConfigurationManagement } from '@/components/features/configuration/ConfigurationManagement';
 import { AnalyticsDashboard } from '@/components/features/dashboard/AnalyticsDashboard';
@@ -17,7 +18,7 @@ import { ReportsDashboard } from '@/components/features/reports/ReportsDashboard
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { usePermissionsQuery } from '@/hooks/usePermissions';
 
-type TabType = 'analytics' | 'users' | 'devices' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager' | 'reports';
+type TabType = 'analytics' | 'users' | 'devices' | 'device-groups' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager' | 'reports';
 
 const TAB_TITLES: Record<TabType, string> = {
   analytics: 'Analytics',
@@ -25,6 +26,7 @@ const TAB_TITLES: Record<TabType, string> = {
   users: 'Users',
   subscriptions: 'Subscriptions',
   devices: 'Devices',
+  'device-groups': 'Device Groups',
   configuration: 'Configuration',
   'security-groups': 'Security Groups',
   'app-update': 'App Update',
@@ -41,6 +43,7 @@ function isTabType(value: string | null): value is TabType {
     value === 'analytics' ||
     value === 'users' ||
     value === 'devices' ||
+    value === 'device-groups' ||
     value === 'subscriptions' ||
     value === 'configuration' ||
     value === 'security-groups' ||
@@ -111,6 +114,9 @@ export function DashboardPage() {
       queryClient.invalidateQueries({ queryKey: ['users'] });
     } else if (tab === 'devices') {
       queryClient.invalidateQueries({ queryKey: ['devices'] });
+    } else if (tab === 'device-groups') {
+      queryClient.invalidateQueries({ queryKey: ['deviceGroups'] });
+      queryClient.invalidateQueries({ queryKey: ['bulkOperations'] });
     } else if (tab === 'subscriptions') {
       queryClient.invalidateQueries({ queryKey: ['userPlans'] });
     } else if (tab === 'configuration') {
@@ -135,7 +141,7 @@ export function DashboardPage() {
       )}
       bottomNav={<BottomNav activeTab={activeTab} onTabChange={handleTabChange} />}
     >
-      <div className={activeTab === 'devices' || activeTab === 'users' || activeTab === 'security-groups' || activeTab === 'app-management' || activeTab === 'file-manager' ? 'h-full p-4 sm:p-6 lg:p-8' : 'p-4 sm:p-6 lg:p-8 pb-10'}>
+      <div className={activeTab === 'devices' || activeTab === 'device-groups' || activeTab === 'users' || activeTab === 'security-groups' || activeTab === 'app-management' || activeTab === 'file-manager' ? 'h-full p-4 sm:p-6 lg:p-8' : 'p-4 sm:p-6 lg:p-8 pb-10'}>
         {activeTab === 'analytics' && (
           <ErrorBoundary moduleName="Analytics">
             <AnalyticsDashboard />
@@ -154,6 +160,11 @@ export function DashboardPage() {
         {activeTab === 'devices' && (
           <ErrorBoundary moduleName="Device Management">
             <DeviceManagement />
+          </ErrorBoundary>
+        )}
+        {activeTab === 'device-groups' && (
+          <ErrorBoundary moduleName="Device Groups">
+            <DeviceGroupManagement />
           </ErrorBoundary>
         )}
         {activeTab === 'configuration' && (

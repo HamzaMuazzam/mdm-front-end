@@ -20,12 +20,15 @@ import { BulkConfigModal, type BulkConfigSection } from './BulkConfigModal';
 import { BulkHeartbeatModal } from './BulkHeartbeatModal';
 import { BulkResetOptionsLockModal } from './BulkResetOptionsLockModal';
 import { BulkAppBlockModal } from './BulkAppBlockModal';
+import { BulkTimeRangeModal } from './BulkTimeRangeModal';
+import { ManageDeviceGroupsModal } from './ManageDeviceGroupsModal';
+import { ApplyToMoreDevicesModal, configFormToPolicyPayload } from './ApplyToMoreDevicesModal';
+import { useDeviceGroupsQuery } from '@/hooks/useDeviceGroups';
 import { ScreenMirroringModal } from './ScreenMirroringModal';
 import { BulkActionsMenu, type BulkActionGroup } from './BulkActionsMenu';
 import { DeviceActionsMenu, type DeviceActionCategory, type ActionTone } from './DeviceActionsMenu';
 import { DeviceConfigPanel } from './DeviceConfigPanel';
-import { Layers, Settings, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, BarChart3, Power, RotateCcw, Siren, Mic, Database, Map, Plus, RefreshCw, Search, Clock, CheckSquare, Square, Users, ShieldAlert, ShieldOff, ArrowUpCircle, Globe, Wifi, MonitorPlay, Activity, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
-import { timeRangeService } from '@/api/services/timerange.service';
+import { Layers, Settings, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, BarChart3, Power, RotateCcw, Siren, Mic, Database, Map, Plus, RefreshCw, Search, Clock, ShieldAlert, ShieldOff, ArrowUpCircle, Globe, Wifi, MonitorPlay, Activity, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import QRCode from 'qrcode';
 import type { CreateDeviceRequest, UpdateDeviceRequest, Device, UpdateDeviceConfigurationRequest } from '@/types/device.types';
 import { ROUTES } from '@/utils/constants';
@@ -73,30 +76,41 @@ export function DeviceManagement() {
   const [isBulkAppBlockOpen, setIsBulkAppBlockOpen] = useState(false);
   const [bulkConfigSection, setBulkConfigSection] = useState<BulkConfigSection | null>(null);
   const [screenMirrorDevice, setScreenMirrorDevice] = useState<Device | null>(null);
-  const [bulkSelectedUuids, setBulkSelectedUuids] = useState<Set<string>>(new Set());
-  const [bulkSearchQuery, setBulkSearchQuery] = useState('');
-  const [bulkStartTime, setBulkStartTime] = useState('09:00');
-  const [bulkEndTime, setBulkEndTime] = useState('17:00');
-  const [bulkTimezone, setBulkTimezone] = useState('device');
-  const [bulkEnabled, setBulkEnabled] = useState(true);
-  const [bulkSaving, setBulkSaving] = useState(false);
-  const [bulkResult, setBulkResult] = useState<{ success: number; failed: number } | null>(null);
+  const [groupsModalDevice, setGroupsModalDevice] = useState<Device | null>(null);
+  const [isConfigApplyMoreOpen, setIsConfigApplyMoreOpen] = useState(false);
 
   const hasPermission = usePermissionStore((state) => state.hasPermission);
   const { data: devices = [], isLoading, refetch: refetchDevices, isFetching } = useDevicesQuery();
+  const { data: deviceGroups = [] } = useDeviceGroupsQuery();
+  const customGroups = useMemo(() => deviceGroups.filter((g) => !g.system), [deviceGroups]);
+  // (plain object — `Map` is shadowed by the lucide icon import in this file)
+  const groupNameById = useMemo(() => {
+    const out: Record<number, string> = {};
+    customGroups.forEach((g) => {
+      out[g.id] = g.name;
+    });
+    return out;
+  }, [customGroups]);
   const [searchQuery, setSearchQuery] = useState('');
-  const filteredDevices = searchQuery.trim()
-    ? devices.filter((d) => {
-        const q = searchQuery.toLowerCase();
-        return (
-          d.deviceName?.toLowerCase().includes(q) ||
-          d.deviceUuid?.toLowerCase().includes(q) ||
-          d.userEmail?.toLowerCase().includes(q) ||
-          d.model?.toLowerCase().includes(q) ||
-          d.description?.toLowerCase().includes(q)
-        );
-      })
-    : devices;
+  /** 'all' | 'ungrouped' | custom group id */
+  const [groupFilter, setGroupFilter] = useState<'all' | 'ungrouped' | number>('all');
+  const filteredDevices = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return devices.filter((d) => {
+      const ids = d.groupIds || [];
+      if (groupFilter === 'ungrouped' && ids.length > 0) return false;
+      if (typeof groupFilter === 'number' && !ids.includes(groupFilter)) return false;
+      if (!q) return true;
+      return (
+        d.deviceName?.toLowerCase().includes(q) ||
+        d.deviceUuid?.toLowerCase().includes(q) ||
+        d.userEmail?.toLowerCase().includes(q) ||
+        d.model?.toLowerCase().includes(q) ||
+        d.description?.toLowerCase().includes(q) ||
+        ids.some((id) => (groupNameById[id] || '').toLowerCase().includes(q))
+      );
+    });
+  }, [devices, searchQuery, groupFilter, groupNameById]);
 
   // ── Column sorting ─────────────────────────────────────────────────────────
   type SortKey = 'live' | 'device' | 'user' | 'model' | 'description';
@@ -450,66 +464,8 @@ export function DeviceManagement() {
     navigate(`/device/${device.deviceUuid}/time-range`);
   };
 
-  // ── Bulk Time Range handlers ─────────────────────────────────────────────
-
-  const openBulkTimeRange = () => {
-    setBulkSelectedUuids(new Set());
-    setBulkSearchQuery('');
-    setBulkStartTime('09:00');
-    setBulkEndTime('17:00');
-    setBulkTimezone('device');
-    setBulkEnabled(true);
-    setBulkResult(null);
-    setIsBulkTimeRangeOpen(true);
-  };
-
-  const bulkFilteredDevices = bulkSearchQuery.trim()
-    ? devices.filter((d: Device) => {
-        const q = bulkSearchQuery.toLowerCase();
-        return (
-          d.deviceName?.toLowerCase().includes(q) ||
-          d.deviceUuid?.toLowerCase().includes(q) ||
-          d.userEmail?.toLowerCase().includes(q) ||
-          d.model?.toLowerCase().includes(q)
-        );
-      })
-    : devices;
-
-  const toggleBulkDevice = (uuid: string) => {
-    setBulkSelectedUuids((prev) => {
-      const next = new Set(prev);
-      next.has(uuid) ? next.delete(uuid) : next.add(uuid);
-      return next;
-    });
-  };
-
-  const toggleBulkSelectAll = () => {
-    if (bulkSelectedUuids.size === bulkFilteredDevices.length) {
-      setBulkSelectedUuids(new Set());
-    } else {
-      setBulkSelectedUuids(new Set(bulkFilteredDevices.map((d: Device) => d.deviceUuid)));
-    }
-  };
-
-  const handleBulkApply = async () => {
-    if (bulkSelectedUuids.size === 0) return;
-    setBulkSaving(true);
-    setBulkResult(null);
-    try {
-      const results = await timeRangeService.bulkAssign({
-        deviceUuids: Array.from(bulkSelectedUuids),
-        startTime: bulkStartTime,
-        endTime: bulkEndTime,
-        timezone: bulkTimezone,
-        enabled: bulkEnabled,
-      });
-      setBulkResult({ success: results.length, failed: bulkSelectedUuids.size - results.length });
-    } catch {
-      setBulkResult({ success: 0, failed: bulkSelectedUuids.size });
-    } finally {
-      setBulkSaving(false);
-    }
-  };
+  // ── Bulk Time Range ───────────────────────────────────────────────────────
+  const openBulkTimeRange = () => setIsBulkTimeRangeOpen(true);
 
   const fetchAlertStatus = useCallback(async (deviceId: number) => {
     if (alertStatusByDevice[deviceId] !== undefined || alertStatusLoading[deviceId]) return;
@@ -673,6 +629,7 @@ export function DeviceManagement() {
           { key: 'code', label: 'Verification Code', icon: Key, onSelect: () => handleShowCode(device.deviceVerificationCode) },
           { key: 'alerts', label: alertsLabel, icon: Bell, tone: alertsTone, disabled: alertsLoading || updateNotificationSettingsMutation.isPending, onSelect: () => handleToggleAlerts(device), visible: hasPermission('notifications:manage-alerts') },
           { key: 'timerange', label: 'Usage Time Range', icon: Clock, tone: 'blue', onSelect: () => handleTimeRange(device) },
+          { key: 'groups', label: 'Manage Groups', icon: Layers, tone: 'blue', onSelect: () => setGroupsModalDevice(device), visible: hasPermission('devices:update') },
           { key: 'edit', label: 'Edit Device', icon: Pencil, onSelect: () => handleEdit(device), visible: hasPermission('devices:update') },
         ],
       },
@@ -1007,8 +964,9 @@ export function DeviceManagement() {
               </button>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5 sm:hidden">{devices.length} device{devices.length !== 1 ? 's' : ''} registered</p>
-            {/* Search — full width on mobile, constrained on desktop */}
-            <div className="relative mt-2 w-full sm:w-56 lg:w-72">
+            {/* Search + group filter — full width on mobile, constrained on desktop */}
+            <div className="mt-2 flex w-full flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="relative w-full sm:w-56 lg:w-72">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
               <input
                 type="text"
@@ -1026,6 +984,26 @@ export function DeviceManagement() {
                   <X className="h-3.5 w-3.5" />
                 </button>
               )}
+            </div>
+            <select
+              value={typeof groupFilter === 'number' ? String(groupFilter) : groupFilter}
+              onChange={(e) => {
+                const v = e.target.value;
+                setGroupFilter(v === 'all' || v === 'ungrouped' ? v : Number(v));
+              }}
+              title="Filter by device group"
+              className={`h-[34px] w-full rounded-md border bg-white px-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary sm:w-44 ${
+                groupFilter === 'all' ? 'border-gray-300 text-gray-700' : 'border-blue-300 text-blue-700'
+              }`}
+            >
+              <option value="all">All groups</option>
+              <option value="ungrouped">Ungrouped</option>
+              {customGroups.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.name} ({g.deviceCount})
+                </option>
+              ))}
+            </select>
             </div>
           </div>
         </div>
@@ -1233,6 +1211,7 @@ export function DeviceManagement() {
                   <SortableTh label="User" sortKey="user" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
                   <SortableTh label="Model / OS" sortKey="model" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
                   <SortableTh label="Description" sortKey="description" activeKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                  <th>Groups</th>
                   <th className="w-16 text-right">Actions</th>
                 </tr>
               </thead>
@@ -1335,6 +1314,28 @@ export function DeviceManagement() {
                           {device.description || '—'}
                         </span>
                       </td>
+                      <td>
+                        {(() => {
+                          const names = (device.groupIds || []).map((id) => groupNameById[id]).filter((n): n is string => !!n);
+                          if (names.length === 0) return <span className="text-[11px] text-gray-300">—</span>;
+                          return (
+                            <div className="flex max-w-[200px] flex-wrap gap-1" title={names.join(', ')}>
+                              {names.slice(0, 2).map((n) => (
+                                <button
+                                  key={n}
+                                  type="button"
+                                  onClick={() => setGroupFilter(customGroups.find((g) => g.name === n)?.id ?? 'all')}
+                                  className="max-w-[110px] truncate rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 hover:bg-blue-100"
+                                  title={`Filter by ${n}`}
+                                >
+                                  {n}
+                                </button>
+                              ))}
+                              {names.length > 2 && <span className="text-[10px] text-gray-400">+{names.length - 2}</span>}
+                            </div>
+                          );
+                        })()}
+                      </td>
                       <td className="w-16 text-right">
                         <DeviceActionsMenu
                           variant="dropdown"
@@ -1356,6 +1357,23 @@ export function DeviceManagement() {
       {policyModalDevice && (
         <DevicePolicyModal device={policyModalDevice} onClose={() => setPolicyModalDevice(null)} />
       )}
+      {groupsModalDevice && (
+        <ManageDeviceGroupsModal device={groupsModalDevice} onClose={() => setGroupsModalDevice(null)} />
+      )}
+      {isConfigApplyMoreOpen && deviceConfig && (() => {
+        const source = devices.find((d) => d.id === configDeviceId);
+        return source ? (
+          <ApplyToMoreDevicesModal
+            title="Apply configuration to more devices"
+            subtitle="Push the configuration values on screen to groups or other devices"
+            icon={Settings}
+            devices={devices}
+            sourceDevice={source}
+            payload={configFormToPolicyPayload(configFormData)}
+            onClose={() => setIsConfigApplyMoreOpen(false)}
+          />
+        ) : null;
+      })()}
       {isBulkRootOpen && (
         <BulkRootPolicyModal devices={devices} onClose={() => setIsBulkRootOpen(false)} />
       )}
@@ -1384,243 +1402,8 @@ export function DeviceManagement() {
         <ScreenMirroringModal device={screenMirrorDevice} onClose={() => setScreenMirrorDevice(null)} />
       )}
 
-      {/* ── Bulk Time Range Modal ────────────────────────────────────────────── */}
       {isBulkTimeRangeOpen && (
-        <div
-          className="fixed inset-0 bg-black/30 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
-          onClick={() => setIsBulkTimeRangeOpen(false)}
-        >
-          <div
-            className="w-full sm:max-w-2xl rounded-t-lg sm:rounded-lg bg-white border border-gray-200 shadow-lg flex flex-col max-h-[92dvh]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-border shrink-0">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-md bg-blue-50">
-                  <Clock className="h-4 w-4 text-blue-600" />
-                </div>
-                <div>
-                  <h2 className="text-base font-semibold text-gray-900">Bulk Time Range</h2>
-                  <p className="text-xs text-muted-foreground">Apply the same time range to multiple devices at once</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsBulkTimeRangeOpen(false)}
-                className="p-1.5 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="flex flex-col sm:flex-row flex-1 min-h-0 overflow-hidden">
-
-              {/* Left panel: device selection */}
-              <div className="flex flex-col sm:w-80 border-b sm:border-b-0 sm:border-r border-border max-h-64 sm:max-h-none">
-                {/* Device search + select all */}
-                <div className="px-4 py-3 border-b border-border shrink-0 space-y-2">
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-                    <input
-                      type="text"
-                      placeholder="Search devices…"
-                      value={bulkSearchQuery}
-                      onChange={(e) => setBulkSearchQuery(e.target.value)}
-                      className="w-full rounded-md border border-gray-300 bg-white py-1.5 pl-8 pr-3 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={toggleBulkSelectAll}
-                    className="flex items-center gap-2 text-xs text-blue-600 hover:text-blue-700 font-medium"
-                  >
-                    {bulkSelectedUuids.size === bulkFilteredDevices.length && bulkFilteredDevices.length > 0
-                      ? <CheckSquare className="h-3.5 w-3.5" />
-                      : <Square className="h-3.5 w-3.5" />}
-                    {bulkSelectedUuids.size === bulkFilteredDevices.length && bulkFilteredDevices.length > 0
-                      ? 'Deselect all'
-                      : `Select all (${bulkFilteredDevices.length})`}
-                  </button>
-                </div>
-
-                {/* Device list */}
-                <div className="flex-1 overflow-y-auto divide-y divide-border">
-                  {bulkFilteredDevices.length === 0 ? (
-                    <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
-                      No devices found
-                    </div>
-                  ) : (
-                    bulkFilteredDevices.map((device: Device) => {
-                      const selected = bulkSelectedUuids.has(device.deviceUuid);
-                      const online   = deviceStatuses[device.deviceUuid] === 'online';
-                      return (
-                        <button
-                          key={device.deviceUuid}
-                          type="button"
-                          onClick={() => toggleBulkDevice(device.deviceUuid)}
-                          className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
-                            selected ? 'bg-blue-50' : 'hover:bg-gray-50'
-                          }`}
-                        >
-                          <div className={`shrink-0 h-4 w-4 rounded border-2 flex items-center justify-center transition-colors ${
-                            selected
-                              ? 'bg-blue-600 border-blue-600'
-                              : 'border-gray-300 bg-white'
-                          }`}>
-                            {selected && <Check className="h-2.5 w-2.5 text-white" />}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">
-                              {device.deviceName || 'Unnamed Device'}
-                            </p>
-                            <p className="text-xs text-muted-foreground truncate">
-                              {device.userEmail || device.deviceUuid}
-                            </p>
-                          </div>
-                          <span className={`shrink-0 h-2 w-2 rounded-full ${online ? 'bg-green-500' : 'bg-gray-400'}`} />
-                        </button>
-                      );
-                    })
-                  )}
-                </div>
-
-                {/* Selection count */}
-                <div className="px-4 py-2.5 border-t border-border bg-muted/30 shrink-0">
-                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <Users className="h-3.5 w-3.5" />
-                    <span>
-                      <span className="font-semibold text-foreground">{bulkSelectedUuids.size}</span> device{bulkSelectedUuids.size !== 1 ? 's' : ''} selected
-                    </span>
-                  </p>
-                </div>
-              </div>
-
-              {/* Right panel: time range config */}
-              <div className="flex flex-col flex-1 min-h-0">
-                <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
-
-                  {/* Time pickers */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-medium text-muted-foreground mb-1">
-                        Start Time (allowed from)
-                      </label>
-                      <input
-                        type="time"
-                        value={bulkStartTime}
-                        onChange={(e) => setBulkStartTime(e.target.value)}
-                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-muted-foreground mb-1">
-                        End Time (lock after)
-                      </label>
-                      <input
-                        type="time"
-                        value={bulkEndTime}
-                        onChange={(e) => setBulkEndTime(e.target.value)}
-                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Midnight-crossing hint */}
-                  {bulkStartTime > bulkEndTime && (
-                    <p className="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-md px-3 py-2">
-                      Midnight-crossing range: unlocks at {bulkStartTime}, locks at {bulkEndTime} next day.
-                    </p>
-                  )}
-
-                  {/* Timezone */}
-                  <div>
-                    <label className="block text-xs font-medium text-muted-foreground mb-1">Timezone</label>
-                    <select
-                      value={bulkTimezone}
-                      onChange={(e) => setBulkTimezone(e.target.value)}
-                      className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                    >
-                      {['device','UTC','Asia/Karachi','Asia/Kolkata','Asia/Dubai','America/New_York','America/Los_Angeles','Europe/London','Europe/Berlin','Australia/Sydney'].map((tz) => (
-                        <option key={tz} value={tz}>{tz === 'device' ? 'Device local timezone' : tz}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Enable toggle */}
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setBulkEnabled((v) => !v)}
-                      className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
-                        bulkEnabled
-                          ? 'border-green-200 bg-green-50 text-green-700 hover:bg-green-100'
-                          : 'border-gray-200 bg-gray-100 text-gray-500 hover:bg-gray-200'
-                      }`}
-                    >
-                      {bulkEnabled ? <CheckSquare className="h-4 w-4" /> : <Square className="h-4 w-4" />}
-                      {bulkEnabled ? 'Enabled' : 'Disabled'}
-                    </button>
-                    <span className="text-xs text-muted-foreground">
-                      {bulkEnabled ? 'Policy will be enforced immediately on all selected devices.' : 'Config saved but not enforced.'}
-                    </span>
-                  </div>
-
-                  {/* Result banner */}
-                  {bulkResult && (
-                    <div className={`rounded-md border px-4 py-3 text-sm flex items-start gap-2 ${
-                      bulkResult.failed === 0
-                        ? 'bg-green-50 border-green-200 text-green-700'
-                        : bulkResult.success === 0
-                        ? 'bg-red-50 border-red-200 text-red-700'
-                        : 'bg-amber-50 border-amber-200 text-amber-700'
-                    }`}>
-                      <Check className="h-4 w-4 shrink-0 mt-0.5" />
-                      <div>
-                        <p className="font-medium">
-                          {bulkResult.failed === 0
-                            ? `Time range applied to all ${bulkResult.success} device${bulkResult.success !== 1 ? 's' : ''}.`
-                            : `Applied to ${bulkResult.success} device${bulkResult.success !== 1 ? 's' : ''}. ${bulkResult.failed} failed.`}
-                        </p>
-                        <p className="text-xs opacity-80 mt-0.5">Each device will enforce the policy at the next scheduled transition.</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Footer */}
-                <div className="shrink-0 px-5 py-4 border-t border-border flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsBulkTimeRangeOpen(false)}
-                    className="flex-1 sm:flex-none py-2.5 px-4 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    Close
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleBulkApply}
-                    disabled={bulkSelectedUuids.size === 0 || bulkSaving}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-md bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium transition-colors shadow-sm"
-                  >
-                    {bulkSaving ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 animate-spin" />
-                        Applying…
-                      </>
-                    ) : (
-                      <>
-                        <Clock className="h-4 w-4" />
-                        Apply to {bulkSelectedUuids.size} device{bulkSelectedUuids.size !== 1 ? 's' : ''}
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </div>
+        <BulkTimeRangeModal devices={devices} onClose={() => setIsBulkTimeRangeOpen(false)} />
       )}
 
       {/* Verification Code Modal */}
@@ -1947,6 +1730,18 @@ export function DeviceManagement() {
                 )}
               </div>
               <div className="flex flex-wrap gap-2">
+                {deviceConfig && hasPermission('devices:configurations:update') && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsConfigApplyMoreOpen(true)}
+                    className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                    title="Push the values on this screen to groups or other devices"
+                  >
+                    <Layers className="h-4 w-4 mr-1" />
+                    Apply to more devices…
+                  </Button>
+                )}
                 {deviceConfig && !isConfigEditMode && hasPermission('devices:configurations:update') && (
                   <Button
                     variant="outline"

@@ -7,7 +7,7 @@ import {
   HEARTBEAT_MAX_SECONDS,
 } from '@/api/services/tracking.service';
 import { toast } from '@/hooks/useToast';
-import { BulkPolicyScaffold } from './BulkPolicyScaffold';
+import { BulkPolicyScaffold, type BulkApplyContext } from './BulkPolicyScaffold';
 
 /** Quick presets for the most common heartbeat cadences. */
 const PRESETS = [
@@ -32,18 +32,32 @@ function describe(seconds: number): string {
  * The backend persists per device and pushes the new value on the device's
  * `trackingConfigUpdate` topic, so live devices pick it up without waiting for a config poll.
  */
-export function BulkHeartbeatModal({ devices, onClose }: { devices: Device[]; onClose: () => void }) {
-  const [seconds, setSeconds] = useState<number>(300);
+export function BulkHeartbeatModal({
+  devices,
+  onClose,
+  lockedDeviceUuids,
+  initialSeconds,
+}: {
+  devices: Device[];
+  onClose: () => void;
+  /** "Apply to more devices…" from a device page: that device is pre-selected and locked. */
+  lockedDeviceUuids?: string[];
+  /** Heartbeat pre-filled from the current device. */
+  initialSeconds?: number;
+}) {
+  const [seconds, setSeconds] = useState<number>(
+    initialSeconds && Number.isFinite(initialSeconds) ? Math.round(initialSeconds) : 300
+  );
   const [isPending, setIsPending] = useState(false);
 
   const outOfRange = seconds < HEARTBEAT_MIN_SECONDS || seconds > HEARTBEAT_MAX_SECONDS;
   const isValid = Number.isFinite(seconds) && !outOfRange;
 
-  const handleApply = async (deviceUuids: string[]) => {
+  const handleApply = async ({ target }: BulkApplyContext) => {
     if (!isValid) return;
     setIsPending(true);
     try {
-      const results = await trackingService.bulkUpdateConfig({ deviceUuids, heartbeatTimer: seconds });
+      const results = await trackingService.bulkUpdateConfig({ target, heartbeatTimer: seconds });
       const ok = results.filter((r) => r.success).length;
       const failed = results.length - ok;
       toast({
@@ -73,6 +87,7 @@ export function BulkHeartbeatModal({ devices, onClose }: { devices: Device[]; on
       canApply={isValid}
       onApply={handleApply}
       onClose={onClose}
+      lockedDeviceUuids={lockedDeviceUuids}
     >
       <div className="space-y-4">
         <div>

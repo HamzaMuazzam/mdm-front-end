@@ -3,7 +3,7 @@ import { ShieldAlert } from 'lucide-react';
 import type { Device } from '@/types/device.types';
 import { useApplyDevicePolicy } from '@/hooks/useDevices';
 import { toast } from '@/hooks/useToast';
-import { BulkPolicyScaffold } from './BulkPolicyScaffold';
+import { BulkPolicyScaffold, type BulkApplyContext } from './BulkPolicyScaffold';
 import { RootPolicySection, defaultDevicePolicy, rootPolicyToPayload, type DevicePolicyState } from './DevicePolicyForm';
 
 /** Bulk "Root / Compromise Detection" — apply the same detection policy to many devices. */
@@ -11,9 +11,9 @@ export function BulkRootPolicyModal({ devices, onClose }: { devices: Device[]; o
   const applyMutation = useApplyDevicePolicy();
   const [policy, setPolicy] = useState<DevicePolicyState>(defaultDevicePolicy);
 
-  const handleApply = async (deviceUuids: string[]) => {
+  const handleApply = async ({ target }: BulkApplyContext) => {
     try {
-      const results = await applyMutation.mutateAsync({ deviceUuids, ...rootPolicyToPayload(policy) });
+      const results = await applyMutation.mutateAsync({ target, ...rootPolicyToPayload(policy) });
       const ok = results.filter((r) => r.success).length;
       const failed = results.length - ok;
       toast({

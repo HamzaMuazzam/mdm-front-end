@@ -9,7 +9,7 @@ import {
   useApplicationPermissionGranters,
 } from '@/hooks/useDevices';
 import { toast } from '@/hooks/useToast';
-import { BulkPolicyScaffold } from './BulkPolicyScaffold';
+import { BulkPolicyScaffold, type BulkApplyContext } from './BulkPolicyScaffold';
 
 export type BulkConfigSection = 'connectivity' | 'display' | 'security' | 'notifications';
 
@@ -140,9 +140,9 @@ export function BulkConfigModal({ section, devices, onClose }: { section: BulkCo
     return v !== undefined && v !== '';
   }).length;
 
-  const handleApply = async (deviceUuids: string[]) => {
+  const handleApply = async ({ target }: BulkApplyContext) => {
     try {
-      const results = await applyMutation.mutateAsync({ deviceUuids, ...buildPayload() });
+      const results = await applyMutation.mutateAsync({ target, ...buildPayload() });
       const ok = results.filter((r) => r.success).length;
       const failed = results.length - ok;
       toast({

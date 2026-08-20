@@ -21,6 +21,9 @@ import { appManagementService } from '@/api/services/app-management.service';
 import { deviceService } from '@/api/services/device.service';
 import type { ManagedApp, AppCommand, CommandStatus, CommandType } from '@/types/app-management.types';
 import type { Device } from '@/types/device.types';
+import { BulkTargetDropdown } from '@/components/features/devices/BulkTargetDropdown';
+import { emptySelection, isSelectionEmpty, selectionToTarget, type BulkTargetSelection } from '@/components/features/devices/BulkTargetPicker';
+import { useDeviceGroupsQuery } from '@/hooks/useDeviceGroups';
 import { usePermissionStore } from '@/store/permissionStore';
 import { parseApkFile } from '@/utils/apkParser';
 
@@ -210,173 +213,6 @@ function DeviceDropdown({ devices, selectedUuid, onSelect, placeholder = 'Select
               ))
             )}
           </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Multi-Device Dropdown with Search, Select All / Deselect All ─────────────
-
-interface MultiDeviceDropdownProps {
-  devices: Device[];
-  selectedUuids: string[];
-  onSelectionChange: (uuids: string[]) => void;
-  placeholder?: string;
-}
-
-function MultiDeviceDropdown({
-  devices,
-  selectedUuids,
-  onSelectionChange,
-  placeholder = 'Select devices…',
-}: MultiDeviceDropdownProps) {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState('');
-  const ref = useRef<HTMLDivElement>(null);
-
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase();
-    return devices.filter(
-      (d) =>
-        d.deviceName?.toLowerCase().includes(q) ||
-        d.deviceUuid?.toLowerCase().includes(q) ||
-        d.userEmail?.toLowerCase().includes(q)
-    );
-  }, [devices, search]);
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  function toggleDevice(uuid: string) {
-    if (selectedUuids.includes(uuid)) {
-      onSelectionChange(selectedUuids.filter((u) => u !== uuid));
-    } else {
-      onSelectionChange([...selectedUuids, uuid]);
-    }
-  }
-
-  function selectAll() {
-    const filteredUuids = filtered.map((d) => d.deviceUuid);
-    const merged = Array.from(new Set([...selectedUuids, ...filteredUuids]));
-    onSelectionChange(merged);
-  }
-
-  function deselectAll() {
-    onSelectionChange([]);
-  }
-
-  const selectedCount = selectedUuids.length;
-  const buttonLabel =
-    selectedCount === 0
-      ? placeholder
-      : selectedCount === 1
-      ? devices.find((d) => d.deviceUuid === selectedUuids[0])?.deviceName ?? '1 device selected'
-      : `${selectedCount} devices selected`;
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="w-full h-9 flex items-center justify-between rounded-md border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary hover:bg-gray-50 transition-colors"
-      >
-        <span className={selectedCount > 0 ? 'text-foreground' : 'text-muted-foreground'}>{buttonLabel}</span>
-        <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
-      </button>
-
-      {open && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden">
-          {/* Search */}
-          <div className="p-2 border-b border-border">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                autoFocus
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search devices…"
-                className="w-full pl-8 pr-3 py-1.5 text-sm rounded-md border border-gray-300 bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-            </div>
-          </div>
-          {/* Select All / Deselect All */}
-          <div className="flex gap-1 px-2 py-1.5 border-b border-border">
-            <button
-              type="button"
-              onClick={selectAll}
-              className="flex-1 text-xs font-semibold text-primary hover:bg-primary/5 py-1 rounded-md transition-colors"
-            >
-              Select All
-            </button>
-            <div className="w-px bg-border" />
-            <button
-              type="button"
-              onClick={deselectAll}
-              className="flex-1 text-xs font-semibold text-muted-foreground hover:bg-muted/50 py-1 rounded-md transition-colors"
-            >
-              Deselect All
-            </button>
-          </div>
-          {/* Device list with checkboxes */}
-          <div className="max-h-52 overflow-y-auto">
-            {filtered.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">No devices found</p>
-            ) : (
-              filtered.map((d) => {
-                const checked = selectedUuids.includes(d.deviceUuid);
-                return (
-                  <button
-                    key={d.deviceUuid}
-                    type="button"
-                    onClick={() => toggleDevice(d.deviceUuid)}
-                    className={`w-full text-left px-3 py-2.5 text-sm hover:bg-muted/50 transition-colors flex items-center gap-2.5 ${
-                      checked ? 'bg-primary/5' : ''
-                    }`}
-                  >
-                    <div
-                      className={`h-4 w-4 shrink-0 rounded border-2 flex items-center justify-center ${
-                        checked ? 'border-primary bg-primary' : 'border-border bg-background'
-                      }`}
-                    >
-                      {checked && (
-                        <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 10 8" fill="none">
-                          <path
-                            d="M1 4l3 3 5-6"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <span className={`font-medium ${checked ? 'text-primary' : 'text-foreground'}`}>
-                        {d.deviceName}
-                      </span>
-                      <span className="text-xs text-muted-foreground ml-2">{d.deviceUuid}</span>
-                      {d.userEmail && <span className="block text-xs text-muted-foreground">{d.userEmail}</span>}
-                    </div>
-                  </button>
-                );
-              })
-            )}
-          </div>
-          {/* Footer count */}
-          {selectedCount > 0 && (
-            <div className="px-3 py-2 border-t border-border bg-muted text-xs text-muted-foreground">
-              {selectedCount} device{selectedCount !== 1 ? 's' : ''} selected
-            </div>
-          )}
         </div>
       )}
     </div>
@@ -1059,23 +895,24 @@ interface DeployTabProps {
 }
 
 function DeployTab({ devices, devicesLoading, apps, appsLoading }: DeployTabProps) {
+  const { data: groups = [] } = useDeviceGroupsQuery();
   // Install form
-  const [installDeviceUuids, setInstallDeviceUuids] = useState<string[]>([]);
+  const [installTarget, setInstallTarget] = useState<BulkTargetSelection>(emptySelection());
   const [installApp, setInstallApp] = useState<ManagedApp | null>(null);
   const [installing, setInstalling] = useState(false);
   const [installMsg, setInstallMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [installResults, setInstallResults] = useState<AppCommand[]>([]);
 
   // Uninstall form
-  const [uninstallDeviceUuids, setUninstallDeviceUuids] = useState<string[]>([]);
+  const [uninstallTarget, setUninstallTarget] = useState<BulkTargetSelection>(emptySelection());
   const [uninstallPackage, setUninstallPackage] = useState('');
   const [uninstalling, setUninstalling] = useState(false);
   const [uninstallMsg, setUninstallMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [uninstallResults, setUninstallResults] = useState<AppCommand[]>([]);
 
   async function handleInstall() {
-    if (installDeviceUuids.length === 0 || !installApp) {
-      setInstallMsg({ ok: false, text: 'Select at least one device and an app.' });
+    if (isSelectionEmpty(installTarget) || !installApp) {
+      setInstallMsg({ ok: false, text: 'Select at least one group or device, and an app.' });
       return;
     }
     setInstalling(true);
@@ -1083,7 +920,7 @@ function DeployTab({ devices, devicesLoading, apps, appsLoading }: DeployTabProp
     setInstallResults([]);
     try {
       const res = await appManagementService.installApp({
-        deviceUuids: installDeviceUuids,
+        target: selectionToTarget(installTarget, groups),
         managedAppId: installApp.id,
       });
       if (res.success) {
@@ -1092,7 +929,7 @@ function DeployTab({ devices, devicesLoading, apps, appsLoading }: DeployTabProp
           text: `Install command sent to ${res.data.length} device${res.data.length !== 1 ? 's' : ''}.`,
         });
         setInstallResults(res.data);
-        setInstallDeviceUuids([]);
+        setInstallTarget(emptySelection());
         setInstallApp(null);
       } else {
         setInstallMsg({ ok: false, text: res.message || 'Install command failed.' });
@@ -1105,8 +942,8 @@ function DeployTab({ devices, devicesLoading, apps, appsLoading }: DeployTabProp
   }
 
   async function handleUninstall() {
-    if (uninstallDeviceUuids.length === 0 || !uninstallPackage.trim()) {
-      setUninstallMsg({ ok: false, text: 'Select at least one device and enter a package name.' });
+    if (isSelectionEmpty(uninstallTarget) || !uninstallPackage.trim()) {
+      setUninstallMsg({ ok: false, text: 'Select at least one group or device, and enter a package name.' });
       return;
     }
     setUninstalling(true);
@@ -1114,7 +951,7 @@ function DeployTab({ devices, devicesLoading, apps, appsLoading }: DeployTabProp
     setUninstallResults([]);
     try {
       const res = await appManagementService.uninstallApp({
-        deviceUuids: uninstallDeviceUuids,
+        target: selectionToTarget(uninstallTarget, groups),
         packageName: uninstallPackage.trim(),
       });
       if (res.success) {
@@ -1123,7 +960,7 @@ function DeployTab({ devices, devicesLoading, apps, appsLoading }: DeployTabProp
           text: `Uninstall command sent to ${res.data.length} device${res.data.length !== 1 ? 's' : ''}.`,
         });
         setUninstallResults(res.data);
-        setUninstallDeviceUuids([]);
+        setUninstallTarget(emptySelection());
         setUninstallPackage('');
       } else {
         setUninstallMsg({ ok: false, text: res.message || 'Uninstall command failed.' });
@@ -1193,12 +1030,12 @@ function DeployTab({ devices, devicesLoading, apps, appsLoading }: DeployTabProp
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Select Devices *</Label>
-              <MultiDeviceDropdown
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Target Groups / Devices *</Label>
+              <BulkTargetDropdown
                 devices={devices}
-                selectedUuids={installDeviceUuids}
-                onSelectionChange={setInstallDeviceUuids}
-                placeholder="Select one or more devices…"
+                value={installTarget}
+                onChange={setInstallTarget}
+                placeholder="Select groups or devices…"
               />
             </div>
             <div className="space-y-1.5">
@@ -1246,12 +1083,12 @@ function DeployTab({ devices, devicesLoading, apps, appsLoading }: DeployTabProp
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Select Devices *</Label>
-              <MultiDeviceDropdown
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Target Groups / Devices *</Label>
+              <BulkTargetDropdown
                 devices={devices}
-                selectedUuids={uninstallDeviceUuids}
-                onSelectionChange={setUninstallDeviceUuids}
-                placeholder="Select one or more devices…"
+                value={uninstallTarget}
+                onChange={setUninstallTarget}
+                placeholder="Select groups or devices…"
               />
             </div>
             <div className="space-y-1.5">

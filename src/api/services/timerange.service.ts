@@ -1,4 +1,5 @@
 import { apiClient } from '../client';
+import type { BulkTarget } from '@/types/bulk.types';
 import type { ApiResponse } from '@/types/api.types';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -11,7 +12,10 @@ export interface TimeRangeRequest {
 }
 
 export interface TimeRangeBulkRequest {
-  deviceUuids: string[];
+  /** Legacy explicit list — prefer `target`. */
+  deviceUuids?: string[];
+  /** Groups and/or devices to assign the time range to. */
+  target?: BulkTarget;
   startTime: string;
   endTime: string;
   timezone?: string;

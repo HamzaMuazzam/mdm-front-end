@@ -1,3 +1,5 @@
+import type { BulkTarget } from './bulk.types';
+
 export interface ManagedApp {
   id: number;
   packageName: string;
@@ -33,11 +35,17 @@ export interface AppCommand {
 }
 
 export interface InstallRequest {
-  deviceUuids: string[];
+  /** Legacy explicit list — prefer `target`. */
+  deviceUuids?: string[];
+  /** Groups and/or devices to install on. */
+  target?: BulkTarget;
   managedAppId: number;
 }
 
 export interface UninstallRequest {
-  deviceUuids: string[];
+  /** Legacy explicit list — prefer `target`. */
+  deviceUuids?: string[];
+  /** Groups and/or devices to uninstall from. */
+  target?: BulkTarget;
   packageName: string;
 }

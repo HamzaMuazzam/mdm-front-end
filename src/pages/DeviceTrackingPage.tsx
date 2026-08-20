@@ -18,6 +18,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import * as XLSX from 'xlsx';
 import { useDevicesQuery } from '@/hooks/useDevices';
+import { BulkHeartbeatModal } from '@/components/features/devices/BulkHeartbeatModal';
 import {
   trackingService,
   type GeoType,
@@ -586,6 +587,7 @@ export function DeviceTrackingPage() {
   const navigate    = useNavigate();
   const { data: devices } = useDevicesQuery();
   const device      = devices?.find((d) => String(d.id) === deviceId);
+  const [isHeartbeatApplyMoreOpen, setIsHeartbeatApplyMoreOpen] = useState(false);
   const deviceUuid  = device?.deviceUuid;
 
   const [rightOpen]   = useState(false);
@@ -3219,6 +3221,15 @@ export function DeviceTrackingPage() {
                       Live values are grouped here for quick review. Open edit mode when you want to send a polished update to the device.
                     </p>
                     <div className="flex flex-col gap-3 sm:flex-row">
+                      {device && configData && (
+                        <button
+                          onClick={() => setIsHeartbeatApplyMoreOpen(true)}
+                          className="inline-flex items-center justify-center rounded-md border border-blue-200 bg-white px-5 py-3 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-50"
+                          title="Push this heartbeat interval to groups or other devices"
+                        >
+                          Apply heartbeat to more devices…
+                        </button>
+                      )}
                       <button
                         onClick={closeConfigModal}
                         className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50"
@@ -3271,6 +3282,14 @@ export function DeviceTrackingPage() {
             </div>
           </div>
         </div>
+      )}
+      {isHeartbeatApplyMoreOpen && device && (
+        <BulkHeartbeatModal
+          devices={devices ?? []}
+          lockedDeviceUuids={[device.deviceUuid]}
+          initialSeconds={configData?.heartbeatTimer ?? undefined}
+          onClose={() => setIsHeartbeatApplyMoreOpen(false)}
+        />
       )}
     </div>
   );

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { ShieldAlert, X, Loader2 } from 'lucide-react';
+import { ShieldAlert, X, Loader2, Copy } from 'lucide-react';
 import type { Device } from '@/types/device.types';
-import { useDeviceConfiguration, useApplyDevicePolicy } from '@/hooks/useDevices';
+import { useDeviceConfiguration, useApplyDevicePolicy, useDevicesQuery } from '@/hooks/useDevices';
+import { ApplyToMoreDevicesModal } from './ApplyToMoreDevicesModal';
 import { toast } from '@/hooks/useToast';
 import {
   DevicePolicyForm,
@@ -14,7 +15,9 @@ import {
 export function DevicePolicyModal({ device, onClose }: { device: Device; onClose: () => void }) {
   const { data: config, isLoading } = useDeviceConfiguration(device.id);
   const applyMutation = useApplyDevicePolicy();
+  const { data: allDevices = [] } = useDevicesQuery();
   const [policy, setPolicy] = useState<DevicePolicyState>(defaultDevicePolicy);
+  const [isApplyMoreOpen, setIsApplyMoreOpen] = useState(false);
 
   useEffect(() => {
     if (!config) return;
@@ -90,25 +93,49 @@ export function DevicePolicyModal({ device, onClose }: { device: Device; onClose
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-border px-5 py-4">
+        <div className="flex items-center justify-between gap-2 border-t border-border px-5 py-4">
           <button
             type="button"
-            onClick={onClose}
-            className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+            onClick={() => setIsApplyMoreOpen(true)}
+            disabled={isLoading}
+            className="inline-flex items-center gap-1.5 rounded-md border border-blue-200 px-3 py-2 text-xs font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-50"
+            title="Push these values to groups or other devices"
           >
-            Cancel
+            <Copy className="h-3.5 w-3.5" />
+            Apply to more devices…
           </button>
-          <button
-            type="button"
-            onClick={handleApply}
-            disabled={applyMutation.isPending || isLoading}
-            className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-          >
-            {applyMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            Apply &amp; Push
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleApply}
+              disabled={applyMutation.isPending || isLoading}
+              className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              {applyMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              Apply &amp; Push
+            </button>
+          </div>
         </div>
       </div>
+
+      {isApplyMoreOpen && (
+        <ApplyToMoreDevicesModal
+          title="Apply policy to more devices"
+          subtitle="Push this Update & Security policy to groups or other devices"
+          icon={ShieldAlert}
+          devices={allDevices}
+          sourceDevice={device}
+          payload={policyToPayload(policy)}
+          onClose={() => setIsApplyMoreOpen(false)}
+        />
+      )}
     </div>
   );
 }

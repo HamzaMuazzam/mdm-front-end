@@ -1,3 +1,5 @@
+import type { BulkTarget } from './bulk.types';
+
 export interface Device {
   id: number;
   deviceUuid: string;
@@ -31,8 +33,12 @@ export interface Device {
   appVersionCode?: number | null;
   appVersionName?: string | null;
   latestAppVersionCode?: number | null;
-  /** true = on latest release; false = outdated; null/undefined = never reported */
+  /** true = on the release it is targeted with; false = outdated; null/undefined = never reported or not targeted */
   appUpToDate?: boolean | null;
+  /** true when the current active release is targeted at this device */
+  updateTargeted?: boolean | null;
+  /** Custom device-group ids this device belongs to (the system "All" group is implicit). */
+  groupIds?: number[];
 }
 
 export interface CreateDeviceRequest {
@@ -145,7 +151,10 @@ export type SystemUpdatePolicyType = 'AUTOMATIC' | 'WINDOWED' | 'POSTPONED' | 'F
 
 /** Payload for the unified per-device / bulk policy apply endpoint. */
 export interface ApplyDevicePolicyRequest {
-  deviceUuids: string[];
+  /** Legacy explicit list — prefer `target`. At least one of the two must resolve to a device. */
+  deviceUuids?: string[];
+  /** Groups and/or devices to apply to. */
+  target?: BulkTarget;
   rootDetectionEnabled?: boolean | null;
   rootDetectionLockOnCompromise?: boolean | null;
   rootDetectionWipeOnCompromise?: boolean | null;
@@ -174,6 +183,7 @@ export interface ApplyDevicePolicyRequest {
   useDefaultLauncherTheme?: boolean | null;
   backgroundColor?: string | null;
   applicationNamesColor?: string | null;
+  backgroundImageUrl?: string | null;
   iconSize?: string | null;
   screenAlwaysOn?: boolean | null;
   manageScreenTimeout?: boolean | null;
@@ -191,6 +201,15 @@ export interface ApplyDevicePolicyRequest {
   factoryResetLock?: boolean | null;
   networkResetLock?: boolean | null;
   appsControlLock?: boolean | null;
+  lockPowerButton?: boolean | null;
+  devicePassword?: string | null;
+  unlockPassword?: string | null;
+  newServerURL?: string | null;
+  // Configuration: Launcher buttons / bars
+  launcherOrientation?: boolean | null;
+  enableHomeButton?: boolean | null;
+  enableRecentsButton?: boolean | null;
+  enableStatusBarInfo?: boolean | null;
   // Configuration: Notifications / Location / Volume / Permissions
   notificationBarStateId?: number | null;
   enableNotifications?: boolean | null;
@@ -212,7 +231,10 @@ export interface ApplyPolicyResult {
 
 /** Bulk block/unblock apps by package id on one or many devices. */
 export interface BulkAppBlockRequest {
-  deviceUuids: string[];
+  /** Legacy explicit list — prefer `target`. */
+  deviceUuids?: string[];
+  /** Groups and/or devices to block/unblock on. */
+  target?: BulkTarget;
   appPackageIds: string[];
   /** false → block, true → unblock (allow) */
   isAllowed: boolean;
