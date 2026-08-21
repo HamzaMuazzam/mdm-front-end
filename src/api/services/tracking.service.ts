@@ -3,11 +3,16 @@ import type { BulkTarget } from '@/types/bulk.types';
 import type { ApiResponse } from '@/types/api.types';
 
 // ── History ───────────────────────────────────────────────────────────────────
+//
+// Speed-unit contract: every `speed` / `*Kmh` value the tracking API returns is already km/h
+// (the Android agent converts Location.getSpeed() m/s exactly once; the backend stores it as-is).
+// Display it with a "km/h" label — never multiply by 3.6 on this side.
 
 export interface HistoryPoint {
   id: number;
   latitude: number;
   longitude: number;
+  /** km/h as reported by the agent. */
   speed: number;
   accuracy: number;
   bearing: number;
@@ -163,7 +168,7 @@ export interface TrackingUploadPoint {
   availableSatellite: number; connectedSatellite: number;
   reason: string; deviceRDT: string; gpsRDT: string;
   igStatus: number; localPrimaryId: number;
-  latitude: number; longitude: number; speed: number;
+  latitude: number; longitude: number; speed: number; // speed in km/h
   accuracy: number; altitude: number; bearing: number;
   provider: string; versionNo: string; uploadRetryCount: number;
 }
@@ -208,6 +213,7 @@ export interface TrackingEventData {
   eventType: TrackingEventType;
   latitude: number;
   longitude: number;
+  /** km/h at the time of the event (null for events without a fix). */
   speed: number | null;
   bearing: number | null;
   metadata: string | null;

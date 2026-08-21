@@ -39,8 +39,16 @@ export interface IntegrityStats {
   playIntegrityVerdict: string | null;
 }
 
+/**
+ * Integrity roll-up scoped by the backend to the logged-in user's account hierarchy
+ * (own + sub-users' active devices) — not the whole platform.
+ */
 export interface IntegrityFleetSummary {
+  /** Active devices visible to the caller (scanned or not). Absent on pre-scoping backends. */
+  totalDevices?: number;
   totalDevicesScanned: number;
+  /** Visible devices that have never reported an integrity scan. Absent on pre-scoping backends. */
+  notScanned?: number;
   compromised: number;
   suspicious: number;
   clean: number;

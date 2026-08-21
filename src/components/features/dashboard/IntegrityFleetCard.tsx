@@ -36,6 +36,7 @@ export function IntegrityFleetCard() {
   if (!canRead) return null;
 
   const danger = compromised > 0;
+  const notScanned = data?.notScanned ?? 0;
 
   return (
     <Card
@@ -53,6 +54,7 @@ export function IntegrityFleetCard() {
         <span className="text-xs text-gray-500">
           {numberFormatter.format(data?.suspicious ?? 0)} at risk ·{' '}
           {numberFormatter.format(data?.clean ?? 0)} clean
+          {notScanned > 0 && <> · {numberFormatter.format(notScanned)} not scanned</>}
         </span>
         <div
           className={`flex h-9 w-9 items-center justify-center rounded-full ${
