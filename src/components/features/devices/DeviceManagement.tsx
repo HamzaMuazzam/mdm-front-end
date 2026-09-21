@@ -20,6 +20,7 @@ import { BulkConfigModal, type BulkConfigSection } from './BulkConfigModal';
 import { BulkHeartbeatModal } from './BulkHeartbeatModal';
 import { BulkResetOptionsLockModal } from './BulkResetOptionsLockModal';
 import { BulkAppBlockModal } from './BulkAppBlockModal';
+import { AppActionsModal, type AppActionsPreset } from '@/components/features/app-control/AppActionsModal';
 import { BulkTimeRangeModal } from './BulkTimeRangeModal';
 import { ManageDeviceGroupsModal } from './ManageDeviceGroupsModal';
 import { ApplyToMoreDevicesModal, configFormToPolicyPayload } from './ApplyToMoreDevicesModal';
@@ -28,7 +29,7 @@ import { ScreenMirroringModal } from './ScreenMirroringModal';
 import { BulkActionsMenu, type BulkActionGroup } from './BulkActionsMenu';
 import { DeviceActionsMenu, type DeviceActionCategory, type ActionTone } from './DeviceActionsMenu';
 import { DeviceConfigPanel } from './DeviceConfigPanel';
-import { Layers, Settings, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, BarChart3, Power, RotateCcw, Siren, Mic, Database, Map, Plus, RefreshCw, Search, Clock, ShieldAlert, ShieldOff, ArrowUpCircle, Globe, Wifi, MonitorPlay, Activity, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { Layers, Settings, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, BarChart3, Power, RotateCcw, Siren, Mic, Database, Map, Plus, RefreshCw, Search, Clock, ShieldAlert, ShieldOff, ArrowUpCircle, Globe, Wifi, MonitorPlay, Activity, ChevronUp, ChevronDown, ChevronsUpDown, ScrollText, Wrench, Brush } from 'lucide-react';
 import QRCode from 'qrcode';
 import type { CreateDeviceRequest, UpdateDeviceRequest, Device, UpdateDeviceConfigurationRequest } from '@/types/device.types';
 import { ROUTES } from '@/utils/constants';
@@ -74,6 +75,7 @@ export function DeviceManagement() {
   const [isBulkSslOpen, setIsBulkSslOpen] = useState(false);
   const [isBulkHeartbeatOpen, setIsBulkHeartbeatOpen] = useState(false);
   const [isBulkAppBlockOpen, setIsBulkAppBlockOpen] = useState(false);
+  const [appActionsPreset, setAppActionsPreset] = useState<AppActionsPreset | null>(null);
   const [bulkConfigSection, setBulkConfigSection] = useState<BulkConfigSection | null>(null);
   const [screenMirrorDevice, setScreenMirrorDevice] = useState<Device | null>(null);
   const [groupsModalDevice, setGroupsModalDevice] = useState<Device | null>(null);
@@ -448,6 +450,10 @@ export function DeviceManagement() {
     navigate(`/device/${device.id}/integrity`);
   };
 
+  const handleDeviceLogs = (device: Device) => {
+    navigate(`/device/${device.id}/logs`);
+  };
+
   const handleDevicePolicy = (device: Device) => {
     setPolicyModalDevice(device);
   };
@@ -594,11 +600,14 @@ export function DeviceManagement() {
           { key: 'screen', label: 'Screen Mirroring', icon: MonitorPlay, tone: 'blue', onSelect: () => setScreenMirrorDevice(device), visible: hasPermission('devices:monitoring') },
           { key: 'config', label: 'Configuration', icon: Settings, onSelect: () => handleViewConfig(device), visible: hasPermission('devices:configurations:read') },
           { key: 'apps', label: 'Applications', icon: AppWindow, onSelect: () => handleViewApps(device), visible: hasPermission('devices:applications:read') },
+          { key: 'appActions', label: 'App Actions', icon: Wrench, tone: 'blue', onSelect: () => setAppActionsPreset({ lockedDeviceUuids: [device.deviceUuid] }), visible: hasPermission('app-control:execute') },
+          { key: 'clearCaches', label: 'Clear All App Caches', icon: Brush, onSelect: () => setAppActionsPreset({ action: 'CLEAR_CACHE', allUserApps: true, lockedDeviceUuids: [device.deviceUuid] }), visible: hasPermission('app-control:execute') },
           { key: 'requests', label: 'Requests', icon: FileText, onSelect: () => handleViewRequests(device) },
           { key: 'notifications', label: 'Notifications', icon: Bell, onSelect: () => handleViewNotifications(device), visible: hasPermission('notifications:view-history') },
           { key: 'data', label: 'Contacts, SMS & Calls', icon: Database, tone: 'blue', onSelect: () => handleMonitorData(device), visible: hasPermission('device-data:read') || hasPermission('contacts:read') || hasPermission('sms:read') || hasPermission('call-logs:read') },
           { key: 'listen', label: 'Listen to Device', icon: Mic, tone: 'green', onSelect: () => handleListenAudio(device), visible: hasPermission('device-audio:listen') || hasPermission('audio-management:listen') },
           { key: 'sim', label: 'SIM Change Logs', icon: Smartphone, tone: 'blue', onSelect: () => handleSimChanges(device), visible: hasPermission('sim-changes:read') },
+          { key: 'syslogs', label: 'System Logs', icon: ScrollText, tone: 'blue', onSelect: () => handleDeviceLogs(device), visible: hasPermission('device-logs:read') },
         ],
       },
       {
@@ -693,6 +702,12 @@ export function DeviceManagement() {
                       icon: AppWindow,
                       onClick: () => setIsBulkAppBlockOpen(true),
                       visible: hasPermission('devices:applications:read'),
+                    },
+                    {
+                      label: 'App Actions (cache, data, permissions)',
+                      icon: Wrench,
+                      onClick: () => setAppActionsPreset({}),
+                      visible: hasPermission('app-control:execute'),
                     },
                   ],
                 },
@@ -1391,6 +1406,9 @@ export function DeviceManagement() {
       )}
       {isBulkHeartbeatOpen && (
         <BulkHeartbeatModal devices={devices} onClose={() => setIsBulkHeartbeatOpen(false)} />
+      )}
+      {appActionsPreset && (
+        <AppActionsModal devices={devices} preset={appActionsPreset} onClose={() => setAppActionsPreset(null)} />
       )}
       {isBulkAppBlockOpen && (
         <BulkAppBlockModal devices={devices} onClose={() => setIsBulkAppBlockOpen(false)} />

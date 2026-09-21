@@ -3,6 +3,7 @@ import {
   Layers,
   Plus,
   Pencil,
+  AppWindow,
   Trash2,
   Search,
   X,
@@ -34,6 +35,8 @@ import {
   useUpdateDeviceGroupMembers,
 } from '@/hooks/useDeviceGroups';
 import { toast } from '@/hooks/useToast';
+import { AppActionsModal } from '@/components/features/app-control/AppActionsModal';
+import { AppControlHistoryPanel } from '@/components/features/app-control/AppControlHistoryPanel';
 import type { Device } from '@/types/device.types';
 import { BULK_MODULE_LABELS, type BulkModule, type BulkOperationLog, type DeviceGroup } from '@/types/bulk.types';
 
@@ -590,6 +593,7 @@ export function BulkHistoryPanel({ compact = false }: { compact?: boolean }) {
 export function DeviceGroupManagement() {
   const hasPermission = usePermissionStore((state) => state.hasPermission);
   const canManage = hasPermission('devices:update');
+  const [appActionsGroup, setAppActionsGroup] = useState<DeviceGroup | null>(null);
 
   const { data: groups = [], isLoading: groupsLoading, isFetching, refetch } = useDeviceGroupsQuery();
   const { data: allDevices = [] } = useDevicesQuery();
@@ -701,7 +705,10 @@ export function DeviceGroupManagement() {
       </div>
 
       {view === 'history' ? (
-        <BulkHistoryPanel />
+        <div className="space-y-4">
+          {hasPermission('app-control:read') && <AppControlHistoryPanel />}
+          <BulkHistoryPanel />
+        </div>
       ) : (
         <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
           {/* Left: group list */}
@@ -792,6 +799,11 @@ export function DeviceGroupManagement() {
                         {!selected.system && selected.createdByEmail && <> · created by {selected.createdByEmail}</>}
                       </p>
                     </div>
+                    {hasPermission('app-control:execute') && (
+                      <Button size="sm" variant="outline" className="shrink-0" onClick={() => setAppActionsGroup(selected)}>
+                        <AppWindow className="mr-1.5 h-3.5 w-3.5" /> App Actions
+                      </Button>
+                    )}
                     {canManage && !selected.system && (
                       <div className="flex shrink-0 flex-wrap gap-2">
                         <Button size="sm" onClick={() => setAdding(selected)}>
@@ -862,6 +874,9 @@ export function DeviceGroupManagement() {
         </div>
       )}
 
+      {appActionsGroup && (
+        <AppActionsModal devices={devices} preset={{ initialGroupIds: [appActionsGroup.id] }} onClose={() => setAppActionsGroup(null)} />
+      )}
       {isCreateOpen && <CreateGroupDialog devices={devices} onClose={() => setIsCreateOpen(false)} />}
       {editing && <EditGroupDialog group={editing} onClose={() => setEditing(null)} />}
       {deleting && <DeleteGroupDialog group={deleting} onClose={() => setDeleting(null)} />}

@@ -51,7 +51,8 @@ export type BulkModule =
   | 'APP_INSTALL'
   | 'APP_UNINSTALL'
   | 'APP_UPDATE_RELEASE'
-  | 'DEVICE_GROUP';
+  | 'DEVICE_GROUP'
+  | 'APP_CONTROL';
 
 export const BULK_MODULE_LABELS: Record<BulkModule, string> = {
   CONFIG_POLICY: 'Configuration / Policy',
@@ -63,6 +64,7 @@ export const BULK_MODULE_LABELS: Record<BulkModule, string> = {
   APP_UNINSTALL: 'App Uninstall',
   APP_UPDATE_RELEASE: 'App Update Release',
   DEVICE_GROUP: 'Device Group',
+  APP_CONTROL: 'App Actions',
 };
 
 export interface BulkTargetSummary {

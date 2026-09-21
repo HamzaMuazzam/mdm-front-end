@@ -42,6 +42,7 @@ export function BulkPolicyScaffold({
   children,
   lockedDeviceUuids,
   initialDeviceUuids,
+  initialGroupIds,
   maxWidthClass = 'max-w-4xl',
 }: {
   title: string;
@@ -59,12 +60,16 @@ export function BulkPolicyScaffold({
   lockedDeviceUuids?: string[];
   /** Pre-selected (but changeable) devices. */
   initialDeviceUuids?: string[];
+  /** Pre-selected (but changeable) groups — e.g. opened from a group card. */
+  initialGroupIds?: number[];
   maxWidthClass?: string;
 }) {
   const { data: groups = [], isLoading: groupsLoading } = useDeviceGroupsQuery();
   const [selection, setSelection] = useState<BulkTargetSelection>(() => {
     const preset = [...(lockedDeviceUuids || []), ...(initialDeviceUuids || [])];
-    return preset.length ? selectionFromDevices(preset) : emptySelection();
+    const sel = preset.length ? selectionFromDevices(preset) : emptySelection();
+    (initialGroupIds || []).forEach((id) => sel.groupIds.add(id));
+    return sel;
   });
 
   const activeDevices = useMemo(() => devices.filter((d) => !d.deletedAt), [devices]);
@@ -118,7 +123,7 @@ export function BulkPolicyScaffold({
               value={selection}
               onChange={setSelection}
               lockedDeviceUuids={lockedDeviceUuids}
-              initialTab={lockedDeviceUuids?.length ? 'devices' : 'groups'}
+              initialTab={lockedDeviceUuids?.length || initialDeviceUuids?.length ? 'devices' : 'groups'}
             />
           </div>
 

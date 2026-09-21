@@ -2,6 +2,8 @@ import { useState, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useBulkAppBlock, useDeviceApplications, useDevicesQuery, useUpdateDeviceApplication } from '@/hooks/useDevices';
 import { Button } from '@/components/ui/button';
+import { AppActionsModal, type AppActionsPreset } from '@/components/features/app-control/AppActionsModal';
+import { AppRowActionsMenu } from '@/components/features/app-control/AppRowActionsMenu';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -118,6 +120,8 @@ export function DeviceApplicationsPage() {
   const bulkBlockMutation = useBulkAppBlock();
 
   const device = devices.find(d => d.id === numericDeviceId);
+  /** App Actions dialog (clear cache / data, permissions, force stop) pre-filled from this page. */
+  const [appActions, setAppActions] = useState<AppActionsPreset | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -451,6 +455,19 @@ export function DeviceApplicationsPage() {
               {selectedIds.size} app{selectedIds.size !== 1 ? 's' : ''} selected
             </span>
             <div className="flex items-center gap-2 ml-auto">
+              {device?.deviceUuid && (
+                <AppRowActionsMenu
+                  solid
+                  label="App Actions"
+                  onPick={(action) =>
+                    setAppActions({
+                      action,
+                      apps: selectedApps.map((a) => ({ appPackageId: a.appPackageId, appName: a.appName })),
+                      lockedDeviceUuids: [device.deviceUuid],
+                    })
+                  }
+                />
+              )}
               <Button
                 size="sm"
                 variant="outline"
@@ -572,7 +589,12 @@ export function DeviceApplicationsPage() {
                     </div>
 
                     {/* Action footer */}
-                    <div className="px-4 py-2.5 border-t border-gray-100 flex justify-end">
+                    <div className="px-4 py-2.5 border-t border-gray-100 flex justify-end gap-2">
+                      {device?.deviceUuid && (
+                        <AppRowActionsMenu
+                          onPick={(action) => setAppActions({ action, apps: [{ appPackageId: app.appPackageId, appName: app.appName }], lockedDeviceUuids: [device.deviceUuid] })}
+                        />
+                      )}
                       <Button
                         size="sm"
                         variant="outline"
@@ -680,7 +702,12 @@ export function DeviceApplicationsPage() {
                               <span className="text-xs text-muted-foreground">Off</span>
                             )}
                           </td>
-                          <td className="px-5 py-3.5 text-right">
+                          <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                            {device?.deviceUuid && (
+                              <AppRowActionsMenu
+                                onPick={(action) => setAppActions({ action, apps: [{ appPackageId: app.appPackageId, appName: app.appName }], lockedDeviceUuids: [device.deviceUuid] })}
+                              />
+                            )}
                             <Button size="sm" variant="ghost" onClick={() => handleEdit(app)} className="opacity-60 group-hover:opacity-100 transition-opacity">
                               <Pencil className="h-4 w-4 mr-1.5" />Edit
                             </Button>
@@ -699,6 +726,8 @@ export function DeviceApplicationsPage() {
           <EmptyState />
         )}
       </main>
+
+      {appActions && <AppActionsModal devices={devices} preset={appActions} onClose={() => setAppActions(null)} />}
 
       {/* ── Edit Slide-over Panel ─────────────────────────────────── */}
       {editingApp && (
