@@ -26,10 +26,11 @@ import { ManageDeviceGroupsModal } from './ManageDeviceGroupsModal';
 import { ApplyToMoreDevicesModal, configFormToPolicyPayload } from './ApplyToMoreDevicesModal';
 import { useDeviceGroupsQuery } from '@/hooks/useDeviceGroups';
 import { ScreenMirroringModal } from './ScreenMirroringModal';
+import { RemoteControlModal } from './RemoteControlModal';
 import { BulkActionsMenu, type BulkActionGroup } from './BulkActionsMenu';
 import { DeviceActionsMenu, type DeviceActionCategory, type ActionTone } from './DeviceActionsMenu';
 import { DeviceConfigPanel } from './DeviceConfigPanel';
-import { Layers, Settings, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, BarChart3, Power, RotateCcw, Siren, Mic, Database, Map, Plus, RefreshCw, Search, Clock, ShieldAlert, ShieldOff, ArrowUpCircle, Globe, Wifi, MonitorPlay, Activity, ChevronUp, ChevronDown, ChevronsUpDown, ScrollText, Wrench, Brush } from 'lucide-react';
+import { Layers, Settings, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, BarChart3, Power, RotateCcw, Siren, Mic, Database, Map, Plus, RefreshCw, Search, Clock, ShieldAlert, ShieldOff, ArrowUpCircle, Globe, Wifi, MonitorPlay, Activity, ChevronUp, ChevronDown, ChevronsUpDown, ScrollText, Wrench, Brush, MousePointerClick } from 'lucide-react';
 import QRCode from 'qrcode';
 import type { CreateDeviceRequest, UpdateDeviceRequest, Device, UpdateDeviceConfigurationRequest } from '@/types/device.types';
 import { ROUTES } from '@/utils/constants';
@@ -78,6 +79,7 @@ export function DeviceManagement() {
   const [appActionsPreset, setAppActionsPreset] = useState<AppActionsPreset | null>(null);
   const [bulkConfigSection, setBulkConfigSection] = useState<BulkConfigSection | null>(null);
   const [screenMirrorDevice, setScreenMirrorDevice] = useState<Device | null>(null);
+  const [remoteControlDevice, setRemoteControlDevice] = useState<Device | null>(null);
   const [groupsModalDevice, setGroupsModalDevice] = useState<Device | null>(null);
   const [isConfigApplyMoreOpen, setIsConfigApplyMoreOpen] = useState(false);
 
@@ -598,6 +600,7 @@ export function DeviceManagement() {
         items: [
           { key: 'monitor', label: 'Monitor Dashboard', icon: BarChart3, onSelect: () => handleOpenMonitorDashboard(device), visible: hasPermission('devices:monitoring') },
           { key: 'screen', label: 'Screen Mirroring', icon: MonitorPlay, tone: 'blue', onSelect: () => setScreenMirrorDevice(device), visible: hasPermission('devices:monitoring') },
+          { key: 'remoteControl', label: 'Remote Screen (Control)', icon: MousePointerClick, tone: 'blue', onSelect: () => setRemoteControlDevice(device), visible: hasPermission('devices:remote-control') },
           { key: 'config', label: 'Configuration', icon: Settings, onSelect: () => handleViewConfig(device), visible: hasPermission('devices:configurations:read') },
           { key: 'apps', label: 'Applications', icon: AppWindow, onSelect: () => handleViewApps(device), visible: hasPermission('devices:applications:read') },
           { key: 'appActions', label: 'App Actions', icon: Wrench, tone: 'blue', onSelect: () => setAppActionsPreset({ lockedDeviceUuids: [device.deviceUuid] }), visible: hasPermission('app-control:execute') },
@@ -1415,6 +1418,9 @@ export function DeviceManagement() {
       )}
       {bulkConfigSection && (
         <BulkConfigModal section={bulkConfigSection} devices={devices} onClose={() => setBulkConfigSection(null)} />
+      )}
+      {remoteControlDevice && (
+        <RemoteControlModal device={remoteControlDevice} onClose={() => setRemoteControlDevice(null)} />
       )}
       {screenMirrorDevice && (
         <ScreenMirroringModal device={screenMirrorDevice} onClose={() => setScreenMirrorDevice(null)} />
