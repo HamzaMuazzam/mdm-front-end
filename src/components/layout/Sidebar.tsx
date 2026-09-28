@@ -18,11 +18,12 @@ import {
   FileBarChart,
   Layers,
   X,
+  CalendarCheck,
 } from 'lucide-react';
 
 interface SidebarProps {
-  activeTab: 'analytics' | 'users' | 'devices' | 'device-groups' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager' | 'reports';
-  onTabChange: (tab: 'analytics' | 'users' | 'devices' | 'device-groups' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager' | 'reports') => void;
+  activeTab: 'analytics' | 'users' | 'devices' | 'device-groups' | 'attendance' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager' | 'reports';
+  onTabChange: (tab: 'analytics' | 'users' | 'devices' | 'device-groups' | 'attendance' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager' | 'reports') => void;
   isMobileOpen?: boolean;
   onMobileClose?: () => void;
 }
@@ -117,6 +118,15 @@ export function Sidebar({ activeTab, onTabChange, isMobileOpen = false, onMobile
             isActive={activeTab === 'device-groups'}
             isCollapsed={collapsed}
             onClick={() => handleNavClick('device-groups')}
+          />
+        )}
+        {(hasPermission('attendance:records:read') || hasPermission('attendance:rosters:read')) && (
+          <NavButton
+            icon={<CalendarCheck className="h-4 w-4" />}
+            label="Attendance"
+            isActive={activeTab === 'attendance'}
+            isCollapsed={collapsed}
+            onClick={() => handleNavClick('attendance')}
           />
         )}
         {hasPermission('configuration:read') && (

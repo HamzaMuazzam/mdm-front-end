@@ -7,6 +7,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { UserManagement } from '@/components/features/users/UserManagement';
 import { DeviceManagement } from '@/components/features/devices/DeviceManagement';
 import { DeviceGroupManagement } from '@/components/features/device-groups/DeviceGroupManagement';
+import { AttendanceManagement } from '@/components/features/attendance/AttendanceManagement';
 import { SubscriptionsManagement } from '@/components/features/subscriptions/SubscriptionsManagement';
 import { ConfigurationManagement } from '@/components/features/configuration/ConfigurationManagement';
 import { AnalyticsDashboard } from '@/components/features/dashboard/AnalyticsDashboard';
@@ -18,7 +19,7 @@ import { ReportsDashboard } from '@/components/features/reports/ReportsDashboard
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { usePermissionsQuery } from '@/hooks/usePermissions';
 
-type TabType = 'analytics' | 'users' | 'devices' | 'device-groups' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager' | 'reports';
+type TabType = 'analytics' | 'users' | 'devices' | 'device-groups' | 'attendance' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager' | 'reports';
 
 const TAB_TITLES: Record<TabType, string> = {
   analytics: 'Analytics',
@@ -27,6 +28,7 @@ const TAB_TITLES: Record<TabType, string> = {
   subscriptions: 'Subscriptions',
   devices: 'Devices',
   'device-groups': 'Device Groups',
+  attendance: 'Attendance',
   configuration: 'Configuration',
   'security-groups': 'Security Groups',
   'app-update': 'App Update',
@@ -44,6 +46,7 @@ function isTabType(value: string | null): value is TabType {
     value === 'users' ||
     value === 'devices' ||
     value === 'device-groups' ||
+    value === 'attendance' ||
     value === 'subscriptions' ||
     value === 'configuration' ||
     value === 'security-groups' ||
@@ -117,6 +120,8 @@ export function DashboardPage() {
     } else if (tab === 'device-groups') {
       queryClient.invalidateQueries({ queryKey: ['deviceGroups'] });
       queryClient.invalidateQueries({ queryKey: ['bulkOperations'] });
+    } else if (tab === 'attendance') {
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
     } else if (tab === 'subscriptions') {
       queryClient.invalidateQueries({ queryKey: ['userPlans'] });
     } else if (tab === 'configuration') {
@@ -165,6 +170,11 @@ export function DashboardPage() {
         {activeTab === 'device-groups' && (
           <ErrorBoundary moduleName="Device Groups">
             <DeviceGroupManagement />
+          </ErrorBoundary>
+        )}
+        {activeTab === 'attendance' && (
+          <ErrorBoundary moduleName="Attendance">
+            <AttendanceManagement />
           </ErrorBoundary>
         )}
         {activeTab === 'configuration' && (

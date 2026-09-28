@@ -8,6 +8,7 @@ import {
   Smartphone,
   FileBarChart,
   MoreHorizontal,
+  CalendarCheck,
   Users,
   CreditCard,
   Settings,
@@ -24,6 +25,7 @@ export type BottomNavTab =
   | 'users'
   | 'devices'
   | 'device-groups'
+  | 'attendance'
   | 'subscriptions'
   | 'configuration'
   | 'security-groups'
@@ -83,6 +85,12 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
       label: 'Device Groups',
       icon: <Layers className="h-5 w-5" />,
       visible: hasPermission('devices:read'),
+    },
+    {
+      key: 'attendance',
+      label: 'Attendance',
+      icon: <CalendarCheck className="h-5 w-5" />,
+      visible: hasPermission('attendance:records:read') || hasPermission('attendance:rosters:read'),
     },
     {
       key: 'users',
