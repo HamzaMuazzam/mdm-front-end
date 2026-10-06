@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { attendanceService } from '@/api/services/attendance.service';
 import { toast } from '@/hooks/useToast';
 import type {
+  AttendanceSettings,
   AttendanceStatus, EmployeeRequest, HolidayRequest, LeaveCreateRequest, LeaveStatus, RecordOverrideRequest,
   RosterAssignRequest, RosterRequest, SiteRequest,
 } from '@/types/attendance.types';
@@ -48,6 +49,7 @@ export const useLeavesQuery = (params: { status?: LeaveStatus; employeeId?: numb
   useQuery({ queryKey: [...ATTENDANCE_KEY, 'leaves', params], queryFn: () => attendanceService.listLeaves(params), staleTime: 30_000 });
 export const useLeaveBalanceQuery = (employeeId: number | null, year?: number) =>
   useQuery({ queryKey: [...ATTENDANCE_KEY, 'leaveBalance', employeeId, year], queryFn: () => attendanceService.leaveBalance(employeeId!, year), enabled: employeeId != null });
+export const useAttendanceSettingsQuery = () => useQuery({ queryKey: [...ATTENDANCE_KEY, 'settings'], queryFn: attendanceService.settings, staleTime: 60_000 });
 export const useMonthlyReportQuery = (year: number, month: number) =>
   useQuery({ queryKey: [...ATTENDANCE_KEY, 'monthly', year, month], queryFn: () => attendanceService.monthly(year, month), staleTime: 60_000 });
 
@@ -75,3 +77,5 @@ export const useDeleteHoliday = () => useAttendanceMutation((id: number) => atte
 export const useCreateLeave = () => useAttendanceMutation((r: LeaveCreateRequest) => attendanceService.createLeave(r), 'Leave created', 'Could not create leave', useInvalidate(['leaves'], ['leaveBalance']));
 export const useDecideLeave = () => useAttendanceMutation(({ id, approve, note }: { id: number; approve: boolean; note?: string }) => attendanceService.decideLeave(id, approve, note), 'Leave updated', 'Could not update leave', useInvalidate(['leaves'], ['leaveBalance']));
 export const useCancelLeave = () => useAttendanceMutation((id: number) => attendanceService.cancelLeave(id), 'Leave cancelled', 'Could not cancel leave', useInvalidate(['leaves'], ['leaveBalance']));
+
+export const useUpdateAttendanceSettings = () => useAttendanceMutation((r: Partial<AttendanceSettings>) => attendanceService.updateSettings(r), 'Settings saved', 'Could not save settings', useInvalidate(['settings']));

@@ -19,6 +19,8 @@ export interface Employee {
   annualLeaveQuota: number;
   active: boolean;
   hasReferencePhoto: boolean;
+  faceEnrolled?: boolean | null;
+  faceEnrolledAt?: string | null;
   createdAt: string;
 }
 
@@ -134,6 +136,45 @@ export interface DutySegment {
   seconds: number;
 }
 
+export interface AttendanceSession {
+  id: number;
+  sessionNo: number;
+  inAt: string;
+  inLat?: number | null;
+  inLng?: number | null;
+  hasInSelfie: boolean;
+  inFaceScore?: number | null;
+  inLivenessPassed?: boolean | null;
+  outAt?: string | null;
+  outLat?: number | null;
+  outLng?: number | null;
+  hasOutSelfie: boolean;
+  outFaceScore?: number | null;
+  outLivenessPassed?: boolean | null;
+  closeType?: string | null;
+  open: boolean;
+  countedSeconds: number;
+  insideShiftSeconds: number;
+  outsideShiftSeconds: number;
+  flagged?: boolean | null;
+  flagReason?: string | null;
+}
+
+export type FaceMatchMode = 'OFF' | 'FLAG' | 'BLOCK';
+export type MissingReferencePolicy = 'ALLOW_FLAG' | 'BLOCK';
+
+export interface AttendanceSettings {
+  livenessRequired: boolean;
+  faceMatchMode: FaceMatchMode;
+  faceMatchThreshold: number;
+  missingReferencePolicy: MissingReferencePolicy;
+  siteRequired: boolean;
+  faceServiceAvailable?: boolean;
+  faceServiceStatus?: string | null;
+  updatedByEmail?: string | null;
+  updatedAt?: string | null;
+}
+
 export interface AttendanceEvent {
   id: number;
   type: string;
@@ -174,12 +215,16 @@ export interface AttendanceRecord {
   checkOutType?: string | null;
   onDuty: boolean;
   totalDutySeconds: number;
+  sessionCount: number;
+  insideShiftSeconds: number;
+  outsideShiftSeconds: number;
   overtimeSeconds: number;
   lateMinutes: number;
   source?: string | null;
   flagged?: boolean | null;
   flagReason?: string | null;
   note?: string | null;
+  sessions?: AttendanceSession[];
   segments?: DutySegment[];
   events?: AttendanceEvent[];
 }
@@ -262,7 +307,10 @@ export interface MonthlySummaryRow {
   earlyLeave: number;
   onLeave: number;
   holidays: number;
+  sessions: number;
   totalDutySeconds: number;
+  insideShiftSeconds: number;
+  outsideShiftSeconds: number;
   overtimeSeconds: number;
   violations: number;
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Users, CalendarClock, ClipboardList, Palmtree, FileBarChart, Activity, Download, Loader2, ShieldAlert, RefreshCw } from 'lucide-react';
+import { Users, CalendarClock, ClipboardList, Palmtree, FileBarChart, Activity, Download, Loader2, ShieldAlert, RefreshCw, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePermissionStore } from '@/store/permissionStore';
@@ -11,8 +11,9 @@ import { EmployeesPanel } from './EmployeesPanel';
 import { RostersPanel } from './RostersPanel';
 import { RecordsPanel } from './RecordsPanel';
 import { LeaveHolidayPanel } from './LeaveHolidayPanel';
+import { SettingsPanel } from './SettingsPanel';
 
-type SubTab = 'overview' | 'records' | 'rosters' | 'employees' | 'leave' | 'reports';
+type SubTab = 'overview' | 'records' | 'rosters' | 'employees' | 'leave' | 'reports' | 'settings';
 
 function Tile({ label, value, tone = 'default' }: { label: string; value: number | string; tone?: 'default' | 'green' | 'amber' | 'red' | 'blue' }) {
   const tones = { default: 'text-gray-900', green: 'text-green-700', amber: 'text-amber-700', red: 'text-red-700', blue: 'text-blue-700' };
@@ -56,13 +57,14 @@ function OverviewPanel() {
           {live.length === 0 ? <EmptyState text="Nobody is on duty right now." /> : (
             <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
               <table className="min-w-full text-sm">
-                <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500"><tr><th className="px-4 py-2">Employee</th><th className="px-4 py-2">Roster</th><th className="px-4 py-2">Since</th><th className="px-4 py-2 text-right">Duty</th></tr></thead>
+                <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500"><tr><th className="px-4 py-2">Employee</th><th className="px-4 py-2">Roster</th><th className="px-4 py-2">Since</th><th className="px-4 py-2 text-center">Session</th><th className="px-4 py-2 text-right">Duty</th></tr></thead>
                 <tbody className="divide-y divide-gray-100">
                   {live.map((r) => (
                     <tr key={r.id}>
                       <td className="px-4 py-2"><div className="font-medium text-gray-900">{r.employeeName ?? r.deviceName}</div><div className="text-xs text-muted-foreground">{r.employeeCode ?? r.deviceUuid}</div></td>
                       <td className="px-4 py-2 text-gray-600">{r.rosterName ?? '—'}</td>
                       <td className="px-4 py-2">{fmtTime(r.checkInAt)} <StatusBadge status={r.status} /></td>
+                      <td className="px-4 py-2 text-center">#{r.sessionCount}</td>
                       <td className="px-4 py-2 text-right"><LiveDuration record={r} /></td>
                     </tr>
                   ))}
@@ -124,7 +126,7 @@ function ReportsPanel() {
           <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
             <table className="min-w-full text-sm">
               <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
-                <tr><th className="px-3 py-3">Employee</th><th className="px-3 py-3 text-right">Days</th><th className="px-3 py-3 text-right">Present</th><th className="px-3 py-3 text-right">Late</th><th className="px-3 py-3 text-right">Absent</th><th className="px-3 py-3 text-right">Early</th><th className="px-3 py-3 text-right">Leave</th><th className="px-3 py-3 text-right">Duty</th><th className="px-3 py-3 text-right">OT</th><th className="px-3 py-3 text-right">Violations</th></tr>
+                <tr><th className="px-3 py-3">Employee</th><th className="px-3 py-3 text-right">Days</th><th className="px-3 py-3 text-right">Present</th><th className="px-3 py-3 text-right">Late</th><th className="px-3 py-3 text-right">Absent</th><th className="px-3 py-3 text-right">Early</th><th className="px-3 py-3 text-right">Leave</th><th className="px-3 py-3 text-right">In/Out</th><th className="px-3 py-3 text-right">Inside</th><th className="px-3 py-3 text-right">Outside</th><th className="px-3 py-3 text-right">Violations</th></tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {rows.map((r) => (
@@ -136,8 +138,9 @@ function ReportsPanel() {
                     <td className="px-3 py-2 text-right text-red-700">{r.absent}</td>
                     <td className="px-3 py-2 text-right">{r.earlyLeave}</td>
                     <td className="px-3 py-2 text-right text-blue-700">{r.onLeave}</td>
-                    <td className="px-3 py-2 text-right font-medium">{formatDuration(r.totalDutySeconds)}</td>
-                    <td className="px-3 py-2 text-right">{formatDuration(r.overtimeSeconds)}</td>
+                    <td className="px-3 py-2 text-right">×{r.sessions}</td>
+                    <td className="px-3 py-2 text-right font-medium text-green-700">{formatDuration(r.insideShiftSeconds)}</td>
+                    <td className="px-3 py-2 text-right text-amber-700">{formatDuration(r.outsideShiftSeconds)}</td>
                     <td className={`px-3 py-2 text-right ${r.violations > 0 ? 'text-red-700 font-medium' : ''}`}>{r.violations}</td>
                   </tr>
                 ))}
@@ -158,6 +161,7 @@ export function AttendanceManagement() {
     { key: 'employees', label: 'Employees', icon: Users, visible: hasPermission('attendance:records:read') },
     { key: 'leave', label: 'Leave & Holidays', icon: Palmtree, visible: hasPermission('attendance:records:read') },
     { key: 'reports', label: 'Reports', icon: FileBarChart, visible: hasPermission('attendance:reports') },
+    { key: 'settings', label: 'Settings', icon: Settings, visible: hasPermission('attendance:records:read') },
   ];
   const visible = tabs.filter((t) => t.visible);
   const [tab, setTab] = useState<SubTab>(visible[0]?.key ?? 'overview');
@@ -182,6 +186,7 @@ export function AttendanceManagement() {
       {tab === 'employees' && <EmployeesPanel />}
       {tab === 'leave' && <LeaveHolidayPanel />}
       {tab === 'reports' && <ReportsPanel />}
+      {tab === 'settings' && <SettingsPanel />}
     </div>
   );
 }

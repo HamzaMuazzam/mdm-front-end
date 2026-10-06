@@ -101,12 +101,12 @@ export function EmployeesPanel() {
       </div>
 
       {isLoading ? <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-gray-400" /></div>
-        : filtered.length === 0 ? <EmptyState text="No employees yet. Create one and link it to a device to enable attendance." />
+        : filtered.length === 0 ? <EmptyState text="No employees yet. Create one, link it to a device and upload a reference photo for face verification." />
         : (
           <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
             <table className="min-w-full text-sm">
               <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
-                <tr><th className="px-4 py-3">Code</th><th className="px-4 py-3">Name</th><th className="px-4 py-3">Designation</th><th className="px-4 py-3">Device</th><th className="px-4 py-3">Status</th>{canManage && <th className="px-4 py-3 text-right">Actions</th>}</tr>
+                <tr><th className="px-4 py-3">Code</th><th className="px-4 py-3">Name</th><th className="px-4 py-3">Designation</th><th className="px-4 py-3">Device</th><th className="px-4 py-3">Face</th><th className="px-4 py-3">Status</th>{canManage && <th className="px-4 py-3 text-right">Actions</th>}</tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {filtered.map((e) => (
@@ -115,6 +115,7 @@ export function EmployeesPanel() {
                     <td className="px-4 py-3"><div className="font-medium text-gray-900">{e.fullName}</div><div className="text-xs text-muted-foreground">{e.department ?? ''}</div></td>
                     <td className="px-4 py-3 text-gray-600">{e.designation ?? '—'}</td>
                     <td className="px-4 py-3">{e.deviceUuid ? <span className="inline-flex items-center gap-1 text-gray-700"><Smartphone className="h-3.5 w-3.5" />{e.deviceName ?? e.deviceUuid}</span> : <span className="text-xs text-amber-600">Not linked</span>}</td>
+                    <td className="px-4 py-3">{e.faceEnrolled ? <span className="rounded-full bg-green-50 px-2 py-0.5 text-[11px] font-medium text-green-700">Enrolled</span> : e.hasReferencePhoto ? <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700">Photo only</span> : <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-700">No photo</span>}</td>
                     <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${e.active ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{e.active ? 'Active' : 'Inactive'}</span></td>
                     {canManage && (
                       <td className="px-4 py-3">

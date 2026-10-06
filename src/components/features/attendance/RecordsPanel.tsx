@@ -10,17 +10,24 @@ import { AttModal, EmptyState, Field, StatusBadge, fmtDateTime, fmtTime, selectC
 
 const STATUSES = Object.keys(ATTENDANCE_STATUS_LABELS) as AttendanceStatus[];
 
-function Selfie({ id, checkOut = false }: { id: number; checkOut?: boolean }) {
+function Selfie({ id, checkOut = false, session, size = 'lg' }: { id: number; checkOut?: boolean; session?: number; size?: 'lg' | 'sm' }) {
   const [url, setUrl] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+  const box = size === 'lg' ? 'h-40 w-32' : 'h-20 w-16';
   useEffect(() => {
     let active = true; let objectUrl: string | null = null;
-    attendanceService.selfieObjectUrl(id, checkOut).then((u) => { if (active) { objectUrl = u; setUrl(u); } else window.URL.revokeObjectURL(u); }).catch(() => active && setFailed(true));
+    attendanceService.selfieObjectUrl(id, checkOut, session).then((u) => { if (active) { objectUrl = u; setUrl(u); } else window.URL.revokeObjectURL(u); }).catch(() => active && setFailed(true));
     return () => { active = false; if (objectUrl) window.URL.revokeObjectURL(objectUrl); };
-  }, [id, checkOut]);
-  if (failed) return <div className="flex h-40 w-32 items-center justify-center rounded-md bg-gray-100 text-xs text-muted-foreground">No image</div>;
-  if (!url) return <div className="flex h-40 w-32 items-center justify-center rounded-md bg-gray-100"><Loader2 className="h-4 w-4 animate-spin text-gray-400" /></div>;
-  return <img src={url} alt={checkOut ? 'Check-out selfie' : 'Check-in selfie'} className="h-40 w-32 rounded-md object-cover shadow" />;
+  }, [id, checkOut, session]);
+  if (failed) return <div className={`flex ${box} items-center justify-center rounded-md bg-gray-100 text-[10px] text-muted-foreground`}>No image</div>;
+  if (!url) return <div className={`flex ${box} items-center justify-center rounded-md bg-gray-100`}><Loader2 className="h-4 w-4 animate-spin text-gray-400" /></div>;
+  return <img src={url} alt={checkOut ? 'Check-out selfie' : 'Check-in selfie'} className={`${box} rounded-md object-cover shadow`} />;
+}
+
+function FaceScore({ score }: { score?: number | null }) {
+  if (score == null) return <span className="text-[10px] text-muted-foreground">face n/a</span>;
+  const ok = score >= 0.363;
+  return <span className={`text-[10px] font-medium ${ok ? 'text-green-700' : 'text-red-700'}`}>face {score.toFixed(2)}</span>;
 }
 
 function OverrideDialog({ record, onClose }: { record: AttendanceRecord; onClose: () => void }) {
@@ -70,9 +77,9 @@ function RecordDetail({ id, onClose }: { id: number; onClose: () => void }) {
             <div className="grid flex-1 grid-cols-2 gap-x-6 gap-y-2 text-sm">
               <div className="col-span-2 flex items-center gap-2"><StatusBadge status={r.status} />{r.flagged && <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] text-amber-700"><Flag className="h-3 w-3" />{r.flagReason}</span>}{r.source === 'ADMIN_OVERRIDE' && <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600">Corrected</span>}</div>
               <div><div className="text-xs text-muted-foreground">Shift</div>{fmtTime(r.shiftStartAt)} – {fmtTime(r.shiftEndAt)}</div>
-              <div><div className="text-xs text-muted-foreground">Duty</div><span className="font-semibold">{formatDuration(r.totalDutySeconds)}</span>{r.overtimeSeconds > 0 && <span className="ml-1 text-xs text-green-700">+{formatDuration(r.overtimeSeconds)} OT</span>}</div>
-              <div><div className="text-xs text-muted-foreground">Check-in</div>{fmtDateTime(r.checkInAt)}{r.lateMinutes > 0 && <span className="ml-1 text-xs text-amber-700">({r.lateMinutes} min late)</span>}</div>
-              <div><div className="text-xs text-muted-foreground">Check-out</div>{fmtDateTime(r.checkOutAt)}{r.checkOutType && <span className="ml-1 text-xs text-muted-foreground">({r.checkOutType.toLowerCase()})</span>}</div>
+              <div><div className="text-xs text-muted-foreground">Duty · {r.sessionCount} session{r.sessionCount === 1 ? '' : 's'}</div><span className="font-semibold">{formatDuration(r.totalDutySeconds)}</span><span className="ml-2 text-xs text-green-700">inside {formatDuration(r.insideShiftSeconds)}</span><span className="ml-2 text-xs text-amber-700">outside {formatDuration(r.outsideShiftSeconds)}</span></div>
+              <div><div className="text-xs text-muted-foreground">First in</div>{fmtDateTime(r.checkInAt)}{r.lateMinutes > 0 && <span className="ml-1 text-xs text-amber-700">({r.lateMinutes} min late)</span>}</div>
+              <div><div className="text-xs text-muted-foreground">Last out</div>{fmtDateTime(r.checkOutAt)}{r.checkOutType && <span className="ml-1 text-xs text-muted-foreground">({r.checkOutType.toLowerCase()})</span>}</div>
               <div className="col-span-2 text-xs text-muted-foreground">
                 {r.checkInLat != null && <a className="inline-flex items-center gap-1 text-blue-600 underline" target="_blank" rel="noreferrer" href={`https://www.google.com/maps?q=${r.checkInLat},${r.checkInLng}`}><MapPin className="h-3 w-3" />Check-in location{r.checkInAccuracy != null && ` (±${Math.round(r.checkInAccuracy)} m)`}</a>}
                 {r.livenessPassed != null && <span className="ml-3">Liveness: {r.livenessPassed ? 'passed' : 'failed'}</span>}
@@ -83,7 +90,34 @@ function RecordDetail({ id, onClose }: { id: number; onClose: () => void }) {
           </div>
 
           <div>
-            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Duty segments</h4>
+            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Check-in / check-out sessions</h4>
+            {!r.sessions?.length ? <p className="text-xs text-muted-foreground">No sessions recorded.</p> : (
+              <div className="space-y-2">
+                {r.sessions.map((s) => (
+                  <div key={s.id} className={`rounded-lg border p-3 ${s.flagged ? 'border-amber-200 bg-amber-50/40' : 'border-gray-200'}`}>
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                      <div className="font-semibold text-gray-900">Session #{s.sessionNo}{s.open && <span className="ml-2 rounded-full bg-green-50 px-2 py-0.5 text-[10px] text-green-700">open</span>}{s.closeType === 'AUTO' && <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] text-gray-600">auto-closed</span>}{s.closeType === 'ADMIN' && <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] text-gray-600">admin</span>}</div>
+                      <div><span className="font-medium">{formatDuration(s.countedSeconds)}</span><span className="ml-2 text-green-700">inside {formatDuration(s.insideShiftSeconds)}</span><span className="ml-2 text-amber-700">outside {formatDuration(s.outsideShiftSeconds)}</span></div>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-4">
+                      <div className="flex items-center gap-2">
+                        {s.hasInSelfie ? <Selfie id={r.id} session={s.sessionNo} size="sm" /> : <div className="flex h-20 w-16 items-center justify-center rounded-md bg-gray-100 text-[10px] text-muted-foreground">—</div>}
+                        <div className="text-xs"><div className="text-muted-foreground">In</div><div className="font-medium">{fmtDateTime(s.inAt)}</div><FaceScore score={s.inFaceScore} />{s.inLat != null && <a className="ml-2 text-blue-600 underline" target="_blank" rel="noreferrer" href={`https://www.google.com/maps?q=${s.inLat},${s.inLng}`}>map</a>}</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {s.hasOutSelfie ? <Selfie id={r.id} session={s.sessionNo} checkOut size="sm" /> : <div className="flex h-20 w-16 items-center justify-center rounded-md bg-gray-100 text-[10px] text-muted-foreground">—</div>}
+                        <div className="text-xs"><div className="text-muted-foreground">Out</div><div className="font-medium">{s.outAt ? fmtDateTime(s.outAt) : <span className="text-green-700">running</span>}</div>{s.outAt && <FaceScore score={s.outFaceScore} />}{s.outLat != null && <a className="ml-2 text-blue-600 underline" target="_blank" rel="noreferrer" href={`https://www.google.com/maps?q=${s.outLat},${s.outLng}`}>map</a>}</div>
+                      </div>
+                    </div>
+                    {s.flagReason && <div className="mt-2 text-[11px] text-amber-700">{s.flagReason}</div>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Counted time (GPS pauses excluded)</h4>
             {!r.segments?.length ? <p className="text-xs text-muted-foreground">No duty time recorded.</p> : (
               <table className="w-full text-xs"><thead className="text-left text-muted-foreground"><tr><th className="py-1">Start</th><th className="py-1">End</th><th className="py-1">Ended by</th><th className="py-1 text-right">Duration</th></tr></thead>
                 <tbody>{r.segments.map((s) => <tr key={s.id} className="border-t border-gray-100"><td className="py-1">{fmtDateTime(s.startAt)}</td><td className="py-1">{s.endAt ? fmtDateTime(s.endAt) : <span className="text-green-700">running</span>}</td><td className="py-1">{s.endReason ?? '—'}</td><td className="py-1 text-right">{formatDuration(s.seconds)}</td></tr>)}</tbody></table>
@@ -139,7 +173,7 @@ export function RecordsPanel() {
           <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
             <table className="min-w-full text-sm">
               <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
-                <tr><th className="px-4 py-3">Date</th><th className="px-4 py-3">Employee</th><th className="px-4 py-3">Roster</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">In</th><th className="px-4 py-3">Out</th><th className="px-4 py-3 text-right">Duty</th><th className="px-4 py-3"></th></tr>
+                <tr><th className="px-4 py-3">Date</th><th className="px-4 py-3">Employee</th><th className="px-4 py-3">Roster</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">First in</th><th className="px-4 py-3">Last out</th><th className="px-4 py-3 text-center">In/Out</th><th className="px-4 py-3 text-right">Inside</th><th className="px-4 py-3 text-right">Outside</th><th className="px-4 py-3"></th></tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {filtered.map((r) => (
@@ -150,7 +184,9 @@ export function RecordsPanel() {
                     <td className="px-4 py-3"><div className="flex items-center gap-1"><StatusBadge status={r.status} />{r.flagged && <Flag className="h-3.5 w-3.5 text-amber-600" />}{r.onDuty && <span className="h-2 w-2 rounded-full bg-green-500" title="On duty now" />}</div></td>
                     <td className="px-4 py-3 whitespace-nowrap">{fmtTime(r.checkInAt)}{r.lateMinutes > 0 && <span className="ml-1 text-[10px] text-amber-700">+{r.lateMinutes}m</span>}</td>
                     <td className="px-4 py-3 whitespace-nowrap">{fmtTime(r.checkOutAt)}{r.checkOutType === 'AUTO' && <span className="ml-1 text-[10px] text-muted-foreground">auto</span>}</td>
-                    <td className="px-4 py-3 text-right font-medium">{formatDuration(r.totalDutySeconds)}</td>
+                    <td className="px-4 py-3 text-center">×{r.sessionCount}</td>
+                    <td className="px-4 py-3 text-right font-medium text-green-700">{formatDuration(r.insideShiftSeconds)}</td>
+                    <td className="px-4 py-3 text-right text-amber-700">{formatDuration(r.outsideShiftSeconds)}</td>
                     <td className="px-4 py-3 text-right">{r.hasSelfie && <Camera className="h-4 w-4 text-gray-400" />}</td>
                   </tr>
                 ))}

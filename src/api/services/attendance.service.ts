@@ -1,7 +1,7 @@
 import { apiClient } from '../client';
 import type { ApiResponse } from '@/types/api.types';
 import type {
-  AttendanceEvent, AttendanceRecord, AttendanceSite, AttendanceStatus, AttendanceSummary, BulkAssignResult,
+  AttendanceEvent, AttendanceRecord, AttendanceSettings, AttendanceSite, AttendanceStatus, AttendanceSummary, BulkAssignResult,
   Employee, EmployeeRequest, Holiday, HolidayRequest, LeaveBalance, LeaveCreateRequest, LeaveRequestItem, LeaveStatus,
   MonthlySummaryRow, RecordOverrideRequest, Roster, RosterAssignRequest, RosterAssignment, RosterRequest, SiteRequest,
 } from '@/types/attendance.types';
@@ -73,9 +73,15 @@ export const attendanceService = {
     return (await apiClient.put<ApiResponse<AttendanceRecord>>(`${BASE}/records/${id}/override`, req)).data.data;
   },
   /** Authenticated image fetch → object URL (the <img> tag cannot send the JWT). */
-  async selfieObjectUrl(id: number, checkOut = false): Promise<string> {
-    const res = await apiClient.get(`${BASE}/records/${id}/selfie`, { params: { checkOut }, responseType: 'blob' });
+  async selfieObjectUrl(id: number, checkOut = false, session?: number): Promise<string> {
+    const res = await apiClient.get(`${BASE}/records/${id}/selfie`, { params: { checkOut, session }, responseType: 'blob' });
     return window.URL.createObjectURL(new Blob([res.data], { type: 'image/jpeg' }));
+  },
+
+  // settings
+  settings: () => get<AttendanceSettings>(`${BASE}/settings`),
+  async updateSettings(req: Partial<AttendanceSettings>): Promise<AttendanceSettings> {
+    return (await apiClient.put<ApiResponse<AttendanceSettings>>(`${BASE}/settings`, req)).data.data;
   },
 
   // holidays + leave
