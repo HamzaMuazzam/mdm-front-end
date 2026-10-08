@@ -1,7 +1,7 @@
 import { apiClient } from '../client';
 import type { ApiResponse } from '@/types/api.types';
 import type {
-  AttendanceEvent, AttendanceRecord, AttendanceSettings, AttendanceSite, AttendanceStatus, AttendanceSummary, BulkAssignResult,
+  AttendanceEvent, AttendanceRecord, AttendanceTrip, AttendanceSettings, AttendanceSite, AttendanceStatus, AttendanceSummary, BulkAssignResult,
   Employee, EmployeeRequest, Holiday, HolidayRequest, LeaveBalance, LeaveCreateRequest, LeaveRequestItem, LeaveStatus,
   MonthlySummaryRow, RecordOverrideRequest, Roster, RosterAssignRequest, RosterAssignment, RosterRequest, SiteRequest,
 } from '@/types/attendance.types';
@@ -68,6 +68,7 @@ export const attendanceService = {
   records: (params: { from?: string; to?: string; deviceUuid?: string; status?: AttendanceStatus }) => get<AttendanceRecord[]>(`${BASE}/records`, params),
   record: (id: number) => get<AttendanceRecord>(`${BASE}/records/${id}`),
   live: () => get<AttendanceRecord[]>(`${BASE}/live`),
+  trips: (params: { deviceUuid: string; from?: string; to?: string; points?: boolean }) => get<AttendanceTrip[]>(`${BASE}/trips`, params),
   events: (params: { from?: string; to?: string; violationsOnly?: boolean; deviceUuid?: string }) => get<AttendanceEvent[]>(`${BASE}/events`, params),
   async override(id: number, req: RecordOverrideRequest): Promise<AttendanceRecord> {
     return (await apiClient.put<ApiResponse<AttendanceRecord>>(`${BASE}/records/${id}/override`, req)).data.data;

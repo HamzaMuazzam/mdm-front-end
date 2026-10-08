@@ -21,6 +21,8 @@ export interface Device {
   defaultLauncher?: string;
   deletedAt?: string | null;
   deviceVerificationCode?: number;
+  /** false = placeholder auto-added by the server for a device that sends data without registering */
+  registered?: boolean;
   // Live presence + security snapshot (enriched by the device list API)
   lastSeenAt?: number | null;
   online?: boolean;

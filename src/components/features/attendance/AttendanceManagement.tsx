@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Users, CalendarClock, ClipboardList, Palmtree, FileBarChart, Activity, Download, Loader2, ShieldAlert, RefreshCw, Settings } from 'lucide-react';
+import { Users, CalendarClock, ClipboardList, Route, Palmtree, FileBarChart, Activity, Download, Loader2, ShieldAlert, RefreshCw, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePermissionStore } from '@/store/permissionStore';
@@ -10,10 +10,11 @@ import { EmptyState, Field, StatusBadge, fmtDateTime, fmtTime, selectClass, toda
 import { EmployeesPanel } from './EmployeesPanel';
 import { RostersPanel } from './RostersPanel';
 import { RecordsPanel } from './RecordsPanel';
+import { TripsPanel } from './TripsPanel';
 import { LeaveHolidayPanel } from './LeaveHolidayPanel';
 import { SettingsPanel } from './SettingsPanel';
 
-type SubTab = 'overview' | 'records' | 'rosters' | 'employees' | 'leave' | 'reports' | 'settings';
+type SubTab = 'overview' | 'records' | 'trips' | 'rosters' | 'employees' | 'leave' | 'reports' | 'settings';
 
 function Tile({ label, value, tone = 'default' }: { label: string; value: number | string; tone?: 'default' | 'green' | 'amber' | 'red' | 'blue' }) {
   const tones = { default: 'text-gray-900', green: 'text-green-700', amber: 'text-amber-700', red: 'text-red-700', blue: 'text-blue-700' };
@@ -157,6 +158,7 @@ export function AttendanceManagement() {
   const tabs: { key: SubTab; label: string; icon: typeof Users; visible: boolean }[] = [
     { key: 'overview', label: 'Overview', icon: Activity, visible: hasPermission('attendance:records:read') },
     { key: 'records', label: 'Records', icon: ClipboardList, visible: hasPermission('attendance:records:read') },
+    { key: 'trips', label: 'Trips', icon: Route, visible: hasPermission('attendance:records:read') },
     { key: 'rosters', label: 'Rosters & Sites', icon: CalendarClock, visible: hasPermission('attendance:rosters:read') },
     { key: 'employees', label: 'Employees', icon: Users, visible: hasPermission('attendance:records:read') },
     { key: 'leave', label: 'Leave & Holidays', icon: Palmtree, visible: hasPermission('attendance:records:read') },
@@ -182,6 +184,7 @@ export function AttendanceManagement() {
       </div>
       {tab === 'overview' && <OverviewPanel />}
       {tab === 'records' && <RecordsPanel />}
+      {tab === 'trips' && <TripsPanel />}
       {tab === 'rosters' && <RostersPanel />}
       {tab === 'employees' && <EmployeesPanel />}
       {tab === 'leave' && <LeaveHolidayPanel />}

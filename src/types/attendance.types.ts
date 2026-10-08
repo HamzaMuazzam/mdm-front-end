@@ -163,6 +163,44 @@ export interface AttendanceSession {
 export type FaceMatchMode = 'OFF' | 'FLAG' | 'BLOCK';
 export type MissingReferencePolicy = 'ALLOW_FLAG' | 'BLOCK';
 
+export interface TripPoint { lat: number; lng: number; speedKmh?: number | null; accuracy?: number | null; at: string }
+
+/** One check-in → check-out session with its GPS trail. */
+export interface AttendanceTrip {
+  recordId: number;
+  sessionId: number;
+  sessionNo: number;
+  rosterDate: string;
+  deviceUuid: string;
+  deviceName?: string | null;
+  employeeName?: string | null;
+  employeeCode?: string | null;
+  shiftStartAt?: string | null;
+  shiftEndAt?: string | null;
+  inAt: string;
+  inLat?: number | null;
+  inLng?: number | null;
+  inFaceScore?: number | null;
+  inLivenessPassed?: boolean | null;
+  outAt?: string | null;
+  outLat?: number | null;
+  outLng?: number | null;
+  outFaceScore?: number | null;
+  outLivenessPassed?: boolean | null;
+  open: boolean;
+  closeType?: string | null;
+  countedSeconds: number;
+  insideShiftSeconds: number;
+  outsideShiftSeconds: number;
+  flagged?: boolean | null;
+  flagReason?: string | null;
+  pointCount: number;
+  distanceMeters: number;
+  maxSpeedKmh?: number | null;
+  avgSpeedKmh?: number | null;
+  points?: TripPoint[];
+}
+
 export interface AttendanceSettings {
   livenessRequired: boolean;
   faceMatchMode: FaceMatchMode;

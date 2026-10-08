@@ -38,6 +38,9 @@ export const useAttendanceSummaryQuery = (date?: string) =>
   useQuery({ queryKey: [...ATTENDANCE_KEY, 'summary', date ?? 'today'], queryFn: () => attendanceService.summary(date), refetchInterval: 60_000 });
 export const useLiveBoardQuery = () =>
   useQuery({ queryKey: [...ATTENDANCE_KEY, 'live'], queryFn: attendanceService.live, refetchInterval: 30_000 });
+export const useTripsQuery = (params: { deviceUuid: string; from?: string; to?: string }, enabled = true) =>
+  useQuery({ queryKey: [...ATTENDANCE_KEY, 'trips', params], queryFn: () => attendanceService.trips(params), enabled: enabled && !!params.deviceUuid, staleTime: 30_000 });
+
 export const useRecordsQuery = (params: { from?: string; to?: string; deviceUuid?: string; status?: AttendanceStatus }, enabled = true) =>
   useQuery({ queryKey: [...ATTENDANCE_KEY, 'records', params], queryFn: () => attendanceService.records(params), enabled, staleTime: 30_000 });
 export const useRecordQuery = (id: number | null) =>

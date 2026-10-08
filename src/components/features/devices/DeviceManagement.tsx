@@ -1107,7 +1107,12 @@ export function DeviceManagement() {
                 {/* Name + email + model */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2 mb-0.5">
-                    <p className="font-semibold text-sm text-foreground leading-snug truncate">{device.deviceName || 'Unnamed Device'}</p>
+                    <p className="font-semibold text-sm text-foreground leading-snug truncate">
+                      {device.deviceName || 'Unnamed Device'}
+                      {device.registered === false && (
+                        <span className="ml-1.5 inline-flex items-center rounded bg-amber-50 px-1 py-0.5 text-[10px] font-semibold text-amber-700 align-middle">Not registered</span>
+                      )}
+                    </p>
                     <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border ${
                       isActive
                         ? 'bg-green-50 text-green-700 border-green-200'
@@ -1256,6 +1261,14 @@ export function DeviceManagement() {
                               <p className={`truncate text-[13px] font-medium ${isActive ? 'text-gray-900' : 'text-gray-500'}`}>
                                 {device.deviceName || 'Unnamed Device'}
                               </p>
+                              {device.registered === false && (
+                                <span
+                                  className="inline-flex shrink-0 items-center gap-0.5 rounded bg-amber-50 px-1 py-0.5 text-[10px] font-semibold text-amber-700"
+                                  title="This device is sending data to the server but was never registered (no owner). Its data is being dropped until it enrols via QR."
+                                >
+                                  Not registered
+                                </span>
+                              )}
                               {device.integrityCompromised && (
                                 <span
                                   className="inline-flex shrink-0 items-center gap-0.5 rounded bg-red-50 px-1 py-0.5 text-[10px] font-semibold text-red-600"
