@@ -65,7 +65,15 @@ export function SettingsPanel() {
             <option value="ALLOW_FLAG">Allow + flag</option><option value="BLOCK">Block</option>
           </select>
         </Row>
-        <Row title="Liveness challenge" description="Require the blink / head-turn challenge on the device before the selfie is taken. When off, the device still needs one real face in frame.">
+        <Row title="Photo / screen replay detection" description={`Passive anti-spoofing on every selfie (MiniFASNet). Catches printed photos and videos played on another phone. ${data.antiSpoofAvailable ? '' : 'Model not loaded on the server — selfies are not checked until it is.'}`}>
+          <select className={`${selectClass} w-44`} disabled={!canEdit} value={form.antiSpoofMode} onChange={(e) => set('antiSpoofMode', e.target.value as FaceMatchMode)}>
+            <option value="BLOCK">Block + notify</option><option value="FLAG">Flag only</option><option value="OFF">Off</option>
+          </select>
+        </Row>
+        <Row title="Live-face threshold" description="Minimum 'real face' probability (0–1). 0.5 is the model default; raise it to be stricter.">
+          <Input type="number" step="0.05" min={0.1} max={0.95} className="w-28" disabled={!canEdit} value={form.antiSpoofThreshold} onChange={(e) => set('antiSpoofThreshold', Number(e.target.value))} />
+        </Row>
+        <Row title="Liveness challenge" description="Require a random two-step challenge on the device (blink, smile, turn left/right in random order) before the selfie is taken. When off, the device only needs one steady face in frame; the server-side replay detection above still applies.">
           <Toggle checked={form.livenessRequired} disabled={!canEdit} onChange={(v) => set('livenessRequired', v)} />
         </Row>
         <Row title="Site geofence" description="Check-in must happen inside the roster's site when one is bound. GPS must be on in all cases.">

@@ -168,8 +168,11 @@ export interface AttendanceSettings {
   faceMatchMode: FaceMatchMode;
   faceMatchThreshold: number;
   missingReferencePolicy: MissingReferencePolicy;
+  antiSpoofMode: FaceMatchMode;
+  antiSpoofThreshold: number;
   siteRequired: boolean;
   faceServiceAvailable?: boolean;
+  antiSpoofAvailable?: boolean;
   faceServiceStatus?: string | null;
   updatedByEmail?: string | null;
   updatedAt?: string | null;
