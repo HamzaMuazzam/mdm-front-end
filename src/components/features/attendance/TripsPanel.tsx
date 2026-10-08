@@ -190,12 +190,15 @@ export function TripsPanel() {
               return (
                 <Fragment key={t.sessionId}>
                   {pts.length > 1 && <Polyline positions={pts} pathOptions={{ color, weight: 4, opacity: 0.85 }} />}
-                  {pts.length > 1 && selected !== 'all' && pts.map((p, j) => (
-                    j % Math.max(1, Math.floor(pts.length / 60)) === 0
-                      ? <CircleMarker key={j} center={p} radius={2.5} pathOptions={{ color, fillColor: color, fillOpacity: 1 }}>
-                          <Popup>{fmtDateTime(t.points![j].at)}<br />{t.points![j].speedKmh != null ? `${t.points![j].speedKmh} km/h` : ''}</Popup>
-                        </CircleMarker>
-                      : null
+                  {selected !== 'all' && pts.map((p, j) => (
+                    <CircleMarker key={j} center={p} radius={j === 0 || j === pts.length - 1 ? 5 : 3.5} pathOptions={{ color: '#fff', weight: 1.5, fillColor: color, fillOpacity: 1 }}>
+                      <Popup>
+                        <b>Point {j + 1} / {pts.length}</b><br />
+                        {fmtDateTime(t.points![j].at)}<br />
+                        {t.points![j].speedKmh != null ? `${t.points![j].speedKmh} km/h` : 'speed —'}
+                        {t.points![j].accuracy != null ? ` · ±${Math.round(t.points![j].accuracy!)} m` : ''}
+                      </Popup>
+                    </CircleMarker>
                   ))}
                   {t.inLat != null && t.inLng != null && (
                     <Marker position={[t.inLat, t.inLng]} icon={pin(color, 'IN')}>
