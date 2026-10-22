@@ -2,6 +2,22 @@ export interface SecurityGroup {
   id: number;
   groupName: string;
   description: string;
+  parentGroupId?: number | null;
+  parentGroupName?: string | null;
+  createdByUserEmail?: string | null;
+  /** Users currently assigned to this group (within the caller's visibility). */
+  userCount?: number;
+}
+
+export interface MoveSecurityGroupUsersRequest {
+  userIds: number[];
+  /** null = remove the users from any security group */
+  targetSecurityGroupId: number | null;
+}
+
+export interface MoveSecurityGroupUsersResponse {
+  moved: number;
+  skipped: { userId: number; reason: string }[];
 }
 
 export interface CreateSecurityGroupRequest {

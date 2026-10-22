@@ -66,6 +66,30 @@ export function useUpdateUser() {
   });
 }
 
+export function useAssignUserSecurityGroup() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, securityGroupId }: { id: number; securityGroupId: number | null }) =>
+      userService.assignSecurityGroup(id, securityGroupId),
+    onSuccess: (_res, vars) => {
+      queryClient.invalidateQueries({ queryKey: USERS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ['security-groups'] });
+      queryClient.invalidateQueries({ queryKey: ['security-group-members'] });
+      toast({
+        variant: 'success',
+        title: vars.securityGroupId === null ? 'Security group removed' : 'Security group updated',
+        description: vars.securityGroupId === null
+          ? 'The user no longer belongs to any security group.'
+          : 'The user has been moved to the selected security group.',
+      });
+    },
+    onError: (error: any) => {
+      const message = error?.response?.data?.message || error?.message || 'Failed to change security group.';
+      toast({ variant: 'destructive', title: 'Security group not changed', description: message });
+    },
+  });
+}
+
 export function useDeleteUser() {
   const queryClient = useQueryClient();
 

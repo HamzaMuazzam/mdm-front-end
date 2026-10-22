@@ -20,6 +20,12 @@ export const userService = {
     return response.data;
   },
 
+  /** Assign / change / remove (null) a user's security group. */
+  async assignSecurityGroup(id: number, securityGroupId: number | null): Promise<ApiResponse<User>> {
+    const response = await apiClient.patch<ApiResponse<User>>(`/v1/users/${id}/security-group`, { securityGroupId });
+    return response.data;
+  },
+
   async deleteUser(id: number, status: boolean): Promise<ApiResponse<void>> {
     const response = await apiClient.delete<ApiResponse<void>>(`/v1/users/${id}?status=${status}`);
     return response.data;

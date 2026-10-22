@@ -6,6 +6,8 @@ export interface User {
   phone?: string;
   active: boolean;
   userCode?: string;
+  securityGroupId?: number | null;
+  securityGroupName?: string | null;
 }
 
 export interface LoginRequest {

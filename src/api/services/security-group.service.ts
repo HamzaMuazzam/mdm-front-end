@@ -1,6 +1,7 @@
 import { apiClient } from '../client';
 import type { ApiResponse, PaginatedResponse } from '@/types/api.types';
-import type { SecurityGroup, CreateSecurityGroupRequest, SecurityGroupPermissionMatrix } from '@/types/security-group.types';
+import type { SecurityGroup, CreateSecurityGroupRequest, SecurityGroupPermissionMatrix, MoveSecurityGroupUsersRequest, MoveSecurityGroupUsersResponse } from '@/types/security-group.types';
+import type { User } from '@/types/auth.types';
 
 export const securityGroupService = {
   async getAll(page = 0, size = 100): Promise<SecurityGroup[]> {
@@ -40,6 +41,28 @@ export const securityGroupService = {
       permissionId,
     });
     return response.data;
+  },
+
+  /** Users assigned to the group (scoped to the caller's account). */
+  async getMembers(securityGroupId: number, page = 0, size = 200): Promise<User[]> {
+    const response = await apiClient.get<ApiResponse<PaginatedResponse<User>>>(
+      `/v1/security-groups/${securityGroupId}/users`, { params: { page, size } }
+    );
+    return response.data.data.content;
+  },
+
+  /** Users under the caller that are not yet in the group — for the "Add users" picker. */
+  async getEligibleUsers(securityGroupId: number): Promise<User[]> {
+    const response = await apiClient.get<ApiResponse<User[]>>(`/v1/security-groups/${securityGroupId}/eligible-users`);
+    return response.data.data;
+  },
+
+  /** Bulk move / add / unassign. Pass the group's own id as target to add users to it. */
+  async moveUsers(securityGroupId: number, data: MoveSecurityGroupUsersRequest): Promise<MoveSecurityGroupUsersResponse> {
+    const response = await apiClient.patch<ApiResponse<MoveSecurityGroupUsersResponse>>(
+      `/v1/security-groups/${securityGroupId}/users`, data
+    );
+    return response.data.data;
   },
 
   async removePermission(permissionId: number, securityGroupId: number): Promise<ApiResponse<unknown>> {

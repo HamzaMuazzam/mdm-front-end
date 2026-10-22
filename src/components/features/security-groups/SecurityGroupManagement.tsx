@@ -1,357 +1,169 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { ArrowLeft, Pencil, Plus, Shield, ShieldCheck, Users } from 'lucide-react';
 import {
-  useSecurityGroupsQuery,
-  useSecurityGroupPermissionsQuery,
   useCreateSecurityGroup,
+  useSecurityGroupPermissionsQuery,
+  useSecurityGroupsQuery,
   useUpdateSecurityGroup,
-  useAddPermission,
-  useRemovePermission,
 } from '@/hooks/useSecurityGroups';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, ShieldCheck, Plus, X, CheckCircle2, Circle, Loader2, Pencil } from 'lucide-react';
-import type { SecurityGroup, PermissionItem } from '@/types/security-group.types';
 import { usePermissionStore } from '@/store/permissionStore';
-import { Divider } from '@/components/ui/divider';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import type { SecurityGroup } from '@/types/security-group.types';
+import { cn } from '@/lib/utils';
+import { SecurityGroupList } from './SecurityGroupList';
+import { PermissionsMatrix } from './PermissionsMatrix';
+import { MembersPanel } from './MembersPanel';
+import { GroupFormDialog } from './GroupFormDialog';
 
+type DetailTab = 'permissions' | 'members';
+
+/**
+ * Security Groups: master list on the left, detail (Permissions | Members) on the right.
+ * On phones the list and detail are two screens with a back button.
+ */
 export function SecurityGroupManagement() {
-  const [selectedGroup, setSelectedGroup] = useState<SecurityGroup | null>(null);
+  const hasPermission = usePermissionStore((s) => s.hasPermission);
+  const canCreate = hasPermission('security-group:create');
+  const canEdit = hasPermission('security-group:update');
 
-  // Create modal state
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [createName, setCreateName] = useState('');
-  const [createDesc, setCreateDesc] = useState('');
-  const [createError, setCreateError] = useState('');
-
-  // Edit modal state
-  const [editingGroup, setEditingGroup] = useState<SecurityGroup | null>(null);
-  const [editName, setEditName] = useState('');
-  const [editDesc, setEditDesc] = useState('');
-  const [editError, setEditError] = useState('');
-
-  const [togglingPermissionId, setTogglingPermissionId] = useState<number | null>(null);
-
-  const hasPermission = usePermissionStore((state) => state.hasPermission);
-
-  const { data: allGroups = [], isLoading: groupsLoading } = useSecurityGroupsQuery();
-  const groups = allGroups;
-  const { data: matrix, isLoading: permissionsLoading } = useSecurityGroupPermissionsQuery(
-    selectedGroup?.id ?? null
-  );
+  const { data: groups = [], isLoading: groupsLoading } = useSecurityGroupsQuery();
   const createMutation = useCreateSecurityGroup();
   const updateMutation = useUpdateSecurityGroup();
-  const addPermission = useAddPermission(selectedGroup?.id ?? null);
-  const removePermission = useRemovePermission(selectedGroup?.id ?? null);
 
-  // ── Permission toggle ──────────────────────────────────────────────────────
-  const handleTogglePermission = async (perm: PermissionItem) => {
-    if (togglingPermissionId !== null) return;
-    setTogglingPermissionId(perm.permissionId);
-    try {
-      if (perm.isAllocated) {
-        await removePermission.mutateAsync(perm.permissionId);
-      } else {
-        await addPermission.mutateAsync(perm.permissionId);
-      }
-    } finally {
-      setTogglingPermissionId(null);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [tab, setTab] = useState<DetailTab>('permissions');
+  const [form, setForm] = useState<{ open: boolean; group: SecurityGroup | null }>({ open: false, group: null });
+
+  // Keep the selected group object fresh (counts, renames) from the list query.
+  const selected = useMemo(() => groups.find((g) => g.id === selectedId) ?? null, [groups, selectedId]);
+  useEffect(() => {
+    if (selectedId !== null && !groupsLoading && !groups.some((g) => g.id === selectedId)) setSelectedId(null);
+  }, [groups, groupsLoading, selectedId]);
+
+  const { data: matrix, isLoading: matrixLoading } = useSecurityGroupPermissionsQuery(selected?.id ?? null);
+
+  const grantedCount = useMemo(
+    () => matrix?.permissionGroups.reduce((n, g) => n + g.permissions.filter((p) => p.isAllocated).length, 0) ?? null,
+    [matrix],
+  );
+
+  const submitForm = async (data: { groupName: string; description: string }) => {
+    if (form.group) await updateMutation.mutateAsync({ id: form.group.id, data });
+    else {
+      const created = await createMutation.mutateAsync(data);
+      const id = (created as { data?: { id?: number } })?.data?.id;
+      if (typeof id === 'number') { setSelectedId(id); setTab('permissions'); }
     }
+    setForm({ open: false, group: null });
   };
 
-  // ── Create handlers ────────────────────────────────────────────────────────
-  const handleCreateSubmit = async () => {
-    if (!createName.trim()) { setCreateError('Group name is required.'); return; }
-    setCreateError('');
-    try {
-      await createMutation.mutateAsync({ groupName: createName.trim(), description: createDesc.trim() });
-      setIsCreateOpen(false);
-      setCreateName('');
-      setCreateDesc('');
-    } catch { /* handled by mutation toast */ }
-  };
-
-  const handleCloseCreate = () => {
-    if (createMutation.isPending) return;
-    setIsCreateOpen(false);
-    setCreateName('');
-    setCreateDesc('');
-    setCreateError('');
-  };
-
-  // ── Edit handlers ──────────────────────────────────────────────────────────
-  const handleOpenEdit = (group: SecurityGroup, e: React.MouseEvent) => {
-    e.stopPropagation(); // don't also select the group in the list
-    setEditingGroup(group);
-    setEditName(group.groupName);
-    setEditDesc(group.description ?? '');
-    setEditError('');
-  };
-
-  const handleEditSubmit = async () => {
-    if (!editName.trim()) { setEditError('Group name is required.'); return; }
-    setEditError('');
-    try {
-      await updateMutation.mutateAsync({
-        id: editingGroup!.id,
-        data: { groupName: editName.trim(), description: editDesc.trim() },
-      });
-      // If the edited group is currently selected, keep selection in sync
-      if (selectedGroup?.id === editingGroup!.id) {
-        setSelectedGroup((prev) => prev ? { ...prev, groupName: editName.trim(), description: editDesc.trim() } : prev);
-      }
-      setEditingGroup(null);
-    } catch { /* handled by mutation toast */ }
-  };
-
-  const handleCloseEdit = () => {
-    if (updateMutation.isPending) return;
-    setEditingGroup(null);
-    setEditError('');
-  };
+  const detailOpen = selected !== null;
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6">
-        <h1 className="text-xl font-semibold text-gray-900">Security Groups</h1>
-        {hasPermission('security-group:create') && (
-          <Button onClick={() => setIsCreateOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Group
+      {/* page header */}
+      <div className={cn('mb-4 flex items-center justify-between gap-3', detailOpen && 'hidden sm:flex')}>
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">Security Groups</h1>
+          <p className="hidden text-sm text-muted-foreground sm:block">Group permissions into roles, then put users in them.</p>
+        </div>
+        {canCreate && (
+          <Button onClick={() => setForm({ open: true, group: null })}>
+            <Plus className="mr-1.5 h-4 w-4" /> New group
           </Button>
         )}
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0">
-        {/* Left panel – group list */}
-        <Card className="lg:w-1/2 flex flex-col min-h-0" style={{ minHeight: '200px' }}>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Shield className="h-4 w-4" />
-              Groups
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex-1 p-0 overflow-auto">
-            {groupsLoading ? (
-              <div className="p-4 text-sm text-muted-foreground">Loading...</div>
-            ) : groups.length === 0 ? (
-              <div className="p-4 text-sm text-muted-foreground">No security groups found.</div>
-            ) : (
-              <ul className="">
-                {groups.map((group, index) => (
-                  <>
-                    <li
-                      key={group.id}
-                      onClick={() => setSelectedGroup(group)}
-                      className={`flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors ${
-                        selectedGroup?.id === group.id
-                          ? 'bg-muted border-l-4 border-primary'
-                          : 'border-l-4 border-transparent'
-                      }`}
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-sm">{group.groupName}</p>
-                        {group.description && (
-                          <p className="text-xs text-muted-foreground mt-0.5 truncate">{group.description}</p>
-                        )}
-                      </div>
-                      {hasPermission('security-group:update') && (
-                        <button
-                          type="button"
-                          onClick={(e) => handleOpenEdit(group, e)}
-                          className="ml-2 p-1.5 rounded-md opacity-50 hover:opacity-100 hover:bg-muted transition-all shrink-0"
-                          title="Edit group"
-                        >
+      <div className="flex min-h-0 flex-1 gap-4">
+        {/* list */}
+        <Card className={cn('flex min-h-0 flex-col overflow-hidden sm:w-[320px] sm:shrink-0 lg:w-[360px]', detailOpen ? 'hidden sm:flex' : 'flex w-full')}>
+          <SecurityGroupList
+            groups={groups}
+            loading={groupsLoading}
+            selectedId={selectedId}
+            canEdit={canEdit}
+            onSelect={(g) => { setSelectedId(g.id); }}
+            onEdit={(g) => setForm({ open: true, group: g })}
+          />
+        </Card>
+
+        {/* detail */}
+        <Card className={cn('min-h-0 flex-1 flex-col overflow-hidden', detailOpen ? 'flex' : 'hidden sm:flex')}>
+          {!selected ? (
+            <div className="flex h-full flex-col items-center justify-center gap-2 p-10 text-center">
+              <Shield className="h-10 w-10 text-muted-foreground/40" />
+              <p className="text-sm font-medium">Select a security group</p>
+              <p className="max-w-xs text-xs text-muted-foreground">Pick a group on the left to review its permissions and the users assigned to it.</p>
+            </div>
+          ) : (
+            <>
+              {/* detail header */}
+              <div className="border-b border-border px-4 pt-3">
+                <div className="flex items-start gap-3">
+                  <button type="button" className="-ml-1 mt-0.5 rounded-md p-1 hover:bg-muted sm:hidden" onClick={() => setSelectedId(null)} aria-label="Back to groups">
+                    <ArrowLeft className="h-5 w-5" />
+                  </button>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <h2 className="truncate text-base font-semibold">{selected.groupName}</h2>
+                      {canEdit && (
+                        <button type="button" onClick={() => setForm({ open: true, group: selected })} className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground" title="Rename / describe">
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
                       )}
-                    </li>
-                    {index < groups.length - 1 && <Divider />}
-                  </>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Right panel – permission matrix */}
-        <Card className="lg:w-1/2 flex flex-col min-h-0" style={{ minHeight: '200px' }}>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4" />
-              {matrix ? matrix.securityGroupName : selectedGroup ? 'Loading...' : 'Select a group'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex-1 p-0 overflow-auto">
-            {!selectedGroup ? (
-              <div className="p-4 text-sm text-muted-foreground">
-                Click a security group on the left to view its permissions.
-              </div>
-            ) : permissionsLoading ? (
-              <div className="p-4 text-sm text-muted-foreground">Loading permissions...</div>
-            ) : !matrix || matrix.permissionGroups.length === 0 ? (
-              <div className="p-4 text-sm text-muted-foreground">No permissions found for this group.</div>
-            ) : (
-              <div className="p-4 space-y-5">
-                {matrix.permissionGroups.map((group) => {
-                  const visiblePerms = group.permissions.filter(
-                    (p) => matrix.securityGroupId === 1 || p.isAllocated || p.isAllowed
-                  );
-                  if (visiblePerms.length === 0) return null;
-                  const allocatedCount = visiblePerms.filter((p) => p.isAllocated).length;
-                  return (
-                    <div key={group.permissionGroupId}>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                          {group.permissionGroupName}
-                        </span>
-                        <div className="flex-1 h-px bg-border" />
-                        <span className={`text-xs font-medium ${allocatedCount === visiblePerms.length ? 'text-success' : 'text-muted-foreground'}`}>
-                          {allocatedCount}/{visiblePerms.length}
-                        </span>
-                      </div>
-                      <ul className="space-y-1">
-                        {visiblePerms.map((perm) => {
-                          const isToggling = togglingPermissionId === perm.permissionId;
-                          return (
-                            <li
-                              key={perm.permissionId}
-                              onClick={() => hasPermission('security-group:update') && handleTogglePermission(perm)}
-                              className={`flex items-start gap-2 px-2 py-1.5 rounded-md transition-colors select-none ${
-                                !hasPermission('security-group:update')
-                                  ? 'cursor-default'
-                                  : togglingPermissionId !== null
-                                    ? 'cursor-not-allowed opacity-60'
-                                    : 'cursor-pointer hover:bg-muted/50'
-                              }`}
-                            >
-                              {isToggling ? (
-                                <Loader2 className="h-4 w-4 mt-0.5 shrink-0 animate-spin text-muted-foreground" />
-                              ) : perm.isAllocated ? (
-                                <CheckCircle2 className="h-4 w-4 mt-0.5 text-success shrink-0" />
-                              ) : (
-                                <Circle className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
-                              )}
-                              <div className="min-w-0">
-                                <p className={`text-sm font-mono font-medium leading-tight ${!perm.isAllocated ? 'text-muted-foreground' : ''}`}>
-                                  {perm.permissionName}
-                                </p>
-                                {perm.description && (
-                                  <p className="text-xs text-muted-foreground mt-0.5 leading-tight">
-                                    {perm.description}
-                                  </p>
-                                )}
-                              </div>
-                            </li>
-                          );
-                        })}
-                      </ul>
                     </div>
-                  );
-                })}
+                    <p className="truncate text-xs text-muted-foreground">
+                      {selected.description || 'No description'}
+                      {selected.parentGroupName && <> · child of <span className="font-medium">{selected.parentGroupName}</span></>}
+                    </p>
+                  </div>
+                </div>
+
+                <nav className="-mb-px mt-3 flex gap-1" role="tablist">
+                  <TabButton active={tab === 'permissions'} onClick={() => setTab('permissions')} icon={<ShieldCheck className="h-4 w-4" />} label="Permissions" count={grantedCount} />
+                  <TabButton active={tab === 'members'} onClick={() => setTab('members')} icon={<Users className="h-4 w-4" />} label="Members" count={selected.userCount ?? 0} />
+                </nav>
               </div>
-            )}
-          </CardContent>
+
+              <div className="min-h-0 flex-1">
+                {tab === 'permissions' ? (
+                  <PermissionsMatrix securityGroupId={selected.id} matrix={matrix} loading={matrixLoading} canEdit={canEdit} />
+                ) : (
+                  <MembersPanel group={selected} groups={groups} canEdit={canEdit} />
+                )}
+              </div>
+            </>
+          )}
         </Card>
       </div>
 
-      {/* Create Modal */}
-      {isCreateOpen && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0">
-              <CardTitle>Create Security Group</CardTitle>
-              <button type="button" onClick={handleCloseCreate} className="opacity-70 hover:opacity-100">
-                <X className="h-4 w-4" />
-              </button>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="sg-createName">Group Name</Label>
-                  <Input
-                    id="sg-createName"
-                    value={createName}
-                    onChange={(e) => setCreateName(e.target.value)}
-                    placeholder="e.g. ADMIN_GROUP"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sg-createDesc">Description</Label>
-                  <Input
-                    id="sg-createDesc"
-                    value={createDesc}
-                    onChange={(e) => setCreateDesc(e.target.value)}
-                    placeholder="Optional description"
-                  />
-                </div>
-                {createError && <p className="text-sm text-destructive">{createError}</p>}
-                <div className="flex gap-2 justify-end">
-                  <Button type="button" variant="outline" onClick={handleCloseCreate} disabled={createMutation.isPending}>
-                    Cancel
-                  </Button>
-                  <Button type="button" onClick={handleCreateSubmit} disabled={createMutation.isPending}>
-                    {createMutation.isPending ? 'Creating...' : 'Create'}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Edit Modal */}
-      {editingGroup && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0">
-              <CardTitle>Edit Security Group</CardTitle>
-              <button type="button" onClick={handleCloseEdit} className="opacity-70 hover:opacity-100">
-                <X className="h-4 w-4" />
-              </button>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="sg-editName">Group Name</Label>
-                  <Input
-                    id="sg-editName"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    placeholder="e.g. ADMIN_GROUP"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sg-editDesc">Description</Label>
-                  <Input
-                    id="sg-editDesc"
-                    value={editDesc}
-                    onChange={(e) => setEditDesc(e.target.value)}
-                    placeholder="Optional description"
-                  />
-                </div>
-                {editError && <p className="text-sm text-destructive">{editError}</p>}
-                <div className="flex gap-2 justify-end">
-                  <Button type="button" variant="outline" onClick={handleCloseEdit} disabled={updateMutation.isPending}>
-                    Cancel
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={handleEditSubmit}
-                    disabled={
-                      updateMutation.isPending ||
-                      (editName.trim() === editingGroup.groupName && editDesc.trim() === (editingGroup.description ?? ''))
-                    }
-                  >
-                    {updateMutation.isPending ? 'Saving...' : 'Save'}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      {form.open && (
+        <GroupFormDialog
+          group={form.group}
+          pending={createMutation.isPending || updateMutation.isPending}
+          onSubmit={submitForm}
+          onClose={() => !(createMutation.isPending || updateMutation.isPending) && setForm({ open: false, group: null })}
+        />
       )}
     </div>
+  );
+}
+
+function TabButton({ active, onClick, icon, label, count }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string; count: number | null }) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={cn(
+        'flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm transition-colors',
+        active ? 'border-primary font-medium text-primary' : 'border-transparent text-muted-foreground hover:text-foreground',
+      )}
+    >
+      {icon} {label}
+      {count !== null && <span className={cn('rounded-full px-1.5 text-[11px]', active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground')}>{count}</span>}
+    </button>
   );
 }

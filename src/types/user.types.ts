@@ -5,6 +5,8 @@ export interface UpdateUserRequest {
   phone?: string;
   profileImg?: string;
   active?: boolean;
+  /** When set, moves the user to this security group. */
+  securityGroupId?: number;
 }
 
 export interface ResetUserPasswordRequest {

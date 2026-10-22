@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { useUsersQuery, useCreateUser, useDeleteUser, useUpdateUser, useResetUserPassword } from '@/hooks/useUsers';
+import { useUsersQuery, useCreateUser, useDeleteUser, useUpdateUser, useResetUserPassword, useAssignUserSecurityGroup } from '@/hooks/useUsers';
+import { SecurityGroupSelect } from './SecurityGroupSelect';
 import { useSecurityGroupsQuery } from '@/hooks/useSecurityGroups';
 import { useAllPlansQuery } from '@/hooks/useSubscriptions';
 import { useAuthStore } from '@/store/authStore';
@@ -53,6 +54,8 @@ export function UserManagement() {
   const createMutation = useCreateUser();
   const deleteMutation = useDeleteUser();
   const updateMutation = useUpdateUser();
+  const assignGroupMutation = useAssignUserSecurityGroup();
+  const canAssignGroup = hasPermission('user:update') && hasPermission('user:allow to assign security group');
   const resetPasswordMutation = useResetUserPassword();
 
   const {
@@ -69,6 +72,7 @@ export function UserManagement() {
       setEditValue('email', selectedUser.email || '');
       setEditValue('phone', selectedUser.phone || '');
       setEditValue('active', selectedUser.active);
+      setEditValue('securityGroupId', selectedUser.securityGroupId ?? undefined);
     }
   }, [selectedUser, isEditModalOpen, setEditValue]);
 
@@ -175,8 +179,13 @@ export function UserManagement() {
 
   const onEditSubmit = async (data: Omit<UpdateUserRequest, 'id'>) => {
     if (!selectedUser) return;
+    // <select> yields a string; only send the group when it actually changed.
+    const rawGroup = data.securityGroupId as unknown as string | number | undefined;
+    const nextGroup = rawGroup === '' || rawGroup === undefined ? undefined : Number(rawGroup);
+    const payload: Omit<UpdateUserRequest, 'id'> = { ...data, securityGroupId: undefined };
+    if (nextGroup !== undefined && nextGroup !== (selectedUser.securityGroupId ?? null)) payload.securityGroupId = nextGroup;
     try {
-      await updateMutation.mutateAsync({ id: selectedUser.id, ...data });
+      await updateMutation.mutateAsync({ id: selectedUser.id, ...payload });
       setIsEditModalOpen(false);
       setSelectedUser(null);
       resetEdit();
@@ -268,8 +277,18 @@ export function UserManagement() {
                   <ActionMenu user={user} />
                 </div>
               </div>
-              {/* ID row */}
-              <p className="text-xs text-muted-foreground/60 mt-2">ID: {user.id}</p>
+              {/* Security group + ID row */}
+              <div className="mt-3 flex items-center justify-between gap-2">
+                <SecurityGroupSelect
+                  user={user}
+                  groups={securityGroups}
+                  canEdit={canAssignGroup}
+                  isSelf={loggedInUser?.id === user.id}
+                  pending={assignGroupMutation.isPending && assignGroupMutation.variables?.id === user.id}
+                  onChange={(securityGroupId) => assignGroupMutation.mutateAsync({ id: user.id, securityGroupId })}
+                />
+                <p className="text-xs text-muted-foreground/60">ID: {user.id}</p>
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -286,6 +305,7 @@ export function UserManagement() {
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Email</th>
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">User Name</th>
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Phone</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Security Group</th>
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Status</th>
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Actions</th>
                 </tr>
@@ -297,6 +317,16 @@ export function UserManagement() {
                     <td className="px-4 py-3 text-sm">{user.email}</td>
                     <td className="px-4 py-3 text-sm">{user.userName}</td>
                     <td className="px-4 py-3 text-sm">{user.phone}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <SecurityGroupSelect
+                        user={user}
+                        groups={securityGroups}
+                        canEdit={canAssignGroup}
+                        isSelf={loggedInUser?.id === user.id}
+                        pending={assignGroupMutation.isPending && assignGroupMutation.variables?.id === user.id}
+                        onChange={(securityGroupId) => assignGroupMutation.mutateAsync({ id: user.id, securityGroupId })}
+                      />
+                    </td>
                     <td className="px-4 py-3 text-sm">
                       <span className={`inline-block px-2 py-1 text-xs rounded-full font-medium border ${
                         user.active ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
@@ -411,6 +441,19 @@ export function UserManagement() {
                   <Label htmlFor="edit-profileImg">Profile Image URL</Label>
                   <Input id="edit-profileImg" {...registerEdit('profileImg')} />
                 </div>
+                {canAssignGroup && loggedInUser?.id !== selectedUser.id && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="edit-sg">Security Group</Label>
+                    <select id="edit-sg" {...registerEdit('securityGroupId')} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                      {selectedUser.securityGroupId == null && <option value="">— No group —</option>}
+                      {selectedUser.securityGroupId != null && !securityGroups.some((g) => g.id === selectedUser.securityGroupId) && (
+                        <option value={selectedUser.securityGroupId}>{selectedUser.securityGroupName}</option>
+                      )}
+                      {securityGroups.map((sg) => <option key={sg.id} value={sg.id}>{sg.groupName}</option>)}
+                    </select>
+                    <p className="text-xs text-muted-foreground">To remove the group entirely use the Security Group column in the list.</p>
+                  </div>
+                )}
                 <div className="flex items-center gap-2">
                   <input type="checkbox" id="edit-active" {...registerEdit('active')} className="h-4 w-4" />
                   <Label htmlFor="edit-active">Active</Label>
