@@ -592,7 +592,7 @@ export function BulkHistoryPanel({ compact = false }: { compact?: boolean }) {
 
 export function DeviceGroupManagement() {
   const hasPermission = usePermissionStore((state) => state.hasPermission);
-  const canManage = hasPermission('devices:update');
+  const canManage = hasPermission('device-groups:manage');
   const [appActionsGroup, setAppActionsGroup] = useState<DeviceGroup | null>(null);
 
   const { data: groups = [], isLoading: groupsLoading, isFetching, refetch } = useDeviceGroupsQuery();

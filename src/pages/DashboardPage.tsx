@@ -18,6 +18,8 @@ import { FileManagerPage } from '@/components/features/file-manager/FileManagerP
 import { ReportsDashboard } from '@/components/features/reports/ReportsDashboard';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { usePermissionsQuery } from '@/hooks/usePermissions';
+import { usePermissionStore } from '@/store/permissionStore';
+import { TAB_PERMISSIONS, TAB_FALLBACK_ORDER, gateSatisfied } from '@/utils/permissions';
 
 type TabType = 'analytics' | 'users' | 'devices' | 'device-groups' | 'attendance' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager' | 'reports';
 
@@ -93,6 +95,21 @@ export function DashboardPage() {
       setSearchParams(nextParams, { replace: true });
     }
   }, [tabFromQuery, searchParams, setSearchParams]);
+
+  // If the user may not open the active tab (typed ?tab= by hand, or the permission was
+  // revoked), fall back to the first tab they are allowed to see.
+  const hasPermission = usePermissionStore((state) => state.hasPermission);
+  const permissionsLoaded = usePermissionStore((state) => state.isLoaded);
+  useEffect(() => {
+    if (!permissionsLoaded) return;
+    if (gateSatisfied(TAB_PERMISSIONS[activeTab], hasPermission)) return;
+    const fallback = TAB_FALLBACK_ORDER.find((t) => gateSatisfied(TAB_PERMISSIONS[t], hasPermission));
+    if (!fallback || fallback === activeTab) return;
+    setActiveTab(fallback);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('tab', fallback);
+    setSearchParams(nextParams, { replace: true });
+  }, [activeTab, permissionsLoaded, hasPermission, searchParams, setSearchParams]);
 
   // Support existing navigate(..., { state: { activeTab } }) flows by moving state into query param
   useEffect(() => {

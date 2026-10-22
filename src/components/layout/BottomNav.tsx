@@ -84,7 +84,7 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
       key: 'device-groups',
       label: 'Device Groups',
       icon: <Layers className="h-5 w-5" />,
-      visible: hasPermission('devices:read'),
+      visible: hasPermission('device-groups:read'),
     },
     {
       key: 'attendance',

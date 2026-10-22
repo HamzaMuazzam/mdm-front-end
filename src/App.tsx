@@ -3,6 +3,7 @@ import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { PublicRoute } from './components/common/PublicRoute';
 import { Toaster } from './components/ui/toaster';
 import { ROUTES } from './utils/constants';
+import { PERMISSIONS as P } from './utils/permissions';
 
 // Lazy load pages
 import { LoginPage } from './pages/LoginPage';
@@ -57,7 +58,7 @@ function App() {
         <Route
           path={ROUTES.DEVICE_APPLICATIONS}
           element={
-            <ProtectedRoute requiresSubscription>
+            <ProtectedRoute requiresSubscription requiresPermission={P.DEVICES_APPLICATIONS_READ}>
               <DeviceApplicationsPage />
             </ProtectedRoute>
           }
@@ -73,7 +74,7 @@ function App() {
         <Route
           path={ROUTES.DEVICE_MONITOR}
           element={
-            <ProtectedRoute requiresSubscription>
+            <ProtectedRoute requiresSubscription requiresPermission={P.SCREEN_MONITORING_ACCESS}>
               <DeviceMonitorDashboardPage />
             </ProtectedRoute>
           }
@@ -81,7 +82,7 @@ function App() {
         <Route
           path={ROUTES.DEVICE_NOTIFICATIONS}
           element={
-            <ProtectedRoute requiresSubscription>
+            <ProtectedRoute requiresSubscription requiresPermission={P.NOTIFICATIONS_VIEW_HISTORY}>
               <DeviceNotificationsPage />
             </ProtectedRoute>
           }
@@ -90,7 +91,7 @@ function App() {
         <Route
           path={ROUTES.DEVICE_ALERT}
           element={
-            <ProtectedRoute requiresSubscription>
+            <ProtectedRoute requiresSubscription requiresPermission={[P.DEVICE_ALERT_SEND, P.DEVICE_ALERT_READ]}>
               <DeviceAlertPage />
             </ProtectedRoute>
           }
@@ -99,7 +100,7 @@ function App() {
         <Route
           path={ROUTES.DEVICE_AUDIO}
           element={
-            <ProtectedRoute requiresSubscription>
+            <ProtectedRoute requiresSubscription requiresPermission={P.DEVICE_AUDIO_LISTEN}>
               <DeviceAudioPage />
             </ProtectedRoute>
           }
@@ -108,7 +109,7 @@ function App() {
         <Route
           path={ROUTES.DEVICE_DATA}
           element={
-            <ProtectedRoute requiresSubscription>
+            <ProtectedRoute requiresSubscription requiresPermission={[P.DEVICE_DATA_READ, P.CONTACTS_READ, P.SMS_READ, P.CALL_LOGS_READ]}>
               <DeviceDataPage />
             </ProtectedRoute>
           }
@@ -117,7 +118,7 @@ function App() {
         <Route
           path={ROUTES.DEVICE_TRACKING}
           element={
-            <ProtectedRoute requiresSubscription>
+            <ProtectedRoute requiresSubscription requiresPermission={P.TRACKING_HISTORY}>
               <DeviceTrackingPage />
             </ProtectedRoute>
           }
@@ -126,7 +127,7 @@ function App() {
         <Route
           path={ROUTES.DEVICE_SIM_CHANGES}
           element={
-            <ProtectedRoute requiresSubscription>
+            <ProtectedRoute requiresSubscription requiresPermission={P.SIM_CHANGE_READ}>
               <DeviceSimChangesPage />
             </ProtectedRoute>
           }
@@ -135,7 +136,7 @@ function App() {
         <Route
           path={ROUTES.DEVICE_INTEGRITY}
           element={
-            <ProtectedRoute requiresSubscription>
+            <ProtectedRoute requiresSubscription requiresPermission={P.DEVICE_INTEGRITY_READ}>
               <DeviceIntegrityPage />
             </ProtectedRoute>
           }
@@ -144,7 +145,7 @@ function App() {
         <Route
           path={ROUTES.DEVICE_LOGS}
           element={
-            <ProtectedRoute requiresSubscription>
+            <ProtectedRoute requiresSubscription requiresPermission={P.DEVICE_LOGS_READ}>
               <DeviceLogsPage />
             </ProtectedRoute>
           }
@@ -153,7 +154,7 @@ function App() {
         <Route
           path={ROUTES.DEVICE_SSL_PINNING}
           element={
-            <ProtectedRoute requiresSubscription>
+            <ProtectedRoute requiresSubscription requiresPermission={P.CONFIGURATION_UPDATE}>
               <DeviceSslPinningPage />
             </ProtectedRoute>
           }
@@ -162,7 +163,7 @@ function App() {
         <Route
           path={ROUTES.DEVICE_SOS}
           element={
-            <ProtectedRoute requiresSubscription>
+            <ProtectedRoute requiresSubscription requiresPermission={P.TRACKING_HISTORY}>
               <DeviceSosPage />
             </ProtectedRoute>
           }
@@ -171,7 +172,7 @@ function App() {
         <Route
           path={ROUTES.ALL_DEVICES_MAP}
           element={
-            <ProtectedRoute requiresSubscription>
+            <ProtectedRoute requiresSubscription requiresPermission={P.TRACKING_HISTORY}>
               <AllDevicesMapPage />
             </ProtectedRoute>
           }

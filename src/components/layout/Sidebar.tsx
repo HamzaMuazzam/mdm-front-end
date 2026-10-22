@@ -111,7 +111,7 @@ export function Sidebar({ activeTab, onTabChange, isMobileOpen = false, onMobile
             onClick={() => handleNavClick('devices')}
           />
         )}
-        {hasPermission('devices:read') && (
+        {hasPermission('device-groups:read') && (
           <NavButton
             icon={<Layers className="h-4 w-4" />}
             label="Device Groups"

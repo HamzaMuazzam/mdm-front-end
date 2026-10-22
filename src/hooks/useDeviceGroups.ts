@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { deviceGroupService } from '@/api/services/deviceGroup.service';
 import { bulkOperationsService } from '@/api/services/bulkOperations.service';
 import { toast } from '@/hooks/useToast';
+import { usePermissionStore } from '@/store/permissionStore';
 import type { BulkOperationLogQuery, DeviceGroupMembersRequest, DeviceGroupRequest } from '@/types/bulk.types';
 
 export const DEVICE_GROUPS_QUERY_KEY = ['deviceGroups'];
@@ -10,12 +11,17 @@ export const BULK_OPERATIONS_QUERY_KEY = ['bulkOperations'];
 const errorMessage = (error: any, fallback: string) =>
   error?.response?.data?.message || error?.message || fallback;
 
-/** The account's groups — "All" first. Shared by every bulk picker, so keep it fresh but cheap. */
+/**
+ * The account's groups — "All" first. Shared by every bulk picker, so keep it fresh but cheap.
+ * Skipped entirely (returns no data) when the user lacks `device-groups:read`, so pickers in
+ * rosters / app updates / bulk actions simply show no groups instead of surfacing a 403.
+ */
 export function useDeviceGroupsQuery(enabled = true) {
+  const canReadGroups = usePermissionStore((state) => state.hasPermission('device-groups:read'));
   return useQuery({
     queryKey: DEVICE_GROUPS_QUERY_KEY,
     queryFn: deviceGroupService.list,
-    enabled,
+    enabled: enabled && canReadGroups,
     staleTime: 60 * 1000,
   });
 }
