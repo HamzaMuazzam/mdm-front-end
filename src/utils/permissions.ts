@@ -55,6 +55,12 @@ export const PERMISSIONS = {
   DEVICE_ALERT_SEND: 'device-alerts:send',
   DEVICE_ALERT_READ: 'device-alerts:read',
 
+  // Audit Logs
+  AUDIT_LOGS_READ: 'audit-logs:read',
+  AUDIT_LOGS_EXPORT: 'audit-logs:export',
+  AUDIT_LOGS_READ_ALL: 'audit-logs:read-all-accounts',
+  AUDIT_LOGS_SETTINGS: 'audit-logs:settings',
+
   // Tracking
   TRACKING_HISTORY: 'tracking:history',
   TRACKING_LIVE: 'tracking:live-tracking',
@@ -105,6 +111,7 @@ export const TAB_PERMISSIONS = {
   'app-update': PERMISSIONS.APP_UPDATES_UPLOAD,
   'app-management': [PERMISSIONS.APP_MANAGEMENT_READ, PERMISSIONS.APP_MANAGEMENT_UPLOAD, PERMISSIONS.APP_MANAGEMENT_DEPLOY],
   'file-manager': [PERMISSIONS.FILE_MANAGER_READ, PERMISSIONS.FILE_MANAGER_COMMAND],
+  'audit-logs': PERMISSIONS.AUDIT_LOGS_READ,
 } as const satisfies Record<string, PermissionGate>;
 
 export type DashboardTab = keyof typeof TAB_PERMISSIONS;
@@ -112,5 +119,5 @@ export type DashboardTab = keyof typeof TAB_PERMISSIONS;
 /** Order in which to fall back when the requested tab is not allowed. */
 export const TAB_FALLBACK_ORDER: readonly DashboardTab[] = [
   'analytics', 'devices', 'reports', 'users', 'device-groups', 'attendance', 'subscriptions',
-  'configuration', 'security-groups', 'app-update', 'app-management', 'file-manager',
+  'configuration', 'security-groups', 'app-update', 'app-management', 'file-manager', 'audit-logs',
 ];

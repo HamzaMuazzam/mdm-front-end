@@ -30,7 +30,7 @@ import { RemoteControlModal } from './RemoteControlModal';
 import { BulkActionsMenu, type BulkActionGroup } from './BulkActionsMenu';
 import { DeviceActionsMenu, type DeviceActionCategory, type ActionTone } from './DeviceActionsMenu';
 import { DeviceConfigPanel } from './DeviceConfigPanel';
-import { Layers, Settings, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, BarChart3, Power, RotateCcw, Siren, Mic, Database, Map, Plus, RefreshCw, Search, Clock, ShieldAlert, ShieldOff, ArrowUpCircle, Globe, Wifi, MonitorPlay, Activity, ChevronUp, ChevronDown, ChevronsUpDown, ScrollText, Wrench, Brush, MousePointerClick } from 'lucide-react';
+import { Layers, Settings, MapPin, Bell, Smartphone, Monitor, Lock, X, Check, AlertCircle, Pencil, Save, AppWindow, Key, FileText, QrCode, Download, BarChart3, Power, RotateCcw, Siren, Mic, Database, Map, Plus, RefreshCw, Search, Clock, ShieldAlert, ShieldOff, ArrowUpCircle, Globe, Wifi, MonitorPlay, Activity, ChevronUp, ChevronDown, ChevronsUpDown, ScrollText, Wrench, Brush, MousePointerClick, ShieldCheck } from 'lucide-react';
 import QRCode from 'qrcode';
 import type { CreateDeviceRequest, UpdateDeviceRequest, Device, UpdateDeviceConfigurationRequest } from '@/types/device.types';
 import { ROUTES } from '@/utils/constants';
@@ -611,6 +611,7 @@ export function DeviceManagement() {
           { key: 'listen', label: 'Listen to Device', icon: Mic, tone: 'green', onSelect: () => handleListenAudio(device), visible: hasPermission('device-audio:listen') },
           { key: 'sim', label: 'SIM Change Logs', icon: Smartphone, tone: 'blue', onSelect: () => handleSimChanges(device), visible: hasPermission('sim-changes:read') },
           { key: 'syslogs', label: 'System Logs', icon: ScrollText, tone: 'blue', onSelect: () => handleDeviceLogs(device), visible: hasPermission('device-logs:read') },
+          { key: 'audit', label: 'Audit Trail', icon: ShieldCheck, tone: 'blue', onSelect: () => navigate(`/device/${device.id}/audit`), visible: hasPermission('audit-logs:read') },
         ],
       },
       {

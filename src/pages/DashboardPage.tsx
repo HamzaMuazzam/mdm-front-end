@@ -16,12 +16,13 @@ import { AppUpdateManagement } from '@/components/features/app-update/AppUpdateM
 import { AppManagement } from '@/components/features/app-management/AppManagement';
 import { FileManagerPage } from '@/components/features/file-manager/FileManagerPage';
 import { ReportsDashboard } from '@/components/features/reports/ReportsDashboard';
+import { AuditLogsPage } from '@/components/features/audit/AuditLogsPage';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { usePermissionsQuery } from '@/hooks/usePermissions';
 import { usePermissionStore } from '@/store/permissionStore';
 import { TAB_PERMISSIONS, TAB_FALLBACK_ORDER, gateSatisfied } from '@/utils/permissions';
 
-type TabType = 'analytics' | 'users' | 'devices' | 'device-groups' | 'attendance' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager' | 'reports';
+type TabType = 'analytics' | 'users' | 'devices' | 'device-groups' | 'attendance' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager' | 'reports' | 'audit-logs';
 
 const TAB_TITLES: Record<TabType, string> = {
   analytics: 'Analytics',
@@ -36,6 +37,7 @@ const TAB_TITLES: Record<TabType, string> = {
   'app-update': 'App Update',
   'app-management': 'App Management',
   'file-manager': 'File Manager',
+  'audit-logs': 'Audit Logs',
 };
 
 interface LocationState {
@@ -55,7 +57,8 @@ function isTabType(value: string | null): value is TabType {
     value === 'app-update' ||
     value === 'app-management' ||
     value === 'file-manager' ||
-    value === 'reports'
+    value === 'reports' ||
+    value === 'audit-logs'
   );
 }
 
@@ -152,6 +155,8 @@ export function DashboardPage() {
       queryClient.invalidateQueries({ queryKey: ['fileEvents'] });
     } else if (tab === 'reports') {
       queryClient.invalidateQueries({ queryKey: ['reports'] });
+    } else if (tab === 'audit-logs') {
+      queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
     }
   };
 
@@ -222,6 +227,11 @@ export function DashboardPage() {
         {activeTab === 'reports' && (
           <ErrorBoundary moduleName="Reports">
             <ReportsDashboard />
+          </ErrorBoundary>
+        )}
+        {activeTab === 'audit-logs' && (
+          <ErrorBoundary moduleName="Audit Logs">
+            <AuditLogsPage />
           </ErrorBoundary>
         )}
       </div>

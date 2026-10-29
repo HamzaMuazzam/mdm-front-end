@@ -27,6 +27,7 @@ export const ROUTES = {
   DEVICE_SIM_CHANGES: '/device/:deviceId/sim-changes',
   DEVICE_INTEGRITY: '/device/:deviceId/integrity',
   DEVICE_LOGS: '/device/:deviceId/logs',
+  DEVICE_AUDIT: '/device/:deviceId/audit',
   DEVICE_SSL_PINNING: '/device/:deviceId/ssl-pinning',
 } as const;
 

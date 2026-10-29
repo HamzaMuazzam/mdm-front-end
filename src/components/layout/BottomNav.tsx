@@ -32,7 +32,8 @@ export type BottomNavTab =
   | 'app-update'
   | 'app-management'
   | 'file-manager'
-  | 'reports';
+  | 'reports'
+  | 'audit-logs';
 
 interface BottomNavProps {
   activeTab: BottomNavTab;
@@ -137,6 +138,12 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
       icon: <HardDrive className="h-5 w-5" />,
       visible:
         hasPermission('file-manager:read') || hasPermission('file-manager:command'),
+    },
+    {
+      key: 'audit-logs',
+      label: 'Audit Logs',
+      icon: <ShieldCheck className="h-5 w-5" />,
+      visible: hasPermission('audit-logs:read'),
     },
   ];
   const moreItems = moreDefs.filter((item) => item.visible);

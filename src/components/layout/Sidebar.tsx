@@ -22,8 +22,8 @@ import {
 } from 'lucide-react';
 
 interface SidebarProps {
-  activeTab: 'analytics' | 'users' | 'devices' | 'device-groups' | 'attendance' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager' | 'reports';
-  onTabChange: (tab: 'analytics' | 'users' | 'devices' | 'device-groups' | 'attendance' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager' | 'reports') => void;
+  activeTab: 'analytics' | 'users' | 'devices' | 'device-groups' | 'attendance' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager' | 'reports' | 'audit-logs';
+  onTabChange: (tab: 'analytics' | 'users' | 'devices' | 'device-groups' | 'attendance' | 'subscriptions' | 'configuration' | 'security-groups' | 'app-update' | 'app-management' | 'file-manager' | 'reports' | 'audit-logs') => void;
   isMobileOpen?: boolean;
   onMobileClose?: () => void;
 }
@@ -82,6 +82,15 @@ export function Sidebar({ activeTab, onTabChange, isMobileOpen = false, onMobile
             isActive={activeTab === 'reports'}
             isCollapsed={collapsed}
             onClick={() => handleNavClick('reports')}
+          />
+        )}
+        {hasPermission('audit-logs:read') && (
+          <NavButton
+            icon={<ShieldCheck className="h-4 w-4" />}
+            label="Audit Logs"
+            isActive={activeTab === 'audit-logs'}
+            isCollapsed={collapsed}
+            onClick={() => handleNavClick('audit-logs')}
           />
         )}
         {hasPermission('user:read') && (
